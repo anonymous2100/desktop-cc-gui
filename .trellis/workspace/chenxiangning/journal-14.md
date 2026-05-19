@@ -1023,3 +1023,37 @@ Notes:
 ### Next Steps
 
 - None - task complete
+
+
+## Session 500: 拆分 FileViewPanel 外部变更监控测试
+
+**Date**: 2026-05-20
+**Task**: 拆分 FileViewPanel 外部变更监控测试
+**Branch**: `feature/v0.5.0-md`
+
+### Summary
+
+将 FileViewPanel.test.tsx 中 detached external change awareness 相关用例拆到 FileViewPanel.external-change.test.tsx；主测试文件从 2771 行降到 2429 行，large-file near-threshold watch 从 22 降到 21。验证通过：npm run typecheck；npx vitest run src/features/files/components/FileViewPanel.test.tsx src/features/files/components/FileViewPanel.external-change.test.tsx；npx vitest run src/features/files/components/FileViewPanel*.test.tsx；npm run check:large-files:near-threshold；npm run check:large-files:gate；git diff --check。阶段性未跑 heavy-test-noise，按治理约定留到最终整体收口。提交时未混入当前工作区已有 OpenSpec 归档/同步变更。
+
+### Main Changes
+
+完成 FileViewPanel 测试大文件治理切片：只移动测试用例，不改生产逻辑。新增 FileViewPanel.external-change.test.tsx 承接 detached external file change polling/watcher、Windows path-not-found 边界、dirty buffer conflict 相关用例，原 FileViewPanel.test.tsx 删除对应 describe 块。
+
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `f9eeda35` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
