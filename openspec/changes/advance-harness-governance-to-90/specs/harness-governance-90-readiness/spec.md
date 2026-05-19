@@ -17,12 +17,13 @@ The system MUST treat 90% as a minimum floor, 95% as the release-grade target, a
 - **AND** it MUST include deterministic replay coverage
 - **AND** it MUST include degraded-state recovery tests
 - **AND** it MUST include operator handoff guidance
+- **AND** it MUST include macOS local evidence plus explicit Windows/Linux CI qualifiers or actual Windows/Linux evidence
 
 #### Scenario: 99 percent requires platform-complete evidence
 
 - **WHEN** the implementation claims 99% readiness
-- **THEN** Windows, macOS, and Linux evidence MUST be recorded
-- **AND** any missing platform evidence MUST lower the claim to 95% with an explicit external-CI qualifier
+- **THEN** actual Windows, macOS, and Linux evidence MUST be recorded
+- **AND** any unresolved platform qualifier MUST cap the claim below 99%
 
 ### Requirement: Harness Governance Readiness MUST Close The Live Policy Path
 
