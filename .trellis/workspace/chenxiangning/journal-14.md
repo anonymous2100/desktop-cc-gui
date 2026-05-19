@@ -627,3 +627,55 @@ Notes:
 ### Next Steps
 
 - None - task complete
+
+
+## Session 490: 加固 Claude sidebar 会话列表兜底
+
+**Date**: 2026-05-19
+**Task**: 加固 Claude sidebar 会话列表兜底
+**Branch**: `feature/v0.5.0-md`
+
+### Summary
+
+(Add summary)
+
+### Main Changes
+
+| 项目 | 内容 |
+|------|------|
+| OpenSpec change | `harden-claude-sidebar-list-timeout-fallback` |
+| 代码提交 | `aa646cb4 fix(sidebar): 加固 Claude 会话列表兜底` |
+| 前端兜底 | 加固 Claude listing timeout/null/reject、successful-empty partial、mixed-engine degraded last-good fallback 与 child-owned catalog projection regression。 |
+| 后端归属 | 收紧 Claude session catalog attribution，exact/longest child workspace owner 优先，避免 parent projection 抢占 child session。 |
+| 规范状态 | OpenSpec tasks 推进到 25/30；剩余 typecheck 阻塞、3 项手动 QA、合并后 archive。 |
+
+**验证**:
+- `openspec validate harden-claude-sidebar-list-timeout-fallback --strict --no-interactive` 通过
+- `npx vitest run src/features/threads/hooks/useThreadActions.timeout-fallback.test.tsx` 8/8 通过
+- `npx vitest run src/features/threads/hooks/useThreadActions.test.ts` 46/46 通过
+- `npx vitest run src/features/session-activity src/features/app` 58 files / 483 tests 通过
+- Rust focused attribution tests 通过：child workspace、independent nested workspace、worktree isolation、ambiguous git root
+- `npx eslint src/features/threads/hooks/useThreadActions.timeout-fallback.test.tsx src/features/threads/hooks/useThreadActions.ts src/features/threads/hooks/useThreadActions.helpers.ts` 通过
+
+**阻塞/风险**:
+- `npm run typecheck` 被工作区其他未完成 change 的 `src/features/engine/capabilities/*` 类型错误阻塞，不属于本次提交范围。
+- Manual QA 需要真实 Tauri app、>=2 条 Claude session、>=1 条 Codex session，以及强制 timeout 临时验证，未在本轮自动执行。
+
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `aa646cb4` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
