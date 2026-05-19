@@ -1509,3 +1509,45 @@ Notes:
 ### Next Steps
 
 - None - task complete
+
+
+## Session 511: 收口 harness 治理层90分提案
+
+**Date**: 2026-05-20
+**Task**: 收口 harness 治理层90分提案
+**Branch**: `feature/v0.5.0-md`
+
+### Summary
+
+(Add summary)
+
+### Main Changes
+
+完成 harness 治理层 90 分 readiness 提案收口提交。
+
+提交内容：
+- 新增 openspec/changes/advance-harness-governance-to-90 变更集。
+- 更新 docs/architecture/harness-governance-strategy.md。
+- 更新 openspec/project.md，将 harness 治理目标与 Win/macOS/Linux 兼容、large-file governance 约束对齐。
+
+验证：
+- 本地全量 CI 已在提交前通过：lint、typecheck、npm test、cargo test、memory-kind contract、large-file gate、heavy-test-noise gate、doctor:win、tauri debug build、cargo fmt check、git diff --check。
+
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `6b11f21d` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
