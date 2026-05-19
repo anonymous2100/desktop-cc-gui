@@ -23,6 +23,7 @@ import type {
 import { resolveCheckpointValidationProfile } from "../utils/checkpoint";
 import { CheckpointCommitDialog } from "./CheckpointCommitDialog";
 import { FileChangesList } from "./FileChangesList";
+import { PolicyDecisionAuditPanel } from "./audit/PolicyDecisionAuditPanel";
 
 interface CheckpointPanelProps extends CodeAnnotationBridgeProps {
   checkpoint: CheckpointViewModel;
@@ -441,31 +442,7 @@ export const CheckpointPanel = memo(function CheckpointPanel({
         ) : null}
       </section>
       {!compact && visiblePolicyAudit.length > 0 ? (
-        <details className="sp-checkpoint-section sp-checkpoint-section--policy-audit">
-          <summary className="sp-checkpoint-inline-heading">
-            <span className="sp-checkpoint-section-title">{t("statusPanel.policy.title")}</span>
-            <span className="sp-checkpoint-action-hint">
-              {t("statusPanel.policy.count", { count: visiblePolicyAudit.length })}
-            </span>
-          </summary>
-          <ul className="sp-checkpoint-risk-list">
-            {visiblePolicyAudit.map((entry) => (
-              <li
-                key={`${entry.policyId}:${entry.reasonKey ?? "none"}:${entry.sourceId ?? "none"}`}
-                className="sp-checkpoint-risk-item"
-              >
-                <span className={`sp-checkpoint-risk-severity is-${entry.verdictContribution}`}>
-                  {t(`statusPanel.policy.verdict.${entry.verdictContribution}`)}
-                </span>
-                <span>
-                  {entry.reasonKey
-                    ? t(entry.reasonKey)
-                    : t("statusPanel.policy.noReason", { policy: entry.policyId })}
-                </span>
-              </li>
-            ))}
-          </ul>
-        </details>
+        <PolicyDecisionAuditPanel policyAudit={visiblePolicyAudit} />
       ) : null}
       {compact ? (
         <section className="sp-checkpoint-section sp-checkpoint-section--summary-line">

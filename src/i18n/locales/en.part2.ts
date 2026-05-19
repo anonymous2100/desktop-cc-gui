@@ -1869,6 +1869,13 @@ const enPart2 = {
         notRun: "Tests have not run.",
       },
     },
+    audit: {
+      title: "Decision rationale",
+      expandLabel: "{{count}} policy decision(s)",
+      empty: "No policy decisions",
+      reasonUnavailable: "{{policy}} did not provide a reason",
+      sourceUnavailable: "No source",
+    },
     cost: {
       title: "Cost / Budget",
       session: "Session",

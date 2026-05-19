@@ -1588,6 +1588,38 @@
   color: #89d185;
 }
 
+.sp-policy-audit-row {
+  align-items: baseline;
+}
+
+.sp-policy-audit-copy {
+  display: inline-flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 5px;
+  min-width: 0;
+}
+
+.sp-policy-audit-policy {
+  font-weight: 700;
+  color: var(--text-strong);
+}
+
+.sp-policy-audit-source {
+  color: var(--text-muted);
+  font-size: 10px;
+}
+
+.sp-policy-audit-source::before {
+  content: "·";
+  margin-right: 5px;
+  color: var(--text-faint);
+}
+
+.sp-policy-audit-source.is-missing {
+  color: var(--text-faint);
+}
+
 .sp-checkpoint-file-detail {
   display: flex;
   flex-direction: column;

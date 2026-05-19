@@ -1836,6 +1836,13 @@ const zhPart2 = {
         notRun: "Tests 尚未运行。",
       },
     },
+    audit: {
+      title: "判决依据",
+      expandLabel: "{{count}} 条 policy 命中",
+      empty: "暂无 policy 判决",
+      reasonUnavailable: "{{policy}} 未提供原因",
+      sourceUnavailable: "暂无来源",
+    },
     cost: {
       title: "成本 / Budget",
       session: "Session",

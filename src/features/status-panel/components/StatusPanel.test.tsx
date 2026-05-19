@@ -704,6 +704,37 @@ describe("StatusPanel", () => {
     expect(screen.getByText("statusPanel.checkpoint.actions.hint.needs_review")).toBeTruthy();
   });
 
+  it("renders inline policy audit rationale in the dock checkpoint panel", () => {
+    render(
+      <StatusPanel
+        items={[
+          {
+            id: "tool-policy-audit",
+            kind: "tool",
+            toolType: "commandExecution",
+            title: "Tool: Bash",
+            detail: "npm run typecheck",
+            status: "running",
+            turnId: "turn-1",
+          },
+        ]}
+        isProcessing
+        variant="dock"
+      />,
+    );
+
+    fireEvent.click(screen.getByText("Result"));
+
+    const auditDetails = screen.getByText("statusPanel.audit.title").closest("details");
+    expect(auditDetails?.open).toBe(false);
+
+    fireEvent.click(screen.getByText("statusPanel.audit.title"));
+
+    expect(screen.getByText("corePolicy")).toBeTruthy();
+    expect(screen.getByText("statusPanel.policy.verdict.running")).toBeTruthy();
+    expect(screen.getByText("statusPanel.policy.corePolicy.running")).toBeTruthy();
+  });
+
   it("opens the original diff panel when clicking file row diff action", () => {
     const onOpenDiffPath = vi.fn();
     render(
@@ -1212,6 +1243,21 @@ describe("StatusPanel", () => {
 
     expect(onExpandToDock).toHaveBeenCalledTimes(1);
     expect(screen.queryByText("statusPanel.checkpoint.headline.needs_review")).toBeNull();
+  });
+
+  it("keeps policy audit out of the compact checkpoint popover", () => {
+    render(
+      <StatusPanel
+        items={[editToolItem]}
+        isProcessing={false}
+        onExpandToDock={vi.fn()}
+      />,
+    );
+
+    fireEvent.click(screen.getByText("Result"));
+
+    expect(screen.queryByText("statusPanel.audit.title")).toBeNull();
+    expect(screen.getByText("statusPanel.checkpoint.expandToDock")).toBeTruthy();
   });
 
   it("does not render when expanded is false", () => {
