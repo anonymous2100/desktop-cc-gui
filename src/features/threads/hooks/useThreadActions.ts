@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useMemo, useRef } from "react";
 import type { Dispatch, MutableRefObject } from "react";
 import type {
   ConversationItem,
@@ -6,7 +6,6 @@ import type {
   ThreadSummary,
   WorkspaceInfo,
 } from "../../../types";
-import type { WorkspaceSessionCatalogPage } from "../../../services/tauri";
 import {
   connectWorkspace as connectWorkspaceService,
   listThreadTitles as listThreadTitlesService,
@@ -104,17 +103,17 @@ import {
 import { loadSidebarSnapshot } from "../utils/sidebarSnapshot";
 import { buildThreadDebugCorrelation } from "../utils/threadDebugCorrelation";
 import { useThreadActionsSessionRuntime } from "./useThreadActionsSessionRuntime";
+import { useThreadActionsSessionCatalog } from "./useThreadActionsSessionCatalog";
+import { useLoadOlderThreadsForWorkspace } from "./useThreadActionsLoadOlder";
+import { useThreadHistoryLoadingState } from "./useThreadHistoryLoadingState";
 import {
-  CODEX_SESSION_CATALOG_FETCH_TIMEOUT_MS,
   DEFAULT_CLAUDE_CONTEXT_WINDOW,
   GEMINI_SESSION_CACHE_TTL_MS,
   GEMINI_SESSION_FETCH_TIMEOUT_MS,
   NATIVE_SESSION_LIST_FETCH_TIMEOUT_MS,
   RELATED_THREAD_LOAD_CONCURRENCY,
-  SESSION_CATALOG_PAGE_SIZE,
   THREAD_LIST_LIVE_REQUEST_TIMEOUT_MS,
   THREAD_LIST_MAX_EMPTY_PAGES,
-  THREAD_LIST_MAX_EMPTY_PAGES_LOAD_OLDER,
   THREAD_LIST_MAX_EMPTY_PAGES_WITH_ACTIVITY,
   THREAD_LIST_MAX_FETCH_DURATION_MS,
   THREAD_LIST_MAX_TOTAL_PAGES,
@@ -125,11 +124,8 @@ import {
   THREAD_RECOVERY_MAX_PAGES,
   countCatalogSessionsByEngine,
   countSummariesByEngine,
-  decodeThreadListCursorState,
-  normalizeProjectCatalogSession,
   resolveNativeSessionListLimit,
   resolveThreadListCursorForDisplay,
-  type ProjectCatalogSessionSummary,
   type StartupThreadHydrationMode,
 } from "./useThreadActions.threadList";
 import type { ThreadAction, ThreadState } from "./useThreadsReducer";
@@ -189,9 +185,8 @@ export function useThreadActions({
   rememberThreadAlias,
   useUnifiedHistoryLoader = false,
 }: UseThreadActionsOptions) {
-  const [historyLoadingByThreadId, setHistoryLoadingByThreadId] = useState<
-    Record<string, boolean>
-  >({});
+  const { historyLoadingByThreadId, setThreadHistoryLoading } =
+    useThreadHistoryLoadingState();
   // Map workspaceId → filesystem path, populated in listThreadsForWorkspace
   const workspacePathsByIdRef = useRef<Record<string, string>>({});
   const geminiSessionCacheRef = useRef<
@@ -213,6 +208,11 @@ export function useThreadActions({
     : null;
   const canListWorkspaceSessions =
     typeof listWorkspaceSessionsService === "function";
+  const { loadActiveProjectCatalogSessions, loadArchivedSessionMap } =
+    useThreadActionsSessionCatalog({
+      canListWorkspaceSessions,
+      listWorkspaceSessionsService,
+    });
   const {
     beginAutomaticRuntimeRecovery,
     getAutomaticRuntimeRecoveryPartialSource,
@@ -263,29 +263,6 @@ export function useThreadActions({
     [],
   );
 
-  const setThreadHistoryLoading = useCallback(
-    (threadId: string, isLoading: boolean) => {
-      if (!threadId) {
-        return;
-      }
-      setHistoryLoadingByThreadId((current) => {
-        const alreadyLoading = current[threadId] === true;
-        if (isLoading) {
-          if (alreadyLoading) {
-            return current;
-          }
-          return { ...current, [threadId]: true };
-        }
-        if (!alreadyLoading) {
-          return current;
-        }
-        const { [threadId]: _removed, ...rest } = current;
-        return rest;
-      });
-    },
-    [],
-  );
-
   const reconcileMissingClaudeThread = useCallback(
     (workspaceId: string, threadId: string) => {
       loadedThreadsRef.current[threadId] = false;
@@ -323,90 +300,6 @@ export function useThreadActions({
       onDebug,
       removeThreadFromCachedSummaries,
     ],
-  );
-
-  const loadArchivedSessionMap = useCallback(
-    async (workspaceId: string): Promise<Map<string, number> | null> => {
-      if (!canListWorkspaceSessions) {
-        return null;
-      }
-      try {
-        const archivedAtBySessionId = new Map<string, number>();
-        let cursor: string | null = null;
-        const visitedCursors = new Set<string>();
-        do {
-          const currentCursor = cursor;
-          const cursorKey = currentCursor ?? "__root__";
-          if (visitedCursors.has(cursorKey)) {
-            break;
-          }
-          visitedCursors.add(cursorKey);
-          const response = await listWorkspaceSessionsService(workspaceId, {
-            query: { status: "all" },
-            cursor: currentCursor,
-            limit: SESSION_CATALOG_PAGE_SIZE,
-          });
-          response.data.forEach((entry) => {
-            const archivedAt =
-              typeof entry.archivedAt === "number" &&
-              Number.isFinite(entry.archivedAt)
-                ? Math.max(0, entry.archivedAt)
-                : 0;
-            if (archivedAt > 0) {
-              archivedAtBySessionId.set(entry.sessionId, archivedAt);
-            }
-          });
-          cursor = response.nextCursor ?? null;
-        } while (cursor);
-        return archivedAtBySessionId;
-      } catch {
-        return null;
-      }
-    },
-    [canListWorkspaceSessions, listWorkspaceSessionsService],
-  );
-
-  const loadActiveProjectCatalogSessions = useCallback(
-    async (
-      workspaceId: string,
-    ): Promise<{
-      sessions: ProjectCatalogSessionSummary[];
-      partialSource: string | null;
-      nextCursor: string | null;
-    } | null> => {
-      if (!canListWorkspaceSessions) {
-        return null;
-      }
-      const response: WorkspaceSessionCatalogPage | null = await withTimeout(
-        listWorkspaceSessionsService(workspaceId, {
-          query: { status: "active" },
-          cursor: null,
-          limit: SESSION_CATALOG_PAGE_SIZE,
-        }),
-        CODEX_SESSION_CATALOG_FETCH_TIMEOUT_MS,
-      );
-      if (!response) {
-        return {
-          sessions: [],
-          partialSource: "session-catalog-timeout",
-          nextCursor: null,
-        };
-      }
-      const sessions = response.data
-        .map((entry: unknown) => normalizeProjectCatalogSession(entry))
-        .filter((entry): entry is ProjectCatalogSessionSummary => {
-          if (!entry) {
-            return false;
-          }
-          return (entry.workspaceId ?? workspaceId) === workspaceId;
-        });
-      return {
-        sessions,
-        partialSource: response.partialSource ?? null,
-        nextCursor: response.nextCursor ?? null,
-      };
-    },
-    [canListWorkspaceSessions, listWorkspaceSessionsService],
   );
 
   const applySessionArchiveState = useCallback(
@@ -2435,270 +2328,21 @@ export function useThreadActions({
     ],
   );
 
-  const loadOlderThreadsForWorkspace = useCallback(
-    async (workspace: WorkspaceInfo) => {
-      workspacePathsByIdRef.current[workspace.id] = workspace.path;
-      const encodedNextCursor =
-        threadListCursorByWorkspace[workspace.id] ?? null;
-      if (!encodedNextCursor) {
-        return;
-      }
-      const cursorState = decodeThreadListCursorState(encodedNextCursor);
-      const workspacePath = normalizeComparableWorkspacePath(workspace.path);
-      const existing = threadsByWorkspace[workspace.id] ?? [];
-      const activeThreadId = activeThreadIdByWorkspace[workspace.id] ?? "";
-      const knownCodexThreadIds = collectKnownCodexThreadIds(
-        existing,
-        activeThreadId,
-      );
-      dispatch({
-        type: "setThreadListPaging",
-        workspaceId: workspace.id,
-        isLoading: true,
-      });
-      onDebug?.({
-        id: `${Date.now()}-client-thread-list-older`,
-        timestamp: Date.now(),
-        source: "client",
-        label: "thread/list older",
-        payload: {
-          workspaceId: workspace.id,
-          cursor: encodedNextCursor,
-          cursorSource: cursorState.source,
-        },
-      });
-      try {
-        let mappedTitles: Record<string, string> = {};
-        const archivedSessionMapPromise = loadArchivedSessionMap(workspace.id);
-        try {
-          mappedTitles = await listThreadTitlesService(workspace.id);
-          onThreadTitleMappingsLoaded?.(workspace.id, mappedTitles);
-        } catch {
-          mappedTitles = {};
-        }
-        let catalogCursor: string | null = null;
-        let didLoadCatalogPage = false;
-        let catalogSessions: ProjectCatalogSessionSummary[] = [];
-        let catalogPartialSource: string | null = null;
-        if (canListWorkspaceSessions && cursorState.source === "catalog") {
-          const response: WorkspaceSessionCatalogPage | null =
-            await withTimeout(
-              listWorkspaceSessionsService(workspace.id, {
-                query: { status: "active" },
-                cursor: cursorState.cursor,
-                limit: SESSION_CATALOG_PAGE_SIZE,
-              }),
-              CODEX_SESSION_CATALOG_FETCH_TIMEOUT_MS,
-            );
-          if (response) {
-            didLoadCatalogPage = true;
-            catalogCursor = response.nextCursor ?? null;
-            catalogPartialSource = response.partialSource ?? null;
-            catalogSessions = response.data
-              .map((entry) => normalizeProjectCatalogSession(entry))
-              .filter(
-                (entry): entry is ProjectCatalogSessionSummary =>
-                  Boolean(entry) &&
-                  (entry!.workspaceId ?? workspace.id) === workspace.id,
-              );
-          } else {
-            catalogPartialSource = "session-catalog-load-older-timeout";
-          }
-        }
-        const matchingThreads: Record<string, unknown>[] = [];
-        const targetCount = THREAD_LIST_TARGET_COUNT;
-        const pageSize = THREAD_LIST_PAGE_SIZE;
-        const maxPagesWithoutMatch = THREAD_LIST_MAX_EMPTY_PAGES_LOAD_OLDER;
-        let pagesFetched = 0;
-        const fetchStartedAt = Date.now();
-        let runtimeCursor: string | null = null;
-        if (cursorState.source === "runtime") {
-          runtimeCursor = cursorState.cursor;
-          do {
-            pagesFetched += 1;
-            const response = (await listThreadsService(
-              workspace.id,
-              runtimeCursor,
-              pageSize,
-            )) as Record<string, unknown>;
-            onDebug?.({
-              id: `${Date.now()}-server-thread-list-older`,
-              timestamp: Date.now(),
-              source: "server",
-              label: "thread/list older response",
-              payload: response,
-            });
-            const result = (response.result ?? response) as Record<
-              string,
-              unknown
-            >;
-            const data = Array.isArray(result?.data)
-              ? (result.data as Record<string, unknown>[])
-              : [];
-            const allowKnownCodexWithoutCwd =
-              isLocalSessionScanUnavailable(result);
-            const next = (result?.nextCursor ?? result?.next_cursor ?? null) as
-              | string
-              | null;
-            matchingThreads.push(
-              ...data.filter((thread) =>
-                shouldIncludeWorkspaceThreadEntry(
-                  thread,
-                  workspacePath,
-                  knownCodexThreadIds,
-                  allowKnownCodexWithoutCwd,
-                ),
-              ),
-            );
-            runtimeCursor = next;
-            if (
-              matchingThreads.length === 0 &&
-              pagesFetched >= maxPagesWithoutMatch
-            ) {
-              break;
-            }
-            if (pagesFetched >= THREAD_LIST_MAX_TOTAL_PAGES) {
-              break;
-            }
-            if (
-              Date.now() - fetchStartedAt >=
-              THREAD_LIST_MAX_FETCH_DURATION_MS
-            ) {
-              break;
-            }
-          } while (runtimeCursor && matchingThreads.length < targetCount);
-        }
-
-        const existingIds = new Set(existing.map((thread) => thread.id));
-        const additions: ThreadSummary[] = [];
-        matchingThreads.forEach((thread) => {
-          const id = String(thread?.id ?? "");
-          if (!id || existingIds.has(id)) {
-            return;
-          }
-          const preview = asString(thread?.preview ?? "").trim();
-          const mappedTitle = mappedTitles[id];
-          const customName = mappedTitle || getCustomName(workspace.id, id);
-          const fallbackName = `Agent ${existing.length + additions.length + 1}`;
-          const name = customName
-            ? customName
-            : preview.length > 0
-              ? previewThreadName(preview, fallbackName)
-              : fallbackName;
-          additions.push({
-            id,
-            name,
-            updatedAt: getThreadTimestamp(thread),
-            sizeBytes: extractThreadSizeBytes(thread),
-            ...resolveThreadSourceMeta(thread),
-          });
-          existingIds.add(id);
-        });
-
-        const visibleAdditions = applySessionArchiveState(
-          additions,
-          await archivedSessionMapPromise,
-        );
-
-        const mergedCatalogThreads = mergeCodexCatalogSessionSummaries(
-          [...existing, ...visibleAdditions],
-          catalogSessions,
-          workspace.id,
-          mappedTitles,
-          getCustomName,
-        );
-        const visibleMergedThreads = applySessionArchiveState(
-          mergedCatalogThreads,
-          await archivedSessionMapPromise,
-        );
-
-        const visibleMergedIds = visibleMergedThreads
-          .map((thread) => thread.id)
-          .join("\u0000");
-        const existingIdsSignature = existing
-          .map((thread) => thread.id)
-          .join("\u0000");
-        if (visibleMergedIds !== existingIdsSignature) {
-          dispatch({
-            type: "setThreads",
-            workspaceId: workspace.id,
-            threads: visibleMergedThreads,
-          });
-          latestThreadsByWorkspaceRef.current = {
-            ...latestThreadsByWorkspaceRef.current,
-            [workspace.id]: visibleMergedThreads,
-          };
-        }
-        dispatch({
-          type: "setThreadListCursor",
-          workspaceId: workspace.id,
-          cursor: didLoadCatalogPage
-            ? resolveThreadListCursorForDisplay({
-                catalogCursor,
-                catalogPartialSource,
-                runtimeCursor: null,
-              })
-            : resolveThreadListCursorForDisplay({
-                catalogCursor: null,
-                catalogPartialSource: null,
-                runtimeCursor,
-              }),
-        });
-        if (catalogPartialSource) {
-          onDebug?.({
-            id: `${Date.now()}-client-thread-list-older-catalog-partial`,
-            timestamp: Date.now(),
-            source: "client",
-            label: "thread/list older catalog partial",
-            payload: {
-              workspaceId: workspace.id,
-              partialSource: catalogPartialSource,
-            },
-          });
-        }
-        matchingThreads.forEach((thread) => {
-          const threadId = String(thread?.id ?? "");
-          const preview = asString(thread?.preview ?? "").trim();
-          if (!threadId || !preview) {
-            return;
-          }
-          dispatch({
-            type: "setLastAgentMessage",
-            threadId,
-            text: preview,
-            timestamp: getThreadTimestamp(thread),
-          });
-        });
-      } catch (error) {
-        onDebug?.({
-          id: `${Date.now()}-client-thread-list-older-error`,
-          timestamp: Date.now(),
-          source: "error",
-          label: "thread/list older error",
-          payload: error instanceof Error ? error.message : String(error),
-        });
-      } finally {
-        dispatch({
-          type: "setThreadListPaging",
-          workspaceId: workspace.id,
-          isLoading: false,
-        });
-      }
-    },
-    [
-      applySessionArchiveState,
-      canListWorkspaceSessions,
-      dispatch,
-      getCustomName,
-      loadArchivedSessionMap,
-      listWorkspaceSessionsService,
-      onDebug,
-      onThreadTitleMappingsLoaded,
-      activeThreadIdByWorkspace,
-      threadListCursorByWorkspace,
-      threadsByWorkspace,
-    ],
-  );
+  const loadOlderThreadsForWorkspace = useLoadOlderThreadsForWorkspace({
+    activeThreadIdByWorkspace,
+    applySessionArchiveState,
+    canListWorkspaceSessions,
+    dispatch,
+    getCustomName,
+    latestThreadsByWorkspaceRef,
+    listWorkspaceSessionsService,
+    loadArchivedSessionMap,
+    onDebug,
+    onThreadTitleMappingsLoaded,
+    threadListCursorByWorkspace,
+    threadsByWorkspace,
+    workspacePathsByIdRef,
+  });
 
   const archiveThread = useMemo(
     () => createArchiveThreadAction({ onDebug }),
