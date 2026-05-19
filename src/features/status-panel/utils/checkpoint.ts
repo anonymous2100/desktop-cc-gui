@@ -13,6 +13,7 @@ import type {
   SubagentInfo,
   TodoItem,
 } from "../types";
+import { evaluatePolicyChain } from "./policies";
 
 const DISPLAY_VALIDATION_KINDS = ["lint", "typecheck", "tests", "build"] as const;
 const CHECKPOINT_ACTION_LIMIT = 3;
@@ -191,7 +192,7 @@ export function buildCheckpointViewModel(
   const failedCommandKind = failedCommand
     ? classifyValidationKind(failedCommand.command)
     : null;
-  const verdict = resolveVerdict({
+  const policyEvidence = {
     failedCommand,
     failedCommandKind,
     failedSubagent,
@@ -207,7 +208,10 @@ export function buildCheckpointViewModel(
     hasInProgressTodo,
     isProcessing,
     requiredKinds: validationProfile.requiredKinds,
-  });
+    validations,
+  };
+  const policyResult = evaluatePolicyChain(policyEvidence);
+  const verdict = policyResult.verdict;
 
   const headline = buildHeadline(verdict, hasEvidence);
   const fallbackSummary = buildDeterministicSummary({
@@ -252,6 +256,7 @@ export function buildCheckpointViewModel(
     verdict,
     headline,
     summary: summaryResolution.summary,
+    policyAudit: policyResult.decisions,
     evidence: {
       changedFiles: fileChanges.length,
       additions: totalAdditions,
@@ -549,65 +554,6 @@ function buildRisks(input: {
   }
 
   return risks;
-}
-
-function resolveVerdict(input: {
-  failedCommand: CommandSummary | null;
-  failedCommandKind: CheckpointValidationKind | null;
-  failedSubagent: SubagentInfo | null;
-  failedValidation: CheckpointValidationEvidence | null;
-  fileChanges: FileChangeSummary[];
-  hasCompletedSubagentSet: boolean;
-  hasCompletedTodoSet: boolean;
-  hasEvidence: boolean;
-  hasReadyValidations: boolean;
-  hasRunningCommand: boolean;
-  hasRunningSubagent: boolean;
-  hasSuccessfulCommand: boolean;
-  hasInProgressTodo: boolean;
-  isProcessing: boolean;
-  requiredKinds: readonly CheckpointValidationKind[];
-}): CheckpointViewModel["verdict"] {
-  if (input.failedSubagent) {
-    return "blocked";
-  }
-  if (
-    input.failedValidation &&
-    input.requiredKinds.includes(input.failedValidation.kind)
-  ) {
-    return "blocked";
-  }
-  if (
-    input.failedCommand &&
-    input.failedCommandKind &&
-    input.failedCommandKind !== "custom" &&
-    input.requiredKinds.includes(input.failedCommandKind)
-  ) {
-    return "blocked";
-  }
-
-  if (
-    input.isProcessing ||
-    input.hasRunningCommand ||
-    input.hasRunningSubagent ||
-    input.hasInProgressTodo
-  ) {
-    return "running";
-  }
-
-  if (!input.hasEvidence) {
-    return "needs_review";
-  }
-
-  if (
-    (input.fileChanges.length > 0 && input.hasReadyValidations) ||
-    (input.fileChanges.length === 0 &&
-      (input.hasSuccessfulCommand || input.hasCompletedTodoSet || input.hasCompletedSubagentSet))
-  ) {
-    return "ready";
-  }
-
-  return "needs_review";
 }
 
 function buildHeadline(

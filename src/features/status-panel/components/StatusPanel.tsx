@@ -16,6 +16,8 @@ import ListTodo from "lucide-react/dist/esm/icons/list-todo";
 import MessageSquareQuote from "lucide-react/dist/esm/icons/message-square-quote";
 import type { LucideIcon } from "lucide-react";
 import type { ConversationItem, GitFileStatus, TurnPlan } from "../../../types";
+import type { EngineType, ThreadTokenUsage } from "../../../types";
+import { isEngineCapabilityAvailable } from "../../engine/engineCapabilityMatrix";
 import { useStatusPanelData } from "../hooks/useStatusPanelData";
 import type { FileChangeSummary, SubagentInfo, TabType } from "../types";
 import {
@@ -30,6 +32,7 @@ import { SubagentList } from "./SubagentList";
 import { TodoList } from "./TodoList";
 import { UserConversationTimelinePanel } from "./UserConversationTimelinePanel";
 import { resolveUserConversationTimeline } from "../utils/userConversationTimeline";
+import { CostBudgetSection } from "./CostBudgetSection";
 
 interface StatusPanelProps extends CodeAnnotationBridgeProps {
   workspaceId?: string | null;
@@ -42,6 +45,9 @@ interface StatusPanelProps extends CodeAnnotationBridgeProps {
   isCodexEngine?: boolean;
   activeThreadId?: string | null;
   activeTurnId?: string | null;
+  selectedEngine?: EngineType | null;
+  selectedModelId?: string | null;
+  activeTokenUsage?: ThreadTokenUsage | null;
   workspaceGitFiles?: GitFileStatus[];
   workspaceGitStagedFiles?: GitFileStatus[];
   workspaceGitUnstagedFiles?: GitFileStatus[];
@@ -157,6 +163,9 @@ export const StatusPanel = memo(function StatusPanel({
   isCodexEngine = false,
   activeThreadId = null,
   activeTurnId = null,
+  selectedEngine = null,
+  selectedModelId = null,
+  activeTokenUsage = null,
   workspaceGitFiles,
   workspaceGitStagedFiles = [],
   workspaceGitUnstagedFiles = [],
@@ -213,13 +222,18 @@ export const StatusPanel = memo(function StatusPanel({
   });
 
   const hasPlanData = isPlanMode || Boolean(plan);
-  const showPlanTab = hasPlanData && !isCodexEngine;
+  const statusPanelEngine = selectedEngine ?? (isCodexEngine ? "codex" : null);
+  const supportsCollaborationMode =
+    statusPanelEngine !== null &&
+    isEngineCapabilityAvailable(statusPanelEngine, "collaboration.mode");
+  const usePlanAsTaskList = isCodexEngine && supportsCollaborationMode;
+  const showPlanTab = hasPlanData && !usePlanAsTaskList;
   const panelRef = useRef<HTMLDivElement>(null);
   const planTotal = plan?.steps.length ?? 0;
   const planCompleted =
     plan?.steps.filter((step) => step.status === "completed").length ?? 0;
   const codexTaskItems = useMemo(() => {
-    if (isCodexEngine && plan && plan.steps.length > 0) {
+    if (usePlanAsTaskList && plan && plan.steps.length > 0) {
       return plan.steps.map((step) => {
         const statusForDisplay = resolvePlanStepStatusForDisplay(step.status, isProcessing);
         return {
@@ -234,7 +248,7 @@ export const StatusPanel = memo(function StatusPanel({
       });
     }
     return todos;
-  }, [isCodexEngine, isProcessing, plan, todos]);
+  }, [isProcessing, plan, todos, usePlanAsTaskList]);
   const codexTaskCompleted = useMemo(
     () => codexTaskItems.filter((item) => item.status === "completed").length,
     [codexTaskItems],
@@ -272,7 +286,7 @@ export const StatusPanel = memo(function StatusPanel({
   const checkpoint = useMemo(
     () =>
       buildCheckpointViewModel({
-        todos: isCodexEngine ? codexTaskItems : todos,
+        todos: usePlanAsTaskList ? codexTaskItems : todos,
         subagents,
         fileChanges,
         commands,
@@ -286,10 +300,10 @@ export const StatusPanel = memo(function StatusPanel({
       codexTaskItems,
       effectiveItems,
       fileChanges,
-      isCodexEngine,
       isProcessing,
       subagents,
       todos,
+      usePlanAsTaskList,
     ],
   );
   const displayedFileChanges =
@@ -304,7 +318,7 @@ export const StatusPanel = memo(function StatusPanel({
       ? workspaceGitTotals?.deletions ??
         workspaceFileChanges.reduce((sum, entry) => sum + entry.deletions, 0)
       : totalDeletions;
-  const shouldShowTodoTab = isCodexEngine
+  const shouldShowTodoTab = usePlanAsTaskList
     ? hasTabData(codexTaskCompleted, codexTaskTotal)
     : hasTabData(todoCompleted, todoTotal);
   const shouldShowSubagentTab = hasTabData(subagentCompleted, subagentTotal);
@@ -421,10 +435,10 @@ export const StatusPanel = memo(function StatusPanel({
             : shouldShowTodoTab,
         badge: (
           <span className="sp-tab-count">
-            {isCodexEngine ? `${codexTaskCompleted}/${codexTaskTotal}` : `${todoCompleted}/${todoTotal}`}
+            {usePlanAsTaskList ? `${codexTaskCompleted}/${codexTaskTotal}` : `${todoCompleted}/${todoTotal}`}
           </span>
         ),
-        loading: isProcessing && (isCodexEngine ? codexTaskInProgress : hasInProgressTodo),
+        loading: isProcessing && (usePlanAsTaskList ? codexTaskInProgress : hasInProgressTodo),
       },
       subagent: {
         tab: "subagent",
@@ -504,6 +518,7 @@ export const StatusPanel = memo(function StatusPanel({
       todoCompleted,
       todoTotal,
       userConversationTimeline.items.length,
+      usePlanAsTaskList,
       variant,
       visibleDockTabs,
     ],
@@ -524,7 +539,7 @@ export const StatusPanel = memo(function StatusPanel({
       : openTab;
   const contentNode = (
     <>
-      {activeTab === "todo" && <TodoList todos={isCodexEngine ? codexTaskItems : todos} />}
+      {activeTab === "todo" && <TodoList todos={usePlanAsTaskList ? codexTaskItems : todos} />}
       {activeTab === "subagent" && (
         <SubagentList
           subagents={subagents}
@@ -537,46 +552,55 @@ export const StatusPanel = memo(function StatusPanel({
         />
       )}
       {activeTab === "checkpoint" && (
-        <CheckpointPanel
-          checkpoint={checkpoint}
-          compact={variant !== "dock"}
-          fileChanges={displayedFileChanges}
-          totalAdditions={displayedTotalAdditions}
-          totalDeletions={displayedTotalDeletions}
-          onOpenDiffPath={onOpenDiffPath}
-          onOpenFilePath={onOpenFilePath}
-          workspaceId={workspaceId}
-          workspacePath={workspacePath}
-          onRefreshGitStatus={onRefreshGitStatus}
-          commitMessage={commitMessage}
-          commitMessageLoading={commitMessageLoading}
-          commitMessageError={commitMessageError}
-          onCommitMessageChange={onCommitMessageChange}
-          onGenerateCommitMessage={onGenerateCommitMessage}
-          onCommit={onCommit}
-          commitLoading={commitLoading}
-          commitError={commitError}
-          stagedFiles={workspaceGitStagedFiles}
-          unstagedFiles={workspaceGitUnstagedFiles}
-          onCreateCodeAnnotation={onCreateCodeAnnotation}
-          onRemoveCodeAnnotation={onRemoveCodeAnnotation}
-          codeAnnotations={codeAnnotations}
-          onExpandToDock={
-            onExpandToDock
-              ? () => {
-                  onExpandToDock();
-                  if (variant !== "dock") {
-                    setOpenTab(null);
+        <>
+          <CostBudgetSection
+            compact={variant !== "dock"}
+            engine={selectedEngine}
+            model={selectedModelId}
+            usage={activeTokenUsage}
+            sessionId={activeThreadId}
+          />
+          <CheckpointPanel
+            checkpoint={checkpoint}
+            compact={variant !== "dock"}
+            fileChanges={displayedFileChanges}
+            totalAdditions={displayedTotalAdditions}
+            totalDeletions={displayedTotalDeletions}
+            onOpenDiffPath={onOpenDiffPath}
+            onOpenFilePath={onOpenFilePath}
+            workspaceId={workspaceId}
+            workspacePath={workspacePath}
+            onRefreshGitStatus={onRefreshGitStatus}
+            commitMessage={commitMessage}
+            commitMessageLoading={commitMessageLoading}
+            commitMessageError={commitMessageError}
+            onCommitMessageChange={onCommitMessageChange}
+            onGenerateCommitMessage={onGenerateCommitMessage}
+            onCommit={onCommit}
+            commitLoading={commitLoading}
+            commitError={commitError}
+            stagedFiles={workspaceGitStagedFiles}
+            unstagedFiles={workspaceGitUnstagedFiles}
+            onCreateCodeAnnotation={onCreateCodeAnnotation}
+            onRemoveCodeAnnotation={onRemoveCodeAnnotation}
+            codeAnnotations={codeAnnotations}
+            onExpandToDock={
+              onExpandToDock
+                ? () => {
+                    onExpandToDock();
+                    if (variant !== "dock") {
+                      setOpenTab(null);
+                    }
                   }
-                }
-              : undefined
-          }
-          onAfterSelect={() => {
-            if (variant !== "dock") {
-              setOpenTab(null);
+                : undefined
             }
-          }}
-        />
+            onAfterSelect={() => {
+              if (variant !== "dock") {
+                setOpenTab(null);
+              }
+            }}
+          />
+        </>
       )}
       {activeTab === "latestUserMessage" && variant === "dock" && (
         <UserConversationTimelinePanel

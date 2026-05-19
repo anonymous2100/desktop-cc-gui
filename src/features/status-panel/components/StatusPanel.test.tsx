@@ -1408,6 +1408,43 @@ describe("StatusPanel", () => {
     expect(screen.queryByText("User Conversation")).toBeNull();
   });
 
+  it("renders cost budget section in checkpoint panel when token usage is available", () => {
+    render(
+      <StatusPanel
+        items={[editToolItem]}
+        isProcessing={false}
+        variant="dock"
+        selectedEngine="codex"
+        selectedModelId="gpt-5.4"
+        activeThreadId="thread-cost"
+        activeTokenUsage={{
+          total: {
+            totalTokens: 2000,
+            inputTokens: 1200,
+            cachedInputTokens: 200,
+            outputTokens: 800,
+            reasoningOutputTokens: 100,
+          },
+          last: {
+            totalTokens: 2000,
+            inputTokens: 1200,
+            cachedInputTokens: 200,
+            outputTokens: 800,
+            reasoningOutputTokens: 100,
+          },
+          modelContextWindow: 200000,
+        }}
+      />,
+    );
+
+    fireEvent.click(screen.getByText("Result"));
+
+    expect(screen.getByText("statusPanel.cost.title")).toBeTruthy();
+    expect(screen.getByText("statusPanel.cost.session: $0.01")).toBeTruthy();
+    expect(screen.getByText("statusPanel.cost.engine: codex")).toBeTruthy();
+    expect(screen.getByText("statusPanel.cost.model: gpt-5.4")).toBeTruthy();
+  });
+
   it("shows dock todo and subagent tabs again once status data exists", () => {
     render(
       <StatusPanel
