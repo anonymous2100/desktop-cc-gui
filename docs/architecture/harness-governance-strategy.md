@@ -32,6 +32,8 @@
 > **v1.8 校准结论**：90% 只是最低 floor，不是本轮目标。当前总控 change 已升级为 95%-99% release-grade readiness：95% 要求运行闭环 + provenance + replay + recovery + operator handoff；99% 额外要求 Win/macOS/Linux 三平台 evidence 完整。100% 不作为本地交付目标，因为缺长期生产运行数据时声称 100% 不可信。
 >
 > **v1.9 加固结论**：95%-99% 不能只靠“任务写全”。总控 change 现在补了四个生产级门禁：① S1 明确 `StatusPanel` hook/useMemo 顺序，防止 evidence 只显示不进 policy ② S3 增加 `check:agent-domain-event-adoption`，防止只有 schema 没有真实 producer/consumer ③ S6 将 consumed evidence provenance 从 SHOULD 收紧为 MUST ④ S7 要求每个平台 evidence 逐行记录 `platform / command / runUrlOrArtifactPath / date / commit / result / qualifier`。
+>
+> **v1.10 Review 收口**：第二轮 production review 后，95/99 的边界进一步明确：95% 可接受 Windows/Linux 外部 CI qualifier，但 99% 必须有真实三平台 result evidence；S2 默认 large-file result evidence 走 structured JSON，S3 默认 first producer 走 turn completed/failed，避免开放问题拖慢执行。
 
 ---
 
@@ -86,6 +88,7 @@
 2. S3 不能只跑 `check:agent-domain-event-schema`；必须新增 `check:agent-domain-event-adoption`，证明至少一个 bounded producer/consumer path 真实存在。
 3. S6 中所有参与 policy audit 的 consumed evidence 必须具备 source id 与 observed-at；经 parser/adapter 或 artifact 来源的证据必须带对应 identity，缺失必须显式 qualification。
 4. S7 的三平台证据必须按平台逐行记录命令、run URL 或 artifact path、日期、commit、结果和 qualifier；缺 Windows/Linux 实证时只能停在 95% 附近，不能声称 99%。
+5. 百分比声明必须按证据降级：只有 macOS 本地 evidence + Windows/Linux external-CI qualifier 时，最多声明 95% release-grade；只有 Windows/macOS/Linux actual result evidence 全齐，才允许 99% evidence-complete。
 
 ### 0.1 一句话定调
 
@@ -785,6 +788,7 @@ steps:
 | v1.7 | 2026-05-20 | 陈湘宁 × AI Co-Architect | **90% readiness 校准版**：复核当前代码与提案后，将 harness governance 当前状态校准为约 70% foundation-ready；新增 `advance-harness-governance-to-90` 作为总控 change，承接 snapshot injection、gate result evidence、domain-event adoption、browser scroll evidence、webview timing evidence 与后续 one-hub split。 |
 | v1.8 | 2026-05-20 | 陈湘宁 × AI Co-Architect | **95%-99% release-grade readiness 校准版**：把 90% 改为最低 floor，补齐 provenance/replay、safe recovery、operator handoff、Win/macOS/Linux evidence、sync/archive handoff 的总控要求；明确 95% 与 99% 的证据差异，避免把局部闭环误报为整体成熟。 |
 | v1.9 | 2026-05-20 | 陈湘宁 × AI Co-Architect | **生产级执行加固版**：移除总控 design 中的重复旧计划；补强 S1 `StatusPanel` hook/useMemo 顺序约束、S3 domain-event adoption checker、S6 consumed evidence provenance MUST、S7 per-platform evidence row schema。 |
+| v1.10 | 2026-05-20 | 陈湘宁 × AI Co-Architect | **二轮 review 收口版**：校准 95/99 平台证据边界；S2 默认 structured JSON gate result；S3 默认 turn completed/failed first producer；S3 design write set 补入 adoption checker 与 `package.json`。 |
 
 ---
 
