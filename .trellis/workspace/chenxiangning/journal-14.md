@@ -1722,3 +1722,45 @@ Notes:
 ### Next Steps
 
 - None - task complete
+
+
+## Session 516: 补齐 harness 治理校准记录
+
+**Date**: 2026-05-20
+**Task**: 补齐 harness 治理校准记录
+**Branch**: `feature/v0.5.0-md`
+
+### Summary
+
+(Add summary)
+
+### Main Changes
+
+补充提交 harness governance 校准记录同步。
+
+提交内容：
+- 在 docs/architecture/harness-governance-strategy.md 增补 v1.10 review 收口记录。
+- 在 openspec/project.md 记录 95/99 平台证据边界、S2/S3 默认实施路径和当前 change 校准摘要。
+
+验证：
+- 文档记录补丁。
+- 前置全量本地 CI 已通过。
+
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `203a2224` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
