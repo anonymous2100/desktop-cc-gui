@@ -1551,3 +1551,45 @@ Notes:
 ### Next Steps
 
 - None - task complete
+
+
+## Session 512: 拆分 harness 运行时治理模块
+
+**Date**: 2026-05-20
+**Task**: 拆分 harness 运行时治理模块
+**Branch**: `feature/v0.5.0-md`
+
+### Summary
+
+(Add summary)
+
+### Main Changes
+
+完成 Rust/Tauri harness runtime 治理模块拆分提交。
+
+提交内容：
+- 拆分 daemon runtime helper、codex start thread retry、runtime gates、ledger、session lifecycle 等模块边界。
+- 拆分 Claude mode-blocked、Claude history filter/fork 相关测试。
+- 保持 runtime、codex、project memory、workspace 文件路径兼容性契约。
+
+验证：
+- 提交前已通过 cargo test、cargo fmt --check、npm typecheck、heavy-test-noise gate、large-file gate、doctor:win、Tauri debug build。
+
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `fab60797` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
