@@ -19,6 +19,7 @@ import type { ConversationItem, GitFileStatus, TurnPlan } from "../../../types";
 import type { EngineType, ThreadTokenUsage } from "../../../types";
 import { isEngineCapabilityAvailable } from "../../engine/engineCapabilityMatrix";
 import { useStatusPanelData } from "../hooks/useStatusPanelData";
+import { useGovernanceEvidence } from "../../governance/evidence/useGovernanceEvidence";
 import type { FileChangeSummary, SubagentInfo, TabType } from "../types";
 import {
   buildCheckpointViewModel,
@@ -33,6 +34,7 @@ import { TodoList } from "./TodoList";
 import { UserConversationTimelinePanel } from "./UserConversationTimelinePanel";
 import { resolveUserConversationTimeline } from "../utils/userConversationTimeline";
 import { CostBudgetSection } from "./CostBudgetSection";
+import { GovernanceEvidenceSection } from "./GovernanceEvidenceSection";
 
 interface StatusPanelProps extends CodeAnnotationBridgeProps {
   workspaceId?: string | null;
@@ -524,12 +526,6 @@ export const StatusPanel = memo(function StatusPanel({
     ],
   );
 
-  if (!expanded) return null;
-
-  if (variant === "dock" && !preferredTab) {
-    return null;
-  }
-
   const activeTab =
     variant === "dock"
       ? openTab &&
@@ -537,6 +533,17 @@ export const StatusPanel = memo(function StatusPanel({
         ? openTab
         : preferredTab
       : openTab;
+  const governanceEvidenceState = useGovernanceEvidence(
+    workspaceId,
+    variant === "dock" && activeTab === "checkpoint" && Boolean(workspaceId),
+  );
+
+  if (!expanded) return null;
+
+  if (variant === "dock" && !preferredTab) {
+    return null;
+  }
+
   const contentNode = (
     <>
       {activeTab === "todo" && <TodoList todos={usePlanAsTaskList ? codexTaskItems : todos} />}
@@ -553,6 +560,12 @@ export const StatusPanel = memo(function StatusPanel({
       )}
       {activeTab === "checkpoint" && (
         <>
+          {variant === "dock" ? (
+            <GovernanceEvidenceSection
+              evidence={governanceEvidenceState.evidence}
+              isLoading={governanceEvidenceState.isLoading}
+            />
+          ) : null}
           <CostBudgetSection
             compact={variant !== "dock"}
             engine={selectedEngine}

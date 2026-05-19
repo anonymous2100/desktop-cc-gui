@@ -1843,6 +1843,18 @@ const zhPart2 = {
       reasonUnavailable: "{{policy}} 未提供原因",
       sourceUnavailable: "暂无来源",
     },
+    governance: {
+      title: "治理证据",
+      loading: "正在读取证据...",
+      empty: "暂无治理证据",
+      count: "{{count}} 条证据",
+      status: {
+        pass: "通过",
+        warn: "警告",
+        fail: "失败",
+        unknown: "未知",
+      },
+    },
     cost: {
       title: "成本 / Budget",
       session: "Session",

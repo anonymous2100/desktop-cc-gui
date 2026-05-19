@@ -1876,6 +1876,18 @@ const enPart2 = {
       reasonUnavailable: "{{policy}} did not provide a reason",
       sourceUnavailable: "No source",
     },
+    governance: {
+      title: "Governance evidence",
+      loading: "Reading evidence...",
+      empty: "No governance evidence",
+      count: "{{count}} evidence item(s)",
+      status: {
+        pass: "Pass",
+        warn: "Warn",
+        fail: "Fail",
+        unknown: "Unknown",
+      },
+    },
     cost: {
       title: "Cost / Budget",
       session: "Session",
