@@ -16,9 +16,9 @@
 
 ## 2. S2 Gate Result Evidence
 
-- [ ] 2.1 [P0][depends:1][write: `openspec/changes/advance-harness-governance-to-90/design.md` or implementation notes only if no code is changed][verify: canonical large-file artifact source chosen before implementation] Decide whether large-file result evidence consumes existing output or first adds a structured JSON report mode.
+- [ ] 2.1 [P0][depends:1][write: `openspec/changes/advance-harness-governance-to-90/implementation-evidence.md` if no code is changed][verify: canonical large-file artifact source chosen before implementation; default is structured JSON report unless existing output is proven deterministic] Decide whether large-file result evidence consumes existing output or first adds a structured JSON report mode.
 - [ ] 2.2 [P0][depends:2.1][write: `scripts/check-large-files.mjs`, `scripts/check-large-files.test.mjs` if JSON report mode is required][verify: pass/warn/fail/unknown and baseline regression semantics are test-covered] Add or confirm large-file structured result output.
-- [ ] 2.3 [P0][depends:1][write: `openspec/changes/advance-harness-governance-to-90/design.md` or implementation notes only if no code is changed][verify: canonical heavy-test-noise artifact source chosen before implementation] Decide whether heavy-test-noise evidence consumes `.artifacts/heavy-test-noise.log` or adds a structured summary.
+- [ ] 2.3 [P0][depends:1][write: `openspec/changes/advance-harness-governance-to-90/implementation-evidence.md` if no code is changed][verify: canonical heavy-test-noise artifact source chosen before implementation; add structured summary if log parsing remains brittle after ANSI/noisy-output tests] Decide whether heavy-test-noise evidence consumes `.artifacts/heavy-test-noise.log` or adds a structured summary.
 - [ ] 2.4 [P0][depends:2.3][write: `scripts/check-heavy-test-noise.mjs`, `scripts/check-heavy-test-noise.test.mjs` if structured summary is required][verify: advisory warning ceiling is preserved] Add or confirm heavy-test-noise structured result output.
 - [ ] 2.5 [P0][depends:2.2,2.4][write: `src/features/governance/evidence/**`, related tests][verify: missing artifact, malformed artifact, CRLF/LF, Windows paths, pass/warn/fail/unknown covered] Convert gate artifacts into `GovernanceEvidence`.
 - [ ] 2.6 [P1][depends:2.5][write: `src/features/status-panel/utils/policies/**`, related tests][verify: per-gate id/status/degradationReason visible in policy audit metadata] Feed parsed gate results into consolidated policy decisions.
@@ -26,7 +26,7 @@
 
 ## 3. S3 Domain Event Runtime Adoption
 
-- [ ] 3.1 [P0][depends:1][write: implementation notes or `design.md` update if producer choice changes][verify: exactly one producer chosen; default recommendation is turn completed/failed, not high-frequency message delta] Select first runtime producer.
+- [ ] 3.1 [P0][depends:1][write: `openspec/changes/advance-harness-governance-to-90/implementation-evidence.md` if default changes][verify: exactly one producer chosen; default is turn completed/failed unless inventory proves it unsafe; high-frequency message delta remains rejected] Select first runtime producer.
 - [ ] 3.2 [P0][depends:3.1][write: selected producer file only, plus `src/features/threads/domain-events/**` if needed][verify: event emission uses internal controller; application-facing runtime remains subscribe-only] Implement bounded event emission.
 - [ ] 3.3 [P0][depends:3.2][write: one governance-scoped consumer path, tests][verify: no persistence, transport, or new dashboard] Implement first bounded governance consumer.
 - [ ] 3.4 [P0][depends:3.3][write: focused tests][verify: no duplicate event, no unbounded fan-out, unsubscribe remains idempotent] Add adoption regression tests.
@@ -61,7 +61,7 @@
 - [ ] 7.2 [P0][depends:2,6][write: focused parser tests only][verify: LF and CRLF artifacts parse equivalently] Add or confirm newline compatibility coverage.
 - [ ] 7.3 [P0][depends:2,6][write: focused tests or implementation evidence][verify: no new governance parser/check assumes case-sensitive filesystem semantics without explicit documentation] Add or confirm case-sensitivity compatibility coverage.
 - [ ] 7.4 [P0][depends:2,6][write: scripts/package metadata only if needed][verify: governance checks are Node/npm entrypoints and avoid POSIX-only inline shell for cross-platform required paths] Confirm shell and command compatibility.
-- [ ] 7.5 [P0][depends:7.1-7.4][write: `openspec/changes/advance-harness-governance-to-90/implementation-evidence.md`][verify: each macOS/Windows/Linux row records `platform`, `command`, `runUrlOrArtifactPath`, `date`, `commit`, `result`, and `qualifier`; unresolved Windows/Linux qualifiers cap the claim below 99%] Record platform evidence.
+- [ ] 7.5 [P0][depends:7.1-7.4][write: `openspec/changes/advance-harness-governance-to-90/implementation-evidence.md`][verify: each macOS/Windows/Linux row records `platform`, `command`, `runUrlOrArtifactPath`, `date`, `commit`, `result`, and `qualifier`; unresolved Windows/Linux qualifiers may support 95% but cap the claim below 99%] Record platform evidence.
 - [ ] 7.6 [P0][depends:7.1-7.5][write: none][verify: `npm run typecheck` + `node --test scripts/check-large-files.test.mjs scripts/check-heavy-test-noise.test.mjs` + `npm run check:large-files:gate` + `npm run check:large-files:near-threshold`] Validate S7.
 
 ## 8. S8 Recovery And Operator Handoff

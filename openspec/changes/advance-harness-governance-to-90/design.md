@@ -116,7 +116,7 @@ Evidence must explain source, parser, timestamp, artifact identity, and degradat
 | S0 | Planning validation | `openspec/changes/advance-harness-governance-to-90/**` | Yes, docs only | OpenSpec strict validation |
 | S1 | Live snapshot injection | `src/features/status-panel/components/StatusPanel.tsx`, `src/features/status-panel/components/StatusPanel.test.tsx`, `scripts/check-governance-evidence-bridge.mjs` | No, blocks S2 policy consumption | governance audit appears from live snapshot |
 | S2 | Gate artifact ingestion | `src/features/governance/evidence/**`, `scripts/check-large-files.mjs`, `scripts/check-heavy-test-noise.mjs`, tests only as needed | After S1 design is known; implementation can be split by gate | artifact-backed evidence distinguishes missing/configured/result |
-| S3 | Domain event adoption | `src/features/threads/domain-events/**`, one selected producer/consumer path, focused tests | After S1; independent from S2 if write sets do not overlap | one bounded runtime producer/consumer path |
+| S3 | Domain event adoption | `src/features/threads/domain-events/**`, one selected producer/consumer path, focused tests, `scripts/check-agent-domain-event-adoption.mjs`, `package.json` | After S1; independent from S2 if write sets do not overlap | one bounded runtime producer/consumer path plus adoption checker |
 | S4 | Structural evidence hardening | perf scripts/docs for long-list/browser and webview timing | Yes, if it does not touch message/style split files under active work | honest browser/runtime evidence or explicit unsupported record |
 | S5 | Next hub split slice | one selected hub and extracted helper/tests | No if another teammate is already splitting the same area | one-hub-per-slice size and test evidence |
 | S6 | Evidence provenance and replay | `src/features/governance/evidence/**`, replay fixtures/tests, implementation evidence | After S1-S2; can split into fixture-only and metadata-only tasks | decisions can be replayed from captured evidence without re-running gates |
@@ -185,12 +185,14 @@ S2 must be split by gate if needed.
 Large-file gate target:
 
 - Treat `scripts/check-large-files.mjs` output as a source of result evidence only when a structured report or deterministic parsed output exists.
-- If no stable artifact exists, first add a structured JSON report mode before consuming it from UI policy code.
+- Preferred canonical source is a structured JSON report emitted by `scripts/check-large-files.mjs` because the current package scripts are command gates, not stable consumed artifacts.
+- If implementation proves an existing output is already deterministic enough, record that decision in `implementation-evidence.md` before consuming it from UI policy code.
 - Keep hard debt capable of `fail`; keep near-threshold watch as advisory `warn`.
 
 Heavy-test-noise gate target:
 
 - Prefer `.artifacts/heavy-test-noise.log` plus an optional structured summary if log parsing is too brittle.
+- If log parsing remains brittle after tests cover ANSI/noisy output, add a structured summary before policy ingestion.
 - Preserve advisory ceiling: raw failures can become evidence, but the governance policy contribution must not become `blocked` alone.
 
 S2 validation:
@@ -216,6 +218,11 @@ Recommended producer candidates:
 | usage update event | Aligns with cost/context governance; narrow payload. | Token usage paths may be high frequency. | Good if batching/debounce is explicit. |
 | turn completed/failed event | Low frequency; clear lifecycle. | Requires careful correlation with existing thread handlers. | Recommended first default. |
 | message delta event | Rich evidence. | High frequency; likely fan-out risk. | Reject for first adoption. |
+
+Default decision:
+
+- Unless implementation inventory proves the turn lifecycle path is unsafe in the current dirty worktree, S3 MUST start with a turn completed/failed event.
+- Choosing usage update instead MUST be recorded in `implementation-evidence.md` with the batching/debounce reason.
 
 Consumer rule:
 
@@ -329,6 +336,7 @@ S7 evidence levels:
 - Local macOS evidence is required because this workspace runs on macOS.
 - Windows and Linux evidence must come from CI artifacts, documented external-CI qualifiers, or reproducible commands that can be run by the release owner.
 - 95% may proceed with explicit external-CI qualifiers. 99% requires the qualifier to be replaced by actual three-platform evidence.
+- A 99% claim MUST NOT rely on "command is reproducible" alone; it requires actual result evidence for Windows, macOS, and Linux.
 
 Each platform evidence row in `implementation-evidence.md` MUST include:
 
@@ -431,8 +439,5 @@ Each implementation slice must be independently reversible:
 
 ## Open Questions
 
-- Which gate artifact path should be canonical for local heavy-test-noise evidence: `.artifacts/heavy-test-noise.log` only, or an additional structured JSON report?
-- Should large-file governance emit a structured JSON report in baseline mode before policy ingestion consumes it?
-- Which first domain event producer is safest after current large-file split work lands: turn lifecycle or usage/cost updates?
 - What artifact hash format should be canonical for governance evidence: SHA-256 only, or allow tool-provided hashes when present?
 - Which CI run should be the authoritative source for Windows/Linux 99% evidence if local validation is macOS-only?
