@@ -7,7 +7,7 @@
 当前客户端已经有多条治理证据来源：
 
 - `package.json` 中的 `check:*` scripts。
-- `.github/workflows/large-file-governance.yml` 与 `heavy-test-noise-sentry.yml`。
+- `.github/workflows/large-file-governance.yml` 与最终整体收口阶段的 noise sentry。
 - `openspec/changes/*/tasks.md` 的任务状态。
 - `.trellis/workspace/*` 的 session record。
 - StatusPanel 已承载 checkpoint/cost/budget 等运行态治理信息。
@@ -51,7 +51,7 @@
 - Large markdown content MUST be summarized, not rendered wholesale.
 - MVP MUST be useful without executing scripts; script evidence may report configured/present/unknown before runtime execution is wired.
 - Tests MUST use temp fixtures and stay silent.
-- Heavy test noise gate is mandatory: changes MUST remain compatible with `.github/workflows/heavy-test-noise-sentry.yml`, including `node --test scripts/check-heavy-test-noise.test.mjs scripts/test-batched.test.mjs` and `npm run check:heavy-test-noise`.
+- Stage validation intentionally skips the full noise sentry for future incremental edits; run it only during final harness-wide integration closure.
 - Large file governance gate is mandatory: changes MUST remain compatible with `.github/workflows/large-file-governance.yml`, including `node --test scripts/check-large-files.test.mjs`, `npm run check:large-files:near-threshold`, and `npm run check:large-files:gate`.
 - Windows/macOS/Linux compatibility is mandatory: readers MUST normalize workspace-relative paths, avoid shell-only assumptions, tolerate CRLF/LF markdown, and avoid case-sensitive filename assumptions.
 
@@ -67,8 +67,6 @@
 
 ```bash
 npm run typecheck
-node --test scripts/check-heavy-test-noise.test.mjs scripts/test-batched.test.mjs
-npm run check:heavy-test-noise
 node --test scripts/check-large-files.test.mjs
 npm run check:large-files:near-threshold
 npm run check:large-files:gate

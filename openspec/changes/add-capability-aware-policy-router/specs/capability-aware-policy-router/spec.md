@@ -64,13 +64,12 @@ This capability phase MUST NOT add a TS route registry, Rust router, ESLint enfo
 
 ### Requirement: Capability Hook And Scanner MUST Preserve Governance Workflow Gates And Three-Platform Compatibility
 
-The implementation MUST remain compatible with the heavy-test-noise and large-file governance workflows, and scanner behavior MUST be deterministic across Linux, macOS, and Windows.
+The implementation MUST remain compatible with large-file governance and the final harness-wide noise sentry, and scanner behavior MUST be deterministic across Linux, macOS, and Windows.
 
-#### Scenario: heavy test noise gate remains compatible
+#### Scenario: full noise sentry is deferred to integration closure
 
 - **WHEN** this capability is implemented
-- **THEN** `node --test scripts/check-heavy-test-noise.test.mjs scripts/test-batched.test.mjs` MUST pass
-- **AND** `npm run check:heavy-test-noise` MUST pass
+- **THEN** full noise sentry execution MAY be deferred to final harness-wide integration closure
 
 #### Scenario: large file governance gate remains compatible
 

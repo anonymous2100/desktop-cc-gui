@@ -1,7 +1,7 @@
 # Project Context
 
 - Type: OpenSpec Workspace
-- Updated At: 2026-05-17T15:20:00+08:00
+- Updated At: 2026-05-19T00:00:00+08:00
 - Scope: governance snapshot for the current `mossx` repository workspace
 
 ## Domain
@@ -13,7 +13,7 @@ OpenSpec workflow and governance for `mossx`, covering change lifecycle, main sp
 - Spec artifacts: `openspec/specs/*`
 - Change workflow artifacts: `openspec/changes/<change-id>/{proposal,design,tasks,verification}.md`
 - Archive: `openspec/changes/archive/*`
-- Current workspace state: active changes = `11`, archive changes = `303`, main specs = `258`
+- Current workspace state: active changes = `20`, archive changes = `307`, main specs = `260`
 
 ## Entry Surfaces
 
@@ -45,11 +45,11 @@ OpenSpec workflow and governance for `mossx`, covering change lifecycle, main sp
 
 Current implementation branch for this workspace snapshot is `feature/v0.5.0-md`.
 
-The harness governance design set below MUST be treated as design-ready but implementation-unstarted on this branch. Any harness governance implementation artifacts that existed on `feature/v0.5` (core code, checker scripts, task completion marks, CI wiring, or `implementation-evidence.md`) are intentionally not part of the current branch baseline and MUST NOT be used as completion evidence.
+The harness governance design set below MUST be treated as design-ready with current-branch implementation traces present. Earlier `feature/v0.5` completion evidence remains non-authoritative by itself, but the current `feature/v0.5.0-md` codebase now contains matching runtime, checker, test, and CI artifacts that must be re-inventoried before archive.
 
-Next execution pass should reimplement the harness governance proposals from the current `feature/v0.5.0-md` code facts, starting with fresh inventory and validation.
+Next execution pass should reconcile each harness governance proposal against current `feature/v0.5.0-md` code facts, refresh or replace stale `implementation-evidence.md` where needed, run the proposal-specific validation commands, and only then decide whether to sync/archive.
 
-### Harness Governance Design Set
+### Harness Governance Core Set
 
 - `formalize-engine-runtime-contract`
 - `add-engine-capability-matrix-spec`
@@ -64,14 +64,48 @@ Next execution pass should reimplement the harness governance proposals from the
 - `optimize-long-list-virtualization`
 - `optimize-bundle-chunking`
 
+### Harness Governance Extension / Follow-up Set
+
+- `add-capability-aware-policy-router`
+- `add-cross-workspace-cost-admin-view`
+- `add-engine-plugin-onboarding-kit`
+- `add-governance-telemetry-loop`
+- `add-policy-decision-audit-surface`
+- `integrate-openspec-trellis-bridge-into-status-panel`
+- `wire-agent-domain-event-runtime`
+
 ### Other Active Changes
 
 - `stabilize-core-runtime-and-realtime-contracts`
 - `add-codex-structured-launch-profile`
+- `add-file-markdown-math-preview`
+- `harden-claude-sidebar-list-timeout-fallback`
 
-> Harness governance set status on `feature/v0.5.0-md`: proposal/design/tasks/spec deltas are present and should be treated as the current design baseline. Implementation remains unstarted (`0/x tasks`) and should begin with the contract/legal layer before feature integration. All governance changes MUST preserve `.github/workflows/heavy-test-noise-sentry.yml`, `.github/workflows/large-file-governance.yml`, and ubuntu/macos/windows cross-platform parity.
+> Harness governance set status on `feature/v0.5.0-md`: proposal/design/tasks/spec deltas are present and should be treated as the current design baseline. Current code contains implementation traces for the core and substrate work, while some tasks/evidence files still reflect branch-calibration drift. Treat task checkboxes and existing `implementation-evidence.md` as review inputs, not final completion proof, until current-branch validation is rerun.
 
 > Current status should be read from each change directory itself. `project.md` tracks workspace inventory and governance boundaries, not task-by-task execution detail.
+
+### Code Fact Snapshot (2026-05-19)
+
+Current-branch code inventory shows harness/governance implementation traces in:
+
+- `src/features/engine/engineCapabilityMatrix.ts`
+- `src/features/context-ledger/cost-budget.ts`
+- `src/features/context-ledger/cost/*`
+- `src/features/context-ledger/budget/*`
+- `src/features/status-panel/utils/policies/*`
+- `src/features/status-panel/components/CostBudgetSection.tsx`
+- `src/features/status-panel/components/audit/*`
+- `src/features/governance/evidence/*`
+- `src/features/threads/contracts/realtimeEventBatcher.ts`
+- `src/features/threads/contracts/realtimeReplayHarness.ts`
+- `src/features/messages/components/messagesTimelineVirtualization.ts`
+- `vite.config.ts`
+- `scripts/check-engine-capability-matrix.mjs`
+- `scripts/realtime-perf-report.ts`
+- `.github/workflows/ci.yml`
+
+This snapshot is intentionally evidence-oriented, not a completion declaration. Each matching change still needs proposal-local validation before archive.
 
 ## Namespace Policy
 
@@ -115,6 +149,7 @@ Next execution pass should reimplement the harness governance proposals from the
 
 ## Update History
 
+- 2026-05-19: Recalibrated `project.md` against current `feature/v0.5.0-md` code and active proposal inventory. Workspace counts are now active=20, archive=307, specs=260. Harness governance is no longer described as implementation-unstarted; current-branch code traces exist and must be reconciled through fresh validation before sync/archive.
 - 2026-05-19: Recalibrated the harness governance proposal set for `feature/v0.5.0-md` only. Prior `feature/v0.5` implementation artifacts are explicitly excluded from the current baseline; all harness governance implementation must be redone from the current branch facts.
 - 2026-05-17: Hardened harness governance implementation constraints to v1.6 by making heavy-test-noise sentry, large-file governance sentry, and Win/macOS/Linux compatibility explicit requirements across the governance change set; corrected `formalize-engine-runtime-contract` task wording so runtime contract legislation is not confused with capability matrix work.
 - 2026-05-17: Added and calibrated the harness governance design set (`formalize-engine-runtime-contract`, `add-engine-capability-matrix-spec`, `evolve-context-ledger-to-cost-budget`, `evolve-checkpoint-to-policy-chain`, `add-agent-domain-event-schema`) plus substrate blockers (`refactor-mega-hub-split`, `optimize-realtime-event-batching`, `optimize-long-list-virtualization`, `optimize-bundle-chunking`); refreshed workspace inventory after the v1.5 governance design closure (specs=258, archive=303, active=11).

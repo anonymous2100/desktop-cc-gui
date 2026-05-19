@@ -76,11 +76,10 @@ This change is complete when a user can expand the current checkpoint and unders
 
 ## Mandatory Governance Gates
 
-Implementation MUST preserve the two repository workflow gates:
+Implementation MUST preserve the large-file workflow gate during staged work and defer the full noise sentry to final harness-wide integration closure:
 
-- `.github/workflows/heavy-test-noise-sentry.yml`
-  - `node --test scripts/check-heavy-test-noise.test.mjs scripts/test-batched.test.mjs`
-  - `npm run check:heavy-test-noise`
+- Full noise sentry
+  - Deferred to final harness-wide integration closure.
 - `.github/workflows/large-file-governance.yml`
   - `node --test scripts/check-large-files.test.mjs`
   - `npm run check:large-files:near-threshold`

@@ -42,7 +42,7 @@ The first bridge reads exactly these source classes:
 
 - OpenSpec task progress from `openspec/changes/*/tasks.md`.
 - Known package scripts from `package.json`, limited to harness governance checks.
-- Workflow presence for `.github/workflows/large-file-governance.yml` and `.github/workflows/heavy-test-noise-sentry.yml`.
+- Workflow presence for `.github/workflows/large-file-governance.yml`; full noise sentry evidence is collected during final harness-wide integration closure.
 
 Trellis session/task reading is P1 unless an implementation can prove a stable schema in current workspace fixtures.
 
@@ -76,11 +76,10 @@ The bridge is complete when OpenSpec task progress, known harness scripts, and t
 
 ## Mandatory Governance Gates
 
-Implementation MUST preserve the two repository workflow gates:
+Implementation MUST preserve the large-file workflow gate during staged work and defer the full noise sentry to final harness-wide integration closure:
 
-- `.github/workflows/heavy-test-noise-sentry.yml`
-  - `node --test scripts/check-heavy-test-noise.test.mjs scripts/test-batched.test.mjs`
-  - `npm run check:heavy-test-noise`
+- Full noise sentry
+  - Deferred to final harness-wide integration closure.
 - `.github/workflows/large-file-governance.yml`
   - `node --test scripts/check-large-files.test.mjs`
   - `npm run check:large-files:near-threshold`
