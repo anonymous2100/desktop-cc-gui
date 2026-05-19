@@ -797,3 +797,40 @@ Notes:
 ### Next Steps
 
 - None - task complete
+
+
+## Session 494: 解除 useThreadActions 大文件门禁阻塞
+
+**Date**: 2026-05-19
+**Task**: 解除 useThreadActions 大文件门禁阻塞
+**Branch**: `feature/v0.5.0-md`
+
+### Summary
+
+将 useThreadActions 中线程列表常量、cursor 编解码、catalog session normalize 和 engine count 纯逻辑抽到 useThreadActions.threadList.ts，使 useThreadActions.ts 从 2935 行降到 2748 行并通过 large-file gate；同步补勾 3 个 harness change 的 large-file gate 任务。
+
+### Main Changes
+
+- Extracted thread-list pure helpers from src/features/threads/hooks/useThreadActions.ts to src/features/threads/hooks/useThreadActions.threadList.ts without changing the hook public contract.
+- Updated add-policy-decision-audit-surface, add-capability-aware-policy-router, and integrate-openspec-trellis-bridge-into-status-panel tasks to mark large-file gate unblocked.
+- Validation: npm run typecheck; targeted vitest for useThreadActions helpers/listing/recovery/native bridges; npm run check:large-files:gate; npm run check:large-files:near-threshold; openspec validate for the three harness changes; git diff --check.
+- Result: OpenSpec reports all three harness changes complete; near-threshold still reports watch warnings but no hard large-file failure.
+
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `c382433f` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
