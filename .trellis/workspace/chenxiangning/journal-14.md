@@ -1593,3 +1593,46 @@ Notes:
 ### Next Steps
 
 - None - task complete
+
+
+## Session 513: 拆分前端大文件模块边界
+
+**Date**: 2026-05-20
+**Task**: 拆分前端大文件模块边界
+**Branch**: `feature/v0.5.0-md`
+
+### Summary
+
+(Add summary)
+
+### Main Changes
+
+完成前端大文件模块边界拆分提交。
+
+提交内容：
+- 拆分 app-shell model config、workspace home state、model refresh 逻辑到 app-shell-parts。
+- 拆分 GitDiffPanel props/types。
+- 拆分 sidebar、file view、status panel、messages、composer 等 CSS 大文件片段，并在 bootstrap 中保持加载顺序。
+- 修复 useThreadMessaging hook 依赖 warning。
+
+验证：
+- 提交前已通过 npm run lint、npm run typecheck、npm run test、heavy-test-noise gate、large-file gate、Tauri debug build、git diff --check。
+
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `187fd30b` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
