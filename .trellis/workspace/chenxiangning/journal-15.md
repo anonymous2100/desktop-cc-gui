@@ -119,3 +119,36 @@
 ### Next Steps
 
 - None - task complete
+
+
+## Session 524: 收口 harness advisory governance
+
+**Date**: 2026-05-20
+**Task**: 收口 harness advisory governance
+**Branch**: `feature/v0.5.0-md`
+
+### Summary
+
+重新核对并提交 harness advisory governance 收口：补齐 advisory-only policy ceiling、checkpoint section projection、evidence trail provenance、policy audit enforcement metadata 与 conformance checks；同步主 specs，归档 soften-harness-governance-to-advisory-mode，并验证 typecheck、focused vitest、governance checks、OpenSpec strict。
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `9b6c4b09` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
