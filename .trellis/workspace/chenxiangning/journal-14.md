@@ -1920,3 +1920,50 @@ Notes:
 ### Next Steps
 
 - None - task complete
+
+
+## Session 520: 修复 Markdown 预览自动刷新
+
+**Date**: 2026-05-20
+**Task**: 修复 Markdown 预览自动刷新
+**Branch**: `feature/v0.5.0-md`
+
+### Summary
+
+修复文件模块 Markdown 预览默认 polling 刷新与 Mermaid 渲染卡片状态丢失问题
+
+### Main Changes
+
+## Summary
+
+- Created OpenSpec change `fix-markdown-preview-auto-refresh` and completed proposal/design/specs/tasks artifacts.
+- Gated main-window file external-change monitoring behind explicit `liveEditPreviewEnabled`, so opening a file no longer starts default polling refresh.
+- Preserved Mermaid block `source/render` selection across same-document Markdown preview remounts by keying state to workspace/file/block identity.
+- Added focused regression tests for external monitoring gating and Mermaid rendered-view stability.
+
+## Validation
+
+- `openspec validate --all --strict --no-interactive`
+- `openspec validate fix-markdown-preview-auto-refresh --strict --no-interactive`
+- `pnpm vitest run src/app-shell-parts/fileExternalMonitoring.test.ts src/features/files/components/FileViewPanel.test.tsx src/features/files/components/FileViewPanel.external-change.test.tsx src/features/files/hooks/useFileExternalSync.test.tsx`
+- `npm run typecheck`
+- `git diff --check`
+
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `4c2afcfa` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
