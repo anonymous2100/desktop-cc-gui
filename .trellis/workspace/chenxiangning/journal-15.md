@@ -400,3 +400,64 @@
 ### Next Steps
 
 - None - task complete
+
+
+## Session 530: 动态治理证据与成本预算收口
+
+**Date**: 2026-05-20
+**Task**: 动态治理证据与成本预算收口
+**Branch**: `feature/v0.5.0-md`
+
+### Summary
+
+(Add summary)
+
+### Main Changes
+
+## 本次完成
+
+- 实现 `dynamic-project-governance-evidence` OpenSpec 变更：项目治理证据从固定 mossx/harness 清单改为 profile-aware adapter 收集。
+- StatusPanel 治理证据改为 action-oriented 分组；Checkpoint 主视图移除不可读 raw evidence trail，保留 advisory/audit 诊断链路。
+- Cost/Budget 补全 token-only 降级、pricing freshness、本地成本历史、月预算配置、预算 UI 与 settings 入口。
+- 补充 conformance script，防止 bridge-fed governance policy 重新贡献 blocking 或绕过 profile adapter。
+
+## Review / 边界修复
+
+- localStorage 访问增加 try/catch，兼容受限浏览器或 storage 被禁用场景。
+- 成本历史缓存恢复增加字段级 sanitize，丢弃 malformed persisted entries，避免脏缓存污染预算聚合。
+- 月预算 warn/exceeded ratio 保持单调，避免坏持久化值导致阈值倒挂。
+- malformed `package.json` 在 profile-aware 收集路径也会显式产生 degraded evidence，不再静默消失。
+- Cost UI 的 aria-label 改走 i18n，避免用户可访问文本硬编码英文。
+
+## 验证
+
+- `npm run test`：519 test files completed。
+- `npm run typecheck`：通过。
+- `npm run lint`：通过。
+- `npm run check:governance-evidence-bridge`：通过。
+- `npm run check:large-files`：found=0。
+- `openspec validate dynamic-project-governance-evidence --strict --no-interactive`：通过。
+- `git diff --cached --check`：通过。
+
+## 未纳入本次提交
+
+- 工作区仍有无关 desktop split layout 变更未提交：`src/features/layout/components/DesktopLayout*`、`src/styles/main.css`、`openspec/changes/desktop-editor-split-left-composer/`。
+
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `0b83493d` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
