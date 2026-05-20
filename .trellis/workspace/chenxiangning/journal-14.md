@@ -1851,3 +1851,72 @@ Notes:
 ### Next Steps
 
 - None - task complete
+
+
+## Session 519: 收口 harness 治理 release-grade 闭环
+
+**Date**: 2026-05-20
+**Task**: 收口 harness 治理 release-grade 闭环
+**Branch**: `feature/v0.5.0-md`
+
+### Summary
+
+(Add summary)
+
+### Main Changes
+
+## 本次提交
+
+- Commit: `6e64c779 feat(governance): 收口 harness 治理 release-grade 闭环`
+- Change: `advance-harness-governance-to-90`
+- Scope: harness governance release-grade closure
+
+## 主要改动
+
+- 接入 live `GovernanceEvidenceSnapshot` 到 StatusPanel checkpoint policy path。
+- 为 large-file 与 heavy-test-noise gate 增加结构化 JSON artifact，并接入 governance evidence reader。
+- 增加 bounded domain-event runtime adoption path：turn terminal events producer + governance consumer。
+- 增加 evidence provenance、artifact hash、deterministic replay fixtures 与 recovery coverage。
+- 更新 cross-platform evidence matrix、operator handoff、perf baseline evidence 和 OpenSpec implementation evidence。
+- 新增仓库内 `.claude/skills/osp-openspec-sync/scripts/validate-consistency.py` wrapper，隔离全局 skill 脚本尾部 HTML 安装标记污染，并适配 mossx OpenSpec required files。
+- 将 `advance-harness-governance-to-90` 任务矩阵推进到 51/51 完成。
+
+## 验证
+
+- `openspec validate advance-harness-governance-to-90 --strict --no-interactive` passed。
+- `openspec validate --all --strict --no-interactive` passed: 283 items passed, 0 failed。
+- `python3 .claude/skills/osp-openspec-sync/scripts/validate-consistency.py --project-path . --full` returned 0: 841 success, 271 historical warnings, 0 errors。
+- `npm run typecheck` passed。
+- `node --test scripts/check-large-files.test.mjs scripts/check-heavy-test-noise.test.mjs scripts/test-batched.test.mjs` passed: 24 tests。
+- `npm run check:large-files:gate` passed, found=0。
+- `npm run check:large-files:near-threshold` passed, found=0。
+- `npm run check:governance-evidence-bridge` passed。
+- `npm run check:checkpoint-policy-chain` passed。
+- `npm run check:agent-domain-event-schema` passed。
+- `npm run check:agent-domain-event-adoption` passed。
+- `npm run check:engine-capability-matrix` passed。
+- Earlier full `npm run check:heavy-test-noise` passed: 517 test files, act/stdout/stderr payload 0, environment warning 1。
+
+## 剩余风险
+
+- Windows/Linux still require actual external CI evidence for a 99% evidence-complete claim.
+- `validate-consistency.py` still reports 271 historical spec title warnings; these are non-blocking and should be cleaned in a separate spec hygiene task.
+
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `6e64c779` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
