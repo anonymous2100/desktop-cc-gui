@@ -10,6 +10,23 @@ const event = domainEventFactories.turnStarted({
   turnId: "turn-1",
 });
 
+function createStorageWriteProbe() {
+  if (typeof Storage !== "undefined") {
+    const setItem = vi.spyOn(Storage.prototype, "setItem");
+    return {
+      setItem,
+      restore: () => setItem.mockRestore(),
+    };
+  }
+
+  const setItem = vi.fn();
+  vi.stubGlobal("localStorage", { setItem });
+  return {
+    setItem,
+    restore: () => undefined,
+  };
+}
+
 describe("domain event runtime", () => {
   it("exposes subscribe-only public semantics with an internal emit hook", () => {
     const { runtime, emitInternal } = createDomainEventRuntimeController();
@@ -41,18 +58,20 @@ describe("domain event runtime", () => {
   it("does not write persistence or transport channels", () => {
     const { emitInternal } = createDomainEventRuntimeController();
     vi.stubGlobal("postMessage", vi.fn());
-    const setItem = vi.spyOn(Storage.prototype, "setItem");
+    const storageWriteProbe = createStorageWriteProbe();
     const fetchSpy = vi.spyOn(globalThis, "fetch");
     const postMessageSpy = vi.mocked(globalThis.postMessage);
 
-    emitInternal(event);
+    try {
+      emitInternal(event);
 
-    expect(setItem).not.toHaveBeenCalled();
-    expect(fetchSpy).not.toHaveBeenCalled();
-    expect(postMessageSpy).not.toHaveBeenCalled();
-
-    setItem.mockRestore();
-    fetchSpy.mockRestore();
-    vi.unstubAllGlobals();
+      expect(storageWriteProbe.setItem).not.toHaveBeenCalled();
+      expect(fetchSpy).not.toHaveBeenCalled();
+      expect(postMessageSpy).not.toHaveBeenCalled();
+    } finally {
+      storageWriteProbe.restore();
+      fetchSpy.mockRestore();
+      vi.unstubAllGlobals();
+    }
   });
 });
