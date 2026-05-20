@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
+  assignWorkspaceSessionFolders,
   archiveWorkspaceSessions,
   deleteWorkspaceSessions,
   listGlobalCodexSessions,
@@ -19,9 +20,10 @@ export type WorkspaceSessionCatalogFilters = {
   keyword: string;
   engine: string;
   status: WorkspaceSessionCatalogStatus;
+  folderId?: string | null;
 };
 
-type MutationKind = "archive" | "unarchive" | "delete";
+type MutationKind = "archive" | "unarchive" | "delete" | "move-folder";
 
 export type WorkspaceSessionCatalogMutationResult = {
   selectionKey: string;
@@ -31,6 +33,8 @@ export type WorkspaceSessionCatalogMutationResult = {
   archivedAt?: number | null;
   error?: string | null;
   code?: string | null;
+  deletedFromDisk?: boolean | null;
+  metadataCleaned?: boolean | null;
 };
 
 export type WorkspaceSessionCatalogMutationResponse = {
@@ -89,6 +93,7 @@ function toQuery(filters: WorkspaceSessionCatalogFilters): WorkspaceSessionCatal
     keyword: filters.keyword.trim() || null,
     engine: filters.engine.trim() || null,
     status: filters.status,
+    folderId: filters.folderId?.trim() || null,
   };
 }
 
@@ -245,6 +250,7 @@ export function useWorkspaceSessionCatalog({
     async (
       kind: MutationKind,
       selectedEntries: WorkspaceSessionCatalogEntry[],
+      options?: { folderId?: string | null },
     ): Promise<WorkspaceSessionCatalogMutationResponse> => {
       if (mode === "project" && !workspaceId) {
         throw new Error("workspace_id is required");
@@ -287,8 +293,14 @@ export function useWorkspaceSessionCatalog({
               response = await archiveWorkspaceSessions(entryWorkspaceId, sessionIds);
             } else if (kind === "unarchive") {
               response = await unarchiveWorkspaceSessions(entryWorkspaceId, sessionIds);
-            } else {
+            } else if (kind === "delete") {
               response = await deleteWorkspaceSessions(entryWorkspaceId, sessionIds);
+            } else {
+              response = await assignWorkspaceSessionFolders(
+                entryWorkspaceId,
+                sessionIds,
+                options?.folderId ?? null,
+              );
             }
 
             const respondedSessionIds = new Set<string>();
@@ -304,6 +316,8 @@ export function useWorkspaceSessionCatalog({
                 archivedAt: item.archivedAt,
                 error: item.error,
                 code: item.code,
+                deletedFromDisk: item.deletedFromDisk,
+                metadataCleaned: item.metadataCleaned,
               });
             });
 
@@ -338,6 +352,13 @@ export function useWorkspaceSessionCatalog({
               return current.filter(
                 (entry) =>
                   !succeededSelectionKeySet.has(buildWorkspaceSessionSelectionKey(entry)),
+              );
+            }
+            if (kind === "move-folder") {
+              return current.map((entry) =>
+                succeededSelectionKeySet.has(buildWorkspaceSessionSelectionKey(entry))
+                  ? { ...entry, folderId: options?.folderId ?? null }
+                  : entry,
               );
             }
             if (filters.status === "all") {
