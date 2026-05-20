@@ -53,7 +53,7 @@ describe("status panel theme colors", () => {
       /\.sp-governance-evidence\s*\{[^}]*font-family:\s*var\(--ui-font-family\)/s,
     );
     expect(statusPanelCss).toMatch(
-      /\.sp-governance-evidence\s*\{[^}]*--sp-governance-copy-size:\s*10px/s,
+      /\.sp-governance-evidence\s*\{[^}]*--sp-governance-copy-size:\s*12px/s,
     );
     expect(statusPanelCss).toMatch(
       /\.sp-governance-evidence-item\s*\{[^}]*display:\s*flex/s,
