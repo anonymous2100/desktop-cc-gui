@@ -301,6 +301,21 @@ export function AppShell() {
   const [appMode, setAppMode] = useState<AppMode>("chat");
   const [agentTaskScrollRequest, setAgentTaskScrollRequest] =
     useState<AgentTaskScrollRequest | null>(null);
+  const [activeEditorLineRange, setActiveEditorLineRange] = useState<{
+    startLine: number;
+    endLine: number;
+  } | null>(null);
+  const [fileReferenceMode, setFileReferenceMode] = useState<"path" | "none">("none");
+  const [editorSplitLayout, setEditorSplitLayout] = useState<"vertical" | "horizontal">(
+    "vertical",
+  );
+  const [isEditorFileMaximized, setIsEditorFileMaximized] = useState(false);
+  const [liveEditPreviewEnabled, setLiveEditPreviewEnabled] = useState(false);
+  const requestEditorOpenLayout = useCallback(() => {
+    collapseSidebar();
+    setEditorSplitLayout((current) => (current === "horizontal" ? current : "horizontal"));
+    setIsEditorFileMaximized((current) => (current ? false : current));
+  }, [collapseSidebar]);
   const appRootRef = useRef<HTMLDivElement | null>(null);
   const {
     gitHistoryPanelHeight,
@@ -493,17 +508,8 @@ export function AppShell() {
     prDiffs: gitPullRequestDiffs,
     prDiffsLoading: gitPullRequestDiffsLoading,
     prDiffsError: gitPullRequestDiffsError,
+    onOpenEditorLayoutRequest: requestEditorOpenLayout,
   });
-  const [activeEditorLineRange, setActiveEditorLineRange] = useState<{
-    startLine: number;
-    endLine: number;
-  } | null>(null);
-  const [fileReferenceMode, setFileReferenceMode] = useState<"path" | "none">("none");
-  const [editorSplitLayout, setEditorSplitLayout] = useState<"vertical" | "horizontal">(
-    "vertical",
-  );
-  const [isEditorFileMaximized, setIsEditorFileMaximized] = useState(false);
-  const [liveEditPreviewEnabled, setLiveEditPreviewEnabled] = useState(false);
 
   useEffect(() => {
     if (!activeEditorFilePath) {

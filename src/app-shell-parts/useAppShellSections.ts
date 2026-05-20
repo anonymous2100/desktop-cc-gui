@@ -601,11 +601,8 @@ export function useAppShellSections(ctx: any) {
       options?: MessageSendOptions,
     ) => {
       await handleComposerSendWithKanban(text, images, options);
-      if (!isCompact && centerMode === "editor") {
-        setCenterMode("chat");
-      }
     },
-    [centerMode, handleComposerSendWithKanban, isCompact, setCenterMode],
+    [handleComposerSendWithKanban],
   );
 
   const handleComposerQueueWithEditorFallback = useCallback(
@@ -615,11 +612,8 @@ export function useAppShellSections(ctx: any) {
       options?: MessageSendOptions,
     ) => {
       await handleComposerQueue(text, images, mergeSelectedAgentOption(options));
-      if (!isCompact && centerMode === "editor") {
-        setCenterMode("chat");
-      }
     },
-    [centerMode, handleComposerQueue, isCompact, mergeSelectedAgentOption, setCenterMode],
+    [handleComposerQueue, mergeSelectedAgentOption],
   );
 
   const handleRewindFromMessage = useCallback(
