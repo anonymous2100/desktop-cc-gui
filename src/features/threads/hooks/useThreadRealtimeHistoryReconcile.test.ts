@@ -93,6 +93,55 @@ describe("useThreadRealtimeHistoryReconcile Codex terminal drift", () => {
     });
   });
 
+  it("does not reconcile Codex assistant completion without a turn id", async () => {
+    const itemsByThreadRef = {
+      current: {
+        "thread-a": [createAssistantFinalItem("assistant-a", "done")],
+      } satisfies Record<string, ConversationItem[]>,
+    };
+    const threadStatusByIdRef = {
+      current: {
+        "thread-a": createProcessingStatus(),
+      } satisfies ThreadState["threadStatusById"],
+    };
+    const refreshThread = vi.fn().mockResolvedValue("thread-a");
+    const settleCodexTerminalDrift = vi.fn();
+
+    const { result } = renderHook(() =>
+      useThreadRealtimeHistoryReconcile({
+        itemsByThreadRef,
+        refreshThread,
+        resolveCanonicalThreadId: (threadId) => threadId,
+        settleCodexTerminalDrift,
+        threadStatusByIdRef,
+        threadsByWorkspace: {
+          "ws-1": [
+            {
+              id: "thread-a",
+              name: "A",
+              updatedAt: Date.now(),
+              engineSource: "codex",
+            },
+          ],
+        },
+      }),
+    );
+
+    act(() => {
+      result.current.handleCodexAssistantCompletedForHistoryReconcile({
+        workspaceId: "ws-1",
+        threadId: "thread-a",
+      });
+    });
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(4_500);
+    });
+
+    expect(refreshThread).not.toHaveBeenCalled();
+    expect(settleCodexTerminalDrift).not.toHaveBeenCalled();
+  });
+
   it("deduplicates activation terminal-drift reconciliation per thread and turn", async () => {
     const itemsByThreadRef = {
       current: {

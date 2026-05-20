@@ -357,10 +357,14 @@ export function useThreadRealtimeHistoryReconcile({
       threadId: string;
       turnId?: string | null;
     }) => {
+      const completedTurnId = payload.turnId?.trim();
+      if (!completedTurnId) {
+        return;
+      }
       scheduleCodexRealtimeHistoryReconcile(
         payload.workspaceId,
         payload.threadId,
-        payload.turnId?.trim() || "__unknown_turn__",
+        completedTurnId,
         0,
         {
           allowWhileProcessing: true,
