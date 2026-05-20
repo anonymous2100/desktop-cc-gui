@@ -199,3 +199,88 @@ useEffect(() => {
 ```tsx
 <UserInputQuestionCard className="request-user-input-live-card" />
 ```
+
+## Scenario: Status Panel Checkpoint Advisory Projection
+
+### 1. Scope / Trigger
+
+- Trigger：修改 `CheckpointPanel`、`StatusPanel` checkpoint view-model、`src/features/status-panel/utils/policies/**`、`src/features/governance/evidence/**` 或 checkpoint audit UI。
+- 目标：governance evidence 默认作为 advisory 信号进入 checkpoint，稳定展示 Summary / Advisory Signals / Evidence Trail / Policy Audit / Suggested Actions，不新增 blocking gate。
+
+### 2. Signatures
+
+- `PolicyDecision.enforcement: "blocking" | "advisory" | "informational"`
+- Bridge-fed `PolicyDecision` SHOULD carry provenance fields when available:
+  - `evidenceSnapshotId?: string`
+  - `evidenceObservedAt?: string`
+  - `evidenceArtifactPath?: string`
+  - `evidenceArtifactHash?: string`
+  - `evidenceQualifier?: string`
+  - `degradationReason?: string`
+  - `staleAt?: string`
+- `buildCheckpointSectionProjection(input)` MUST return:
+  - `summary`
+  - `advisorySignals`
+  - `evidenceTrail`
+  - `policyAudit`
+  - `suggestedActions`
+
+### 3. Contracts
+
+- Optional governance policies MUST NOT return `verdictContribution: "blocked"`; bridge-fed contributions must type-exclude `blocked`.
+- Existing core runtime/fatal failures MAY remain blocking and MUST NOT be softened by advisory governance.
+- Same-source governance evidence MUST select the most severe advisory contribution; a fresh `pass` row must not hide a same-source `warn`/`fail`/stale/degraded row.
+- Evidence Trail MUST preserve source id plus available provenance: observed time, artifact path/hash, qualifier, degraded reason, and stale time.
+- Suggested actions are guidance only: rendering them MUST NOT execute commands, mutate files, or change checkpoint verdict.
+- Suggested Actions MUST render primary user actions separately from optional command chips; long commands must truncate inside their own group and must not squeeze heading/hint copy into vertical text.
+- Compact checkpoint hosts MAY hide full audit rows, but MUST preserve advisory presence through count/source summary and an expansion path.
+
+### 4. Validation & Error Matrix
+
+| 场景 | 必须行为 | 禁止行为 |
+|---|---|---|
+| stale/missing/malformed governance artifact | 显示 advisory signal + evidence trail provenance | 升级为 `blocked` |
+| same source has pass and warn evidence | 选择 warn/fail/stale/degraded 作为 policy decision | 只取第一条 evidence |
+| compact popover has advisory evidence | 显示 advisory summary/source + dock expansion | 隐藏后让用户误以为治理证据干净 |
+| suggested validation command rendered | 可复制/查看命令，但保持 optional | render 时自动执行命令或修改 verdict |
+| suggested action panel contains long commands | 主动作与 optional command group 分层展示，文案横排可换行，命令 chip 截断 | 把 hint、主按钮、长命令塞进同一横行导致中文竖排或撑宽面板 |
+| core fatal/runtime failure | 保持 blocking 语义 | 被 advisory-only 规则降级 |
+
+### 5. Good / Base / Bad Cases
+
+- Good：`bridgeGovernancePolicies` 使用 `Exclude<PolicyVerdictContribution, "blocked">`，并把 provenance 映射到 `PolicyDecision`，`CheckpointPanel` 只渲染与复制建议命令。
+- Base：compact view 只显示 advisory count 与 source summary，完整 audit 留给 dock。
+- Bad：UI 文案改成 warning，但 policy decision 仍可能贡献 `blocked`。
+- Bad：Evidence Trail 只显示 snapshot id，不显示 artifact path/hash/observedAt，导致 advisory 缺口不可追溯。
+
+### 6. Tests Required
+
+- Policy tests MUST cover warn, fail, unknown, stale, malformed, platform-qualified, and same-source mixed evidence without `blocked`.
+- Projection tests MUST assert advisory signals, evidence trail provenance, and suggested action command mapping.
+- StatusPanel tests MUST cover dock full sections and compact advisory summary parity.
+- Conformance scripts MUST fail if bridge-fed governance policies can contribute `blocked` or omit structured enforcement/provenance fields.
+
+### 7. Wrong vs Correct
+
+#### Wrong
+
+```typescript
+const sourceEvidence = snapshot.evidence.find((entry) => entry.source === source);
+return {
+  verdictContribution: sourceEvidence?.status === "fail" ? "blocked" : "ready",
+};
+```
+
+#### Correct
+
+```typescript
+type AdvisoryBridgeContribution = Exclude<PolicyVerdictContribution, "blocked">;
+
+const sourceEvidence = selectMostSevereAdvisoryEvidence(snapshot, source);
+return {
+  verdictContribution: contributionForEvidence(sourceEvidence),
+  enforcement: "advisory",
+  evidenceObservedAt: sourceEvidence.provenance?.observedAt,
+  evidenceArtifactPath: sourceEvidence.provenance?.artifactPath,
+};
+```

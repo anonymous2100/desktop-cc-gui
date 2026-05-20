@@ -12,10 +12,18 @@ type BridgePolicyConfig = {
   maxFailContribution?: Extract<PolicyVerdictContribution, "needs_review" | "running" | "ready">;
 };
 
+type AdvisoryBridgeContribution = Exclude<PolicyVerdictContribution, "blocked">;
+const ADVISORY_CONTRIBUTION_SEVERITY: Record<AdvisoryBridgeContribution, number> = {
+  no_contribution: 0,
+  ready: 1,
+  running: 2,
+  needs_review: 3,
+};
+
 function contributionForEvidence(
   evidence: GovernanceEvidence,
   maxFailContribution: Extract<PolicyVerdictContribution, "needs_review" | "running" | "ready">,
-): PolicyVerdictContribution {
+): AdvisoryBridgeContribution {
   if (evidence.degraded || evidence.staleAt) {
     return maxFailContribution;
   }
@@ -28,11 +36,32 @@ function contributionForEvidence(
   return "no_contribution";
 }
 
+function enforcementForContribution(
+  contribution: AdvisoryBridgeContribution,
+): PolicyDecision["enforcement"] {
+  if (contribution === "needs_review") {
+    return "advisory";
+  }
+  return "informational";
+}
+
 function findEvidenceBySource(
   evidence: CheckpointPolicyEvidence,
   source: GovernanceEvidence["source"],
+  maxFailContribution: Extract<PolicyVerdictContribution, "needs_review" | "running" | "ready">,
 ): GovernanceEvidence | null {
-  return evidence.governanceSnapshot?.evidence.find((entry) => entry.source === source) ?? null;
+  const sourceEvidence = evidence.governanceSnapshot?.evidence.filter((entry) => entry.source === source) ?? [];
+  let selected: GovernanceEvidence | null = null;
+  let selectedSeverity = -1;
+  for (const entry of sourceEvidence) {
+    const contribution = contributionForEvidence(entry, maxFailContribution);
+    const severity = ADVISORY_CONTRIBUTION_SEVERITY[contribution];
+    if (!selected || severity > selectedSeverity) {
+      selected = entry;
+      selectedSeverity = severity;
+    }
+  }
+  return selected;
 }
 
 function decisionFromEvidence(
@@ -41,12 +70,20 @@ function decisionFromEvidence(
   evidence: GovernanceEvidence,
   maxFailContribution: Extract<PolicyVerdictContribution, "needs_review" | "running" | "ready">,
 ): PolicyDecision {
+  const verdictContribution = contributionForEvidence(evidence, maxFailContribution);
   return {
     policyId,
-    verdictContribution: contributionForEvidence(evidence, maxFailContribution),
+    verdictContribution,
+    enforcement: enforcementForContribution(verdictContribution),
     reasonKey: `statusPanel.policy.${policyId}.${evidence.status}`,
     sourceId: evidence.source,
     evidenceSnapshotId: snapshotId,
+    evidenceObservedAt: evidence.provenance?.observedAt ?? evidence.updatedAt,
+    evidenceArtifactPath: evidence.provenance?.artifactPath ?? (
+      evidence.payload && "sourcePath" in evidence.payload ? evidence.payload.sourcePath : undefined
+    ),
+    evidenceArtifactHash: evidence.provenance?.artifactHash,
+    evidenceQualifier: evidence.provenance?.qualifier,
     degradationReason: evidence.degradationReason,
     staleAt: evidence.staleAt,
   };
@@ -57,15 +94,16 @@ function createBridgeGovernancePolicy(config: BridgePolicyConfig): Policy {
   return {
     id: config.id,
     appliesTo(evidence) {
-      return findEvidenceBySource(evidence, config.source) != null;
+      return findEvidenceBySource(evidence, config.source, maxFailContribution) != null;
     },
     evaluate(evidence) {
       const snapshot = evidence.governanceSnapshot;
-      const sourceEvidence = findEvidenceBySource(evidence, config.source);
+      const sourceEvidence = findEvidenceBySource(evidence, config.source, maxFailContribution);
       if (!snapshot || !sourceEvidence) {
         return {
           policyId: config.id,
           verdictContribution: "no_contribution",
+          enforcement: "informational",
           reasonKey: null,
           sourceId: null,
         };
@@ -100,6 +138,11 @@ export const capabilityMismatchGovernancePolicy = createBridgeGovernancePolicy({
   source: "engine-capability-matrix",
 });
 
+export const engineRuntimeGovernancePolicy = createBridgeGovernancePolicy({
+  id: "engineRuntimeGovernancePolicy",
+  source: "engine-runtime-contract",
+});
+
 export const costBudgetGovernancePolicy = createBridgeGovernancePolicy({
   id: "costBudgetGovernancePolicy",
   source: "cost-budget",
@@ -111,5 +154,6 @@ export const bridgeGovernancePolicies = [
   heavyTestNoiseGovernancePolicy,
   realtimeHarnessGovernancePolicy,
   capabilityMismatchGovernancePolicy,
+  engineRuntimeGovernancePolicy,
   costBudgetGovernancePolicy,
 ] as const;

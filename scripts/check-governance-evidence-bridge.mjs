@@ -8,10 +8,15 @@ const STATUS_PANEL_COMPONENT = path.join(
   ROOT,
   "src/features/status-panel/components/StatusPanel.tsx",
 );
+const CHECKPOINT_PANEL_COMPONENT = path.join(
+  ROOT,
+  "src/features/status-panel/components/CheckpointPanel.tsx",
+);
 const POLICY_DIR = path.join(ROOT, "src/features/status-panel/utils/policies");
 
 const requiredFiles = [
   STATUS_PANEL_COMPONENT,
+  CHECKPOINT_PANEL_COMPONENT,
   path.join(EVIDENCE_DIR, "types.ts"),
   path.join(EVIDENCE_DIR, "governanceEvidence.ts"),
   path.join(EVIDENCE_DIR, "governanceEvidenceBridge.ts"),
@@ -78,6 +83,19 @@ const policyTypeSource = readText(path.join(POLICY_DIR, "policyTypes.ts"));
 if (!policyTypeSource.includes("governanceSnapshot: GovernanceEvidenceSnapshot | null")) {
   fail("CheckpointPolicyEvidence must carry the injected governance snapshot");
 }
+if (!policyTypeSource.includes("enforcement: PolicyDecisionEnforcement")) {
+  fail("PolicyDecision must carry structured advisory enforcement classification");
+}
+for (const token of [
+  "evidenceObservedAt?: string",
+  "evidenceArtifactPath?: string",
+  "evidenceArtifactHash?: string",
+  "evidenceQualifier?: string",
+]) {
+  if (!policyTypeSource.includes(token)) {
+    fail(`PolicyDecision missing evidence provenance field "${token}"`);
+  }
+}
 
 const bridgePolicySource = readText(path.join(POLICY_DIR, "bridgeGovernancePolicies.ts"));
 for (const forbidden of [
@@ -97,6 +115,22 @@ for (const forbidden of [
 
 if (bridgePolicySource.includes("verdictContribution: \"blocked\"")) {
   fail("bridge-fed policies must not contribute blocked");
+}
+if (!bridgePolicySource.includes("Exclude<PolicyVerdictContribution, \"blocked\">")) {
+  fail("bridge-fed policies must type-exclude blocked contributions");
+}
+for (const token of [
+  "engineRuntimeGovernancePolicy",
+  "source: \"engine-runtime-contract\"",
+  "ADVISORY_CONTRIBUTION_SEVERITY",
+  "evidenceObservedAt",
+  "evidenceArtifactPath",
+  "evidenceArtifactHash",
+  "evidenceQualifier",
+]) {
+  if (!bridgePolicySource.includes(token)) {
+    fail(`bridge-fed policies missing provenance or source token "${token}"`);
+  }
 }
 
 const statusPanelSource = readText(STATUS_PANEL_COMPONENT);
@@ -124,6 +158,22 @@ const checkpointCallEndIndex = statusPanelSource.indexOf("})", checkpointCallInd
 const checkpointCallSource = statusPanelSource.slice(checkpointCallIndex, checkpointCallEndIndex);
 if (!checkpointCallSource.includes("governanceSnapshot")) {
   fail("StatusPanel must pass governanceSnapshot into buildCheckpointViewModel");
+}
+
+const checkpointPanelSource = readText(CHECKPOINT_PANEL_COMPONENT);
+for (const token of [
+  "buildCheckpointSectionProjection",
+  "checkpointSections.advisorySignals",
+  "checkpointSections.evidenceTrail",
+  "checkpointSections.suggestedActions",
+  "evidenceTrail.observed",
+  "evidenceTrail.artifact",
+  "evidenceTrail.hash",
+  "evidenceTrail.qualifier",
+]) {
+  if (!checkpointPanelSource.includes(token)) {
+    fail(`CheckpointPanel.tsx missing advisory section token "${token}"`);
+  }
 }
 
 const packageJson = JSON.parse(readText(path.join(ROOT, "package.json")));

@@ -13,7 +13,7 @@ OpenSpec workflow and governance for `mossx`, covering change lifecycle, main sp
 - Spec artifacts: `openspec/specs/*`
 - Change workflow artifacts: `openspec/changes/<change-id>/{proposal,design,tasks,verification}.md`
 - Archive: `openspec/changes/archive/*`
-- Current workspace state: active changes = `12`, archive changes = `316`, main specs = `269`
+- Current workspace state: active changes = `15`, archive changes = `318`, main specs = `271`
 
 ## Entry Surfaces
 
@@ -61,6 +61,12 @@ The archive included `formalize-engine-runtime-contract` with an explicit extern
 - `2026-05-20-add-governance-telemetry-loop`
 - `2026-05-20-wire-agent-domain-event-runtime`
 
+### Archived Harness Governance Extension Set
+
+- `2026-05-20-soften-harness-governance-to-advisory-mode`
+  - Calibration: bridge-fed governance remains advisory-only by default; optional governance policies type-exclude `blocked`, preserve evidence provenance in checkpoint Evidence Trail, and keep suggested actions optional.
+  - Residual: `npm run check:heavy-test-noise` failed in unrelated `useWorkspaceSessionCatalog.test.tsx` timeout cases owned by `refactor-workspace-session-management`; this was archived as advisory residual evidence, not a harness advisory blocking gate.
+
 ### Harness Governance Substrate Set
 
 - `refactor-mega-hub-split`
@@ -89,6 +95,8 @@ The archive included `formalize-engine-runtime-contract` with an explicit extern
 - `add-codex-structured-launch-profile`
 - `add-file-markdown-math-preview`
 - `harden-claude-sidebar-list-timeout-fallback`
+- `fix-markdown-preview-auto-refresh`
+- `refactor-workspace-session-management`
 
 > Harness governance closure status on 2026-05-20: the archived core and extension changes listed above were synchronized into `openspec/specs/**` and moved to `openspec/changes/archive/**`. Deferred contracts intentionally preserve their no-telemetry and no-EventBus boundaries.
 
@@ -166,6 +174,7 @@ Current code review also identified a live closure gap: `useGovernanceEvidence()
 - 2026-05-20: Upgraded `advance-harness-governance-to-90` from a 90% readiness floor to a 95%-99% governance-layer readiness plan. Added release-grade requirements for evidence provenance, deterministic replay, recovery behavior, operator handoff, Windows/macOS/Linux evidence, and sync/archive closure while preserving the existing change id for OpenSpec continuity.
 - 2026-05-20: Hardened `advance-harness-governance-to-90` after production-grade review by removing a stale duplicate execution summary from `design.md`, adding explicit S1 `StatusPanel` hook/useMemo ordering constraints, requiring `check:agent-domain-event-adoption`, tightening consumed evidence provenance to MUST semantics, and defining per-platform implementation-evidence rows for 99% claims.
 - 2026-05-20: Re-reviewed `advance-harness-governance-to-90` against current code facts and tightened execution semantics: S3 write set now includes the adoption checker and `package.json`; S2 defaults large-file result evidence toward structured JSON unless existing output is proven deterministic; S3 defaults first runtime producer to turn completed/failed; 95% versus 99% platform evidence gates now distinguish external-CI qualifiers from actual three-platform result evidence.
+- 2026-05-20: Archived `soften-harness-governance-to-advisory-mode` after implementation review, focused validation, strict OpenSpec validation, and main spec sync. Advisory-only governance semantics are now in main specs and Trellis frontend code-spec guidance; refreshed workspace inventory to active=15, archive=318, specs=271. One unrelated session-management heavy-test residual remains documented in the archived verification notes.
 - 2026-05-20: Archived nine harness governance changes (`formalize-engine-runtime-contract`, `add-engine-capability-matrix-spec`, `evolve-context-ledger-to-cost-budget`, `evolve-checkpoint-to-policy-chain`, `add-agent-domain-event-schema`, `add-capability-aware-policy-router`, `add-policy-decision-audit-surface`, `add-governance-telemetry-loop`, `wire-agent-domain-event-runtime`) after syncing delta specs into main specs and recording closure evidence. `formalize-engine-runtime-contract` carries an explicit external-CI qualifier because remote three-platform CI was not directly observable from the local closure session. Refreshed inventory to active=11, archive=316, specs=269.
 - 2026-05-19: Recalibrated `project.md` against current `feature/v0.5.0-md` code and active proposal inventory. Workspace counts are now active=20, archive=307, specs=260. Harness governance is no longer described as implementation-unstarted; current-branch code traces exist and must be reconciled through fresh validation before sync/archive.
 - 2026-05-19: Recalibrated the harness governance proposal set for `feature/v0.5.0-md` only. Prior `feature/v0.5` implementation artifacts are explicitly excluded from the current baseline; all harness governance implementation must be redone from the current branch facts.

@@ -16,6 +16,7 @@ function contributionForValidation(
     return {
       policyId,
       verdictContribution: "no_contribution",
+      enforcement: "informational",
       reasonKey: null,
       sourceId: null,
     };
@@ -24,6 +25,7 @@ function contributionForValidation(
     return {
       policyId,
       verdictContribution: "ready",
+      enforcement: "informational",
       reasonKey: `statusPanel.policy.${policyId}.pass`,
       sourceId: validation.sourceId,
     };
@@ -32,6 +34,7 @@ function contributionForValidation(
     return {
       policyId,
       verdictContribution: "running",
+      enforcement: "informational",
       reasonKey: `statusPanel.policy.${policyId}.running`,
       sourceId: validation.sourceId,
     };
@@ -39,6 +42,7 @@ function contributionForValidation(
   return {
     policyId,
     verdictContribution: "needs_review",
+    enforcement: "advisory",
     reasonKey: `statusPanel.policy.${policyId}.${validation.status === "fail" ? "fail" : "notRun"}`,
     sourceId: validation.sourceId,
   };
@@ -63,6 +67,7 @@ function createValidationPolicy(
         return {
           policyId: id,
           verdictContribution: "no_contribution",
+          enforcement: "informational",
           reasonKey: null,
           sourceId: null,
         };

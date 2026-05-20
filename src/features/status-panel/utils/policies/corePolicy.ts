@@ -9,6 +9,7 @@ function decision(
   return {
     policyId: corePolicy.id,
     verdictContribution,
+    enforcement: verdictContribution === "blocked" ? "blocking" : verdictContribution === "needs_review" ? "advisory" : "informational",
     reasonKey,
     sourceId,
   };

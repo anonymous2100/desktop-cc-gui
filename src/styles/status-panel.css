@@ -42,7 +42,12 @@
 
 .sp-tabs--dock {
   position: relative;
-  border: 1px solid color-mix(in srgb, var(--border-subtle, rgba(255, 255, 255, 0.08)) 88%, transparent);
+  border: 1px solid
+    color-mix(
+      in srgb,
+      var(--border-subtle, rgba(255, 255, 255, 0.08)) 88%,
+      transparent
+    );
   border-radius: 7px;
   padding: 3px 8px;
   background: transparent;
@@ -108,7 +113,9 @@
 
 .sp-tabs--dock .sp-tab-active .sp-tab-icon {
   color: var(--color-link, #2563eb);
-  filter: drop-shadow(0 0 5px color-mix(in srgb, var(--color-link, #2563eb) 28%, transparent));
+  filter: drop-shadow(
+    0 0 5px color-mix(in srgb, var(--color-link, #2563eb) 28%, transparent)
+  );
   opacity: 1;
 }
 
@@ -328,7 +335,8 @@
   background: var(--accent-primary, #6ea8fe);
   background: color-mix(in srgb, var(--accent-primary, #6ea8fe) 78%, white 22%);
   box-shadow: 0 0 0 3px rgba(110, 168, 254, 0.12);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent-primary, #6ea8fe) 12%, transparent);
+  box-shadow: 0 0 0 3px
+    color-mix(in srgb, var(--accent-primary, #6ea8fe) 12%, transparent);
   flex: 0 0 auto;
 }
 
@@ -337,7 +345,11 @@
   width: 1px;
   margin-top: 8px;
   background: rgba(110, 168, 254, 0.28);
-  background: color-mix(in srgb, var(--accent-primary, #6ea8fe) 28%, transparent);
+  background: color-mix(
+    in srgb,
+    var(--accent-primary, #6ea8fe) 28%,
+    transparent
+  );
 }
 
 .sp-user-conversation-item:last-child .sp-user-conversation-stem {
@@ -354,7 +366,12 @@
   background: transparent;
   border: none;
   border-bottom: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.08));
-  border-bottom: 1px solid color-mix(in srgb, var(--border-subtle, rgba(255, 255, 255, 0.08)) 72%, transparent);
+  border-bottom: 1px solid
+    color-mix(
+      in srgb,
+      var(--border-subtle, rgba(255, 255, 255, 0.08)) 72%,
+      transparent
+    );
   transition:
     border-color 0.18s ease,
     background 0.18s ease;
@@ -362,7 +379,11 @@
 
 .sp-user-conversation-card:hover {
   border-color: var(--accent-primary, #6ea8fe);
-  border-color: color-mix(in srgb, var(--accent-primary, #6ea8fe) 24%, var(--border-subtle, rgba(255, 255, 255, 0.08)));
+  border-color: color-mix(
+    in srgb,
+    var(--accent-primary, #6ea8fe) 24%,
+    var(--border-subtle, rgba(255, 255, 255, 0.08))
+  );
 }
 
 .sp-user-conversation-item:last-child .sp-user-conversation-card {
@@ -413,7 +434,11 @@
 
 .sp-user-conversation-order-index {
   color: var(--accent-primary, #6ea8fe);
-  color: color-mix(in srgb, var(--accent-primary, #6ea8fe) 86%, var(--text-strong));
+  color: color-mix(
+    in srgb,
+    var(--accent-primary, #6ea8fe) 86%,
+    var(--text-strong)
+  );
   font-weight: 700;
   letter-spacing: 0.01em;
 }
@@ -472,13 +497,18 @@
 .sp-user-conversation-toggle:hover {
   text-decoration: none;
   background: var(--surface-hover, rgba(255, 255, 255, 0.06));
-  background: color-mix(in srgb, var(--surface-hover, rgba(255, 255, 255, 0.06)) 72%, transparent);
+  background: color-mix(
+    in srgb,
+    var(--surface-hover, rgba(255, 255, 255, 0.06)) 72%,
+    transparent
+  );
   opacity: 0.96;
 }
 
 .sp-user-conversation-jump:focus-visible,
 .sp-user-conversation-toggle:focus-visible {
-  outline: 2px solid color-mix(in srgb, var(--accent-primary, #6ea8fe) 42%, transparent);
+  outline: 2px solid
+    color-mix(in srgb, var(--accent-primary, #6ea8fe) 42%, transparent);
   outline-offset: 2px;
 }
 
@@ -591,7 +621,8 @@
 }
 
 .sp-subagent-item.is-clickable:focus-visible {
-  outline: 1px solid color-mix(in srgb, var(--accent-color, #61afef) 72%, white 12%);
+  outline: 1px solid
+    color-mix(in srgb, var(--accent-color, #61afef) 72%, white 12%);
   outline-offset: -1px;
 }
 
@@ -717,7 +748,11 @@
 }
 
 .sp-file-added {
-  background: color-mix(in srgb, var(--status-success, #78ebbe) 18%, transparent);
+  background: color-mix(
+    in srgb,
+    var(--status-success, #78ebbe) 18%,
+    transparent
+  );
   color: color-mix(
     in srgb,
     var(--status-success, #78ebbe) 88%,
@@ -744,7 +779,11 @@
 }
 
 .sp-file-renamed {
-  background: color-mix(in srgb, var(--status-warning, #ffaf55) 18%, transparent);
+  background: color-mix(
+    in srgb,
+    var(--status-warning, #ffaf55) 18%,
+    transparent
+  );
   color: color-mix(
     in srgb,
     var(--status-warning, #ffaf55) 82%,
@@ -928,9 +967,9 @@
 
 .sp-checkpoint-section--next-action {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: center;
-  gap: 8px;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: stretch;
+  gap: 7px;
 }
 
 .sp-checkpoint-section--hero {
@@ -944,6 +983,11 @@
 .sp-checkpoint-section--notice {
   padding-top: 8px;
   padding-bottom: 8px;
+}
+
+.sp-checkpoint-section--advisory {
+  border-color: color-mix(in srgb, #ffaf55 28%, var(--border-subtle));
+  background: color-mix(in srgb, #ffaf55 7%, var(--surface-card));
 }
 
 .sp-checkpoint-hero-row {
@@ -987,6 +1031,7 @@
   color: var(--text-faint);
   line-height: 1.2;
   text-align: left;
+  white-space: nowrap;
 }
 
 .sp-checkpoint-headline {
@@ -1110,6 +1155,10 @@
   flex-wrap: nowrap;
 }
 
+.sp-checkpoint-inline-heading--summary {
+  flex-wrap: wrap;
+}
+
 .sp-checkpoint-inline-heading > :not(:first-child)::before {
   content: "·";
   margin-right: 6px;
@@ -1143,6 +1192,7 @@
 }
 
 .sp-checkpoint-validation-command {
+  min-width: 0;
   border: 1px solid var(--border-subtle);
   border-radius: 7px;
   background: color-mix(in srgb, var(--surface-item) 78%, transparent);
@@ -1157,12 +1207,107 @@
   background: var(--surface-hover);
 }
 
+.sp-checkpoint-suggested-command {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: min(360px, 100%);
+  overflow: hidden;
+}
+
+.sp-checkpoint-suggested-command.is-expanded {
+  max-width: 100%;
+  align-items: flex-start;
+  white-space: normal;
+}
+
+.sp-checkpoint-suggested-command-label,
+.sp-checkpoint-suggested-command-copy {
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+}
+
+.sp-checkpoint-suggested-command-label {
+  min-width: 0;
+  padding: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.sp-checkpoint-suggested-command.is-expanded
+  .sp-checkpoint-suggested-command-label {
+  overflow: visible;
+  text-overflow: clip;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  text-align: left;
+}
+
+.sp-checkpoint-suggested-command-copy {
+  flex: 0 0 auto;
+  padding: 0 0 0 6px;
+  border-left: 1px solid var(--border-subtle);
+  color: var(--text-muted);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.sp-checkpoint-suggested-command-copy:hover {
+  color: var(--text-strong);
+}
+
+.sp-checkpoint-disclosure {
+  min-width: 0;
+}
+
+.sp-checkpoint-disclosure-summary {
+  display: flex;
+  cursor: pointer;
+  list-style: none;
+  width: 100%;
+}
+
+.sp-checkpoint-disclosure-summary::-webkit-details-marker {
+  display: none;
+}
+
+.sp-checkpoint-disclosure-summary::after {
+  content: "›";
+  margin-left: auto;
+  color: var(--text-faint);
+  transform: rotate(90deg);
+  transition: transform 0.15s ease;
+}
+
+.sp-checkpoint-disclosure[open] > .sp-checkpoint-disclosure-summary::after {
+  transform: rotate(270deg);
+}
+
+.sp-checkpoint-summary-token {
+  min-width: 0;
+  max-width: min(260px, 100%);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .sp-checkpoint-commit-dialog-overlay {
   --sp-commit-accent: var(--accent, #2563eb);
   --sp-commit-text: var(--text-strong, var(--text-primary, #111827));
   --sp-commit-text-muted: var(--text-muted, #64748b);
-  --sp-commit-text-faint: color-mix(in srgb, var(--sp-commit-text-muted) 82%, transparent);
-  --sp-commit-surface: var(--surface-popover, var(--surface-panel, var(--surface-card, #ffffff)));
+  --sp-commit-text-faint: color-mix(
+    in srgb,
+    var(--sp-commit-text-muted) 82%,
+    transparent
+  );
+  --sp-commit-surface: var(
+    --surface-popover,
+    var(--surface-panel, var(--surface-card, #ffffff))
+  );
   --sp-commit-surface-raised: color-mix(
     in srgb,
     var(--surface-card, var(--sp-commit-surface)) 88%,
@@ -1175,13 +1320,33 @@
   );
   --sp-commit-surface-hover: color-mix(
     in srgb,
-    var(--surface-control-hover, var(--surface-control, var(--sp-commit-surface))) 72%,
+    var(
+        --surface-control-hover,
+        var(--surface-control, var(--sp-commit-surface))
+      )
+      72%,
     var(--sp-commit-surface) 28%
   );
-  --sp-commit-border: color-mix(in srgb, var(--border-subtle, #cbd5e1) 86%, var(--sp-commit-text) 14%);
-  --sp-commit-border-strong: color-mix(in srgb, var(--border-strong, var(--sp-commit-border)) 82%, var(--sp-commit-text) 18%);
-  --sp-commit-success: color-mix(in srgb, var(--success, #16a34a) 78%, var(--sp-commit-text) 22%);
-  --sp-commit-danger: color-mix(in srgb, var(--danger, var(--status-error, #dc2626)) 82%, var(--sp-commit-text) 18%);
+  --sp-commit-border: color-mix(
+    in srgb,
+    var(--border-subtle, #cbd5e1) 86%,
+    var(--sp-commit-text) 14%
+  );
+  --sp-commit-border-strong: color-mix(
+    in srgb,
+    var(--border-strong, var(--sp-commit-border)) 82%,
+    var(--sp-commit-text) 18%
+  );
+  --sp-commit-success: color-mix(
+    in srgb,
+    var(--success, #16a34a) 78%,
+    var(--sp-commit-text) 22%
+  );
+  --sp-commit-danger: color-mix(
+    in srgb,
+    var(--danger, var(--status-error, #dc2626)) 82%,
+    var(--sp-commit-text) 18%
+  );
   position: fixed;
   inset: 0;
   z-index: 70;
@@ -1203,7 +1368,8 @@
   border-radius: 16px;
   background: var(--sp-commit-surface);
   color: var(--sp-commit-text);
-  box-shadow: 0 24px 80px color-mix(in srgb, var(--sp-commit-text) 24%, transparent);
+  box-shadow: 0 24px 80px
+    color-mix(in srgb, var(--sp-commit-text) 24%, transparent);
 }
 
 .sp-checkpoint-commit-dialog-header {
@@ -1264,20 +1430,42 @@
 }
 
 .sp-checkpoint-commit-message-section .commit-message-input:focus {
-  border-color: color-mix(in srgb, var(--sp-commit-accent) 64%, var(--sp-commit-border));
+  border-color: color-mix(
+    in srgb,
+    var(--sp-commit-accent) 64%,
+    var(--sp-commit-border)
+  );
   color: var(--sp-commit-text);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--sp-commit-accent) 18%, transparent);
+  box-shadow: 0 0 0 3px
+    color-mix(in srgb, var(--sp-commit-accent) 18%, transparent);
 }
 
 .sp-checkpoint-commit-message-section .commit-message-generate-button {
   border-color: var(--sp-commit-border);
-  background: color-mix(in srgb, var(--sp-commit-surface-raised) 92%, var(--sp-commit-accent) 8%);
-  color: color-mix(in srgb, var(--sp-commit-accent) 82%, var(--sp-commit-text) 18%);
+  background: color-mix(
+    in srgb,
+    var(--sp-commit-surface-raised) 92%,
+    var(--sp-commit-accent) 8%
+  );
+  color: color-mix(
+    in srgb,
+    var(--sp-commit-accent) 82%,
+    var(--sp-commit-text) 18%
+  );
 }
 
-.sp-checkpoint-commit-message-section .commit-message-generate-button:hover:not(:disabled) {
-  border-color: color-mix(in srgb, var(--sp-commit-accent) 44%, var(--sp-commit-border));
-  background: color-mix(in srgb, var(--sp-commit-surface-hover) 86%, var(--sp-commit-accent) 14%);
+.sp-checkpoint-commit-message-section
+  .commit-message-generate-button:hover:not(:disabled) {
+  border-color: color-mix(
+    in srgb,
+    var(--sp-commit-accent) 44%,
+    var(--sp-commit-border)
+  );
+  background: color-mix(
+    in srgb,
+    var(--sp-commit-surface-hover) 86%,
+    var(--sp-commit-accent) 14%
+  );
 }
 
 .sp-checkpoint-commit-message-section .commit-message-error {
@@ -1587,8 +1775,34 @@
   color: #89d185;
 }
 
+.sp-checkpoint-risk-severity.is-advisory,
+.sp-checkpoint-risk-severity.is-needs_review {
+  color: #ffaf55;
+}
+
+.sp-checkpoint-risk-severity.is-blocked {
+  color: #ff8b72;
+}
+
+.sp-checkpoint-risk-severity.is-ready,
+.sp-checkpoint-risk-severity.is-informational {
+  color: #89d185;
+}
+
+.sp-checkpoint-risk-severity.is-running {
+  color: #61afef;
+}
+
 .sp-policy-audit-row {
   align-items: baseline;
+}
+
+.sp-policy-audit-row.is-advisory {
+  color: var(--text-strong);
+}
+
+.sp-policy-audit-row.is-blocking .sp-policy-audit-policy {
+  color: #ff8b72;
 }
 
 .sp-policy-audit-copy {
@@ -1604,9 +1818,25 @@
   color: var(--text-strong);
 }
 
+.sp-policy-audit-enforcement {
+  color: var(--text-muted);
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.sp-policy-audit-enforcement.is-advisory {
+  color: #ffaf55;
+}
+
+.sp-policy-audit-enforcement.is-blocking {
+  color: #ff8b72;
+}
+
 .sp-policy-audit-source {
   color: var(--text-muted);
   font-size: 10px;
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .sp-policy-audit-source::before {
@@ -1617,6 +1847,98 @@
 
 .sp-policy-audit-source.is-missing {
   color: var(--text-faint);
+}
+
+.sp-checkpoint-advisory-item {
+  align-items: baseline;
+}
+
+.sp-checkpoint-evidence-trail-list {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin: 6px 0 0;
+  padding: 0;
+  list-style: none;
+  max-height: 180px;
+  overflow: auto;
+  scrollbar-width: thin;
+}
+
+.sp-checkpoint-evidence-trail-item {
+  display: grid;
+  grid-template-columns: minmax(120px, 180px) minmax(0, 1fr);
+  align-items: start;
+  gap: 6px 10px;
+  min-width: 0;
+  padding: 5px 0;
+  border-top: 1px solid
+    color-mix(in srgb, var(--border-subtle) 60%, transparent);
+  font-size: var(--sp-checkpoint-copy-size);
+}
+
+.sp-checkpoint-evidence-trail-item:first-child {
+  border-top: none;
+}
+
+.sp-checkpoint-evidence-trail-main {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+}
+
+.sp-checkpoint-evidence-source {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text-muted);
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.sp-checkpoint-evidence-trail-meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px;
+  min-width: 0;
+}
+
+.sp-checkpoint-evidence-trail-chip {
+  display: inline-grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: baseline;
+  gap: 4px;
+  min-width: 0;
+  max-width: min(300px, 100%);
+  padding: 1px 6px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--surface-item) 72%, transparent);
+  color: var(--text-muted);
+}
+
+.sp-checkpoint-evidence-trail-chip.is-muted {
+  color: var(--text-faint);
+}
+
+.sp-checkpoint-evidence-trail-chip-label {
+  flex: 0 0 auto;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.sp-checkpoint-evidence-trail-chip-value {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
+  font-size: 10px;
 }
 
 .sp-governance-evidence-list {
@@ -1705,31 +2027,61 @@
   }
 }
 
-.sp-checkpoint-action-row {
+@media (max-width: 640px) {
+  .sp-checkpoint-evidence-trail-item {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.sp-checkpoint-action-shell {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  justify-items: start;
+  gap: 6px;
+  min-width: 0;
+}
+
+.sp-checkpoint-primary-actions,
+.sp-checkpoint-suggested-actions {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  justify-content: flex-end;
+  justify-content: flex-start;
   gap: 6px;
+  max-width: 100%;
+  min-width: 0;
+}
+
+.sp-checkpoint-suggested-actions {
+  justify-content: flex-start;
 }
 
 .sp-checkpoint-action-hint {
   display: block;
   width: 100%;
+  min-width: 0;
   font-size: var(--sp-checkpoint-copy-size);
   line-height: 1.25;
   color: var(--text-muted);
   text-align: left;
+  overflow-wrap: anywhere;
 }
 
 .sp-checkpoint-section--summary-line .sp-checkpoint-inline-heading {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
+  grid-template-columns: max-content minmax(0, 1fr);
   align-items: start;
   gap: 8px;
+  min-width: 0;
 }
 
-.sp-checkpoint-section--summary-line .sp-checkpoint-inline-heading > :not(:first-child)::before {
+.sp-checkpoint-section--next-action .sp-checkpoint-inline-heading {
+  width: 100%;
+}
+
+.sp-checkpoint-section--summary-line
+  .sp-checkpoint-inline-heading
+  > :not(:first-child)::before {
   content: none;
   margin-right: 0;
 }
@@ -1739,6 +2091,8 @@
   align-items: center;
   justify-content: center;
   gap: 4px;
+  max-width: 100%;
+  min-width: 0;
   border: 1px solid var(--border-subtle);
   border-radius: 7px;
   background: transparent;
@@ -1746,6 +2100,7 @@
   font-size: 12px;
   line-height: 1.1;
   padding: 4px 8px;
+  white-space: nowrap;
 }
 
 .sp-checkpoint-action--commit {
@@ -1886,7 +2241,11 @@
 }
 
 .checkpoint-diff-sidebar-item.is-active {
-  border-color: color-mix(in srgb, var(--accent-primary, #2563eb) 45%, var(--border-subtle));
+  border-color: color-mix(
+    in srgb,
+    var(--accent-primary, #2563eb) 45%,
+    var(--border-subtle)
+  );
   background: color-mix(in srgb, var(--surface-card) 92%, transparent);
 }
 
@@ -2023,7 +2382,8 @@
   cursor: not-allowed;
 }
 
-.editable-diff-review-surface.is-toolbar-inline-actions .editable-diff-review-toolbar-actions {
+.editable-diff-review-surface.is-toolbar-inline-actions
+  .editable-diff-review-toolbar-actions {
   display: contents;
 }
 
@@ -2045,7 +2405,8 @@
   color: var(--text-strong);
 }
 
-.git-history-diff-modal-actions .editable-diff-review-action:not(:disabled):hover {
+.git-history-diff-modal-actions
+  .editable-diff-review-action:not(:disabled):hover {
   background: transparent;
   color: var(--text-emphasis);
 }
@@ -2152,7 +2513,11 @@
 }
 
 .editable-diff-review-sidebar-item.is-active {
-  border-color: color-mix(in srgb, var(--accent-primary, #2563eb) 45%, var(--border-subtle));
+  border-color: color-mix(
+    in srgb,
+    var(--accent-primary, #2563eb) 45%,
+    var(--border-subtle)
+  );
   background: color-mix(in srgb, var(--surface-card) 92%, transparent);
 }
 

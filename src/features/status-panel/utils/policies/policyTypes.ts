@@ -9,6 +9,7 @@ import type {
 import type { GovernanceEvidenceSnapshot } from "../../../governance/evidence";
 
 export type PolicyVerdictContribution = CheckpointVerdict | "no_contribution";
+export type PolicyDecisionEnforcement = "blocking" | "advisory" | "informational";
 
 export type CheckpointPolicyEvidence = {
   failedCommand: CommandSummary | null;
@@ -33,9 +34,14 @@ export type CheckpointPolicyEvidence = {
 export type PolicyDecision = {
   policyId: string;
   verdictContribution: PolicyVerdictContribution;
+  enforcement: PolicyDecisionEnforcement;
   reasonKey: string | null;
   sourceId: string | null;
   evidenceSnapshotId?: string;
+  evidenceObservedAt?: string;
+  evidenceArtifactPath?: string;
+  evidenceArtifactHash?: string;
+  evidenceQualifier?: string;
   degradationReason?: string;
   staleAt?: string;
   gateContributions?: readonly {

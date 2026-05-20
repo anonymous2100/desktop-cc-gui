@@ -48,6 +48,11 @@ for (const token of ["appliesTo", "evaluate", "PolicyDecision", "no_contribution
     fail(`policyTypes missing token "${token}"`);
   }
 }
+for (const token of ["PolicyDecisionEnforcement", "enforcement: PolicyDecisionEnforcement"]) {
+  if (!typeSource.includes(token)) {
+    fail(`policyTypes missing advisory enforcement token "${token}"`);
+  }
+}
 
 const registrySource = readText(path.join(POLICY_DIR, "policyRegistry.ts"));
 for (const token of ["corePolicy", "VERDICT_SEVERITY", "DEFAULT_AUDIT_LIMIT = 50"]) {
@@ -65,9 +70,17 @@ const bridgePolicySource = readText(path.join(POLICY_DIR, "bridgeGovernancePolic
 for (const token of [
   "governanceSnapshot",
   "evidenceSnapshotId",
+  "AdvisoryBridgeContribution",
+  "ADVISORY_CONTRIBUTION_SEVERITY",
+  "enforcementForContribution",
   "costBudgetGovernancePolicy",
   "largeFileGovernancePolicy",
   "heavyTestNoiseGovernancePolicy",
+  "engineRuntimeGovernancePolicy",
+  "evidenceObservedAt",
+  "evidenceArtifactPath",
+  "evidenceArtifactHash",
+  "evidenceQualifier",
 ]) {
   if (!bridgePolicySource.includes(token)) {
     fail(`bridgeGovernancePolicies missing invariant token "${token}"`);
@@ -75,6 +88,12 @@ for (const token of [
 }
 if (bridgePolicySource.includes("verdictContribution: \"blocked\"")) {
   fail("bridge-fed governance policies must not contribute blocked");
+}
+if (!bridgePolicySource.includes("Exclude<PolicyVerdictContribution, \"blocked\">")) {
+  fail("bridge-fed governance policies must type-exclude blocked contributions");
+}
+if (bridgePolicySource.includes("maxFailContribution?: PolicyVerdictContribution")) {
+  fail("bridge-fed governance policy max contribution must not use broad PolicyVerdictContribution");
 }
 
 const policyLocaleTokens = [
@@ -86,6 +105,7 @@ const policyLocaleTokens = [
   "typecheckValidationPolicy:",
   "testsValidationPolicy:",
   "verdict: {",
+  "enforcement: {",
   "needs_review:",
   "no_contribution:",
 ];

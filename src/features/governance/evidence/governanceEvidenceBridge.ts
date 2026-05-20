@@ -5,14 +5,14 @@ import {
 } from "./governanceEvidence";
 import type {
   GovernanceEvidence,
+  GovernanceEvidenceSource,
   GovernanceEvidenceSnapshot,
   GovernanceEvidenceStatus,
-  HarnessGovernanceEvidenceSource,
 } from "./types";
 
 export type GovernanceEvidenceAdapterInput = {
   readonly id: string;
-  readonly source: HarnessGovernanceEvidenceSource;
+  readonly source: GovernanceEvidenceSource;
   readonly status: GovernanceEvidenceStatus;
   readonly title: string;
   readonly summary: string;

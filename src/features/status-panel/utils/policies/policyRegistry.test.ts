@@ -42,6 +42,7 @@ function constantPolicy(
       return {
         policyId: id,
         verdictContribution,
+        enforcement: verdictContribution === "blocked" ? "blocking" : verdictContribution === "needs_review" ? "advisory" : "informational",
         reasonKey: `statusPanel.policy.${id}`,
         sourceId: null,
       };
@@ -92,6 +93,7 @@ describe("policy registry", () => {
         return {
           policyId: "duplicate",
           verdictContribution: "needs_review",
+          enforcement: "advisory",
           reasonKey: "statusPanel.policy.duplicate",
           sourceId: "large-file",
           evidenceSnapshotId: "snapshot-1",

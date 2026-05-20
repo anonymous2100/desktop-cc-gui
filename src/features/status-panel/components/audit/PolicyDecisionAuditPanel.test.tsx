@@ -8,12 +8,14 @@ const auditEntries: PolicyDecision[] = [
   {
     policyId: "corePolicy",
     verdictContribution: "needs_review",
+    enforcement: "advisory",
     reasonKey: "statusPanel.policy.corePolicy.needsReview",
     sourceId: "core",
   },
   {
     policyId: "customPolicy",
     verdictContribution: "no_contribution",
+    enforcement: "informational",
     reasonKey: null,
     sourceId: null,
   },
@@ -38,6 +40,7 @@ describe("PolicyDecisionAuditPanel", () => {
 
     expect(screen.getByText("corePolicy")).toBeTruthy();
     expect(screen.getByText("statusPanel.policy.verdict.needs_review")).toBeTruthy();
+    expect(screen.getByText("statusPanel.audit.enforcement.advisory")).toBeTruthy();
     expect(screen.getByText("statusPanel.policy.corePolicy.needsReview")).toBeTruthy();
     expect(screen.getByText("core")).toBeTruthy();
   });
@@ -66,6 +69,7 @@ describe("PolicyDecisionAuditPanel", () => {
           {
             policyId: "costBudgetGovernancePolicy",
             verdictContribution: "needs_review",
+            enforcement: "advisory",
             reasonKey: "statusPanel.policy.costBudgetGovernancePolicy.fail",
             sourceId: "cost-budget",
             evidenceSnapshotId: "snapshot-1",
