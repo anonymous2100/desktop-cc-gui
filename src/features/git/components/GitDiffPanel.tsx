@@ -884,6 +884,7 @@ export function GitDiffPanel({
   logTotal = 0,
   gitRemoteUrl = null,
   onSelectFile,
+  onOpenFile,
   logEntries,
   logAhead = 0,
   logBehind = 0,
@@ -1144,10 +1145,14 @@ export function GitDiffPanel({
         // Regular click: select single file and view it
         setSelectedFiles(new Set([path]));
         setLastClickedFile(path);
-        onSelectFile?.(path);
+        if (onOpenFile) {
+          onOpenFile(path);
+        } else {
+          onSelectFile?.(path);
+        }
       }
     },
-    [lastClickedFile, allFiles, onSelectFile],
+    [lastClickedFile, allFiles, onOpenFile, onSelectFile],
   );
 
   // Clear selection when files change

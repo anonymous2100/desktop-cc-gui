@@ -2154,6 +2154,7 @@ export function useLayoutNodes(options: LayoutNodesOptions): LayoutNodesResult {
         stagedFiles={options.gitStatus.stagedFiles}
         unstagedFiles={options.gitStatus.unstagedFiles}
         onSelectFile={options.onSelectDiff}
+        onOpenFile={options.onOpenFile}
         selectedPath={sidebarSelectedDiffPath}
         logEntries={options.gitLogEntries}
         logTotal={options.gitLogTotal}
