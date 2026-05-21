@@ -1269,3 +1269,53 @@ Follow-ups: 重新推送并运行 Release workflow，创建 v0.5.0 release。
 ### Next Steps
 
 - None - task complete
+
+
+## Session 547: 收敛 Composer 控制面视觉契约
+
+**Date**: 2026-05-22
+**Task**: 收敛 Composer 控制面视觉契约
+**Branch**: `feature/v0.5.1`
+
+### Summary
+
+将 Composer 模型选择上移到 readiness target，底部工具收敛为可折叠 icon strip；补齐 Gemini 分组、selected overlay check、主题安全 icon、紧凑圆角/高度，并回写 OpenSpec 与 Trellis frontend contract。验证通过 OpenSpec strict、48 个相关 vitest、pnpm typecheck，并完成 Win/macOS/Linux 兼容性 review。
+
+### Main Changes
+
+## 本次完成
+
+- 创建并补全 OpenSpec change `stabilize-composer-control-surface`，固定 Composer 控制面行为与视觉契约。
+- 顶部 readiness target 承载模型选择，底部移除重复 model selector。
+- `modelOptions` 统一 runtime/custom/selected fallback/provider availability 合并，Gemini detected 即进入 selector group。
+- 底部 toolbar 收敛为一个可折叠 icon-only inline strip，context/memory/reasoning/usage 纳入同一行。
+- 邮件提醒、live follow、collapse middle steps、memory reference selected/armed 态统一为同色 icon + overlay check。
+- 修复 mode icon 固定色问题，使用 `currentColor` / codicon；home composer scoped CSS 同步覆盖 light/dark theme。
+- 发送按钮、composer 圆角、默认高度按紧凑工作台控件收敛。
+
+## 验证
+
+- `openspec validate stabilize-composer-control-surface --strict --no-interactive`
+- `pnpm vitest run src/features/composer/components/ChatInputBox/ContextBar.test.tsx src/features/composer/components/ChatInputBox/ButtonArea.test.tsx src/features/home/components/HomeChat.styles.test.ts src/features/composer/components/ChatInputBox/modelOptions.test.ts src/features/composer/components/ChatInputBox/selectors/ModelSelect.test.tsx src/features/composer/components/ChatInputBox/selectors/ReasoningSelect.test.tsx`
+- `pnpm typecheck`
+- `git diff --check`
+- Win/macOS/Linux review：无新增平台分支、shell 调用、硬编码绝对路径或路径分隔符处理；新增 localStorage helper 保留 `typeof window` guard；CSS 沿用项目已有 `color-mix` / CSS variable / currentColor 体系。
+
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `08373230` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
