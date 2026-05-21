@@ -1047,3 +1047,62 @@ Follow-ups: 重新推送并运行 Release workflow，创建 v0.5.0 release。
 ### Next Steps
 
 - None - task complete
+
+
+## Session 543: 邮件驱动 session 收口修复
+
+**Date**: 2026-05-21
+**Task**: 邮件驱动 session 收口修复
+**Branch**: `feature/v0.5.1`
+
+### Summary
+
+(Add summary)
+
+### Main Changes
+
+| 项目 | 记录 |
+|------|------|
+| 用户验收 | 用户确认邮件驱动闭环测试 OK，要求回写提案并做好记录。 |
+| 邮件正文 | Completion email 改为以当前 turn 的最终 assistant message 为锚点，合并本轮 user message 之后的所有可见 assistant 文本，避免只发送末尾短确认。 |
+| 去重与时序 | 邮件回复驱动下一轮时，completion email intent 显式绑定下一轮新 turn，并只选择 armed 之后完成的 assistant final，避免复用上一轮结果导致重复邮件。 |
+| 收信轮询 | 收信监听轮询最小值从 60 秒统一调整为 10 秒，覆盖前端 settings normalize、runtime polling、Rust inbound settings normalize 与 UI input。 |
+| OpenSpec | 已回写 add-email-driven-session-continuation proposal 与 delta specs，补齐正文提取、重复邮件防护、10 秒轮询下限等验收契约。 |
+
+**关键文件**:
+- `src/features/threads/utils/conversationCompletionEmail.ts`
+- `src/features/threads/hooks/useThreadCompletionEmail.ts`
+- `src/features/threads/hooks/useMailDrivenSessionContinuation.ts`
+- `src/features/settings/hooks/useAppSettings.ts`
+- `src-tauri/src/email/session_continuation.rs`
+- `openspec/changes/add-email-driven-session-continuation/proposal.md`
+- `openspec/changes/add-email-driven-session-continuation/specs/conversation-completion-email-notification/spec.md`
+- `openspec/changes/add-email-driven-session-continuation/specs/email-sending-settings/spec.md`
+
+**验证**:
+- `npx vitest run src/features/settings/hooks/useAppSettings.test.ts src/features/threads/hooks/useThreadCompletionEmail.test.tsx src/features/threads/hooks/useMailDrivenSessionContinuation.test.tsx src/features/threads/utils/conversationCompletionEmail.test.ts`
+- `cargo test inbound_settings_preserve_ten_second_poll_interval`
+- `npm run typecheck`
+- `npm run lint`
+- `cargo fmt --check`
+- `openspec validate add-email-driven-session-continuation --strict --no-interactive`
+- `git diff --check`
+
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `4c2f9342` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
