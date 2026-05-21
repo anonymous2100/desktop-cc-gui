@@ -2141,7 +2141,15 @@ const enPart1 = {
     emailMailSessionsDesc:
       "Only Moss-related mail events are shown here. Ordinary unrelated mail is not stored or displayed.",
     emailRefreshSessions: "Refresh sessions",
+    emailRefreshingSessions: "Refreshing…",
+    emailMailSessionsRefreshed: "Mail sessions refreshed.",
     emailCleanupProcessed: "Clean processed records",
+    emailCleaningProcessed: "Cleaning…",
+    emailCleanupProcessedDone: "Processed mail records cleaned.",
+    emailDeleteMailRecords: "Delete mail info",
+    emailDeletingMailRecords: "Deleting…",
+    emailDeleteMailRecordsDone: "Mail info deleted. The session was not deleted.",
+    emailDeleteMailRecordsHint: "Only deletes local mail info. The session is not deleted.",
     emailNoMailSessions: "No Moss mail sessions yet.",
     emailSessionCounts:
       "Outbound {{outbound}} · inbound {{inbound}} · queued {{queued}} · needs confirmation {{confirm}}",
@@ -2155,6 +2163,9 @@ const enPart1 = {
     emailEnableSessionContinuation: "Enable reply continuation",
     emailMailSessionUpdated: "Mail session updated.",
     emailTimelineTitle: "Mail event timeline",
+    emailCloseTimeline: "Close mail events",
+    emailTimelineOutbound: "Moss to user",
+    emailTimelineInbound: "User to Moss",
     emailTimelineEmpty: "No mail events for this session yet.",
     emailError: {
       disabled: "Email sending is disabled.",

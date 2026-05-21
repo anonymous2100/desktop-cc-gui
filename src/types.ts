@@ -672,7 +672,15 @@ export type ClaimMailCommandResult = {
 
 export type MutateMailSessionRequest = {
   sessionId: string;
-  action: "enable" | "pause" | "resume" | "close" | "confirm" | "ignore" | "cleanup";
+  action:
+    | "enable"
+    | "pause"
+    | "resume"
+    | "close"
+    | "confirm"
+    | "ignore"
+    | "cleanup"
+    | "delete_mail_records";
   commandId?: string | null;
 };
 

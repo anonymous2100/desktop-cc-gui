@@ -901,6 +901,14 @@ pub(crate) fn mutate_mail_session(
                 )
             });
         }
+        "delete_mail_records" => {
+            ledger
+                .outgoing
+                .retain(|record| record.session_id != session_id);
+            ledger
+                .commands
+                .retain(|command| command.session_id != session_id);
+        }
         _ => {
             return Err(format!(
                 "unsupported mail session action: {}",
@@ -2372,6 +2380,172 @@ mod tests {
         assert_eq!(result.ignored_count, 1);
         let ledger = read_ledger(&path).expect("ledger");
         assert!(ledger.commands.is_empty());
+        let _ = std::fs::remove_file(path);
+    }
+
+    #[test]
+    fn mutate_delete_mail_records_removes_only_target_mail_records() {
+        let path = temp_ledger_path("delete-mail-records");
+        let ledger = EmailSessionLedger {
+            outgoing: vec![
+                OutgoingMailRecord {
+                    id: "out-target".to_string(),
+                    message_id: Some("<target@example.com>".to_string()),
+                    session_id: "ms_target".to_string(),
+                    workspace_id: "ws-1".to_string(),
+                    workspace_name: Some("Workspace".to_string()),
+                    thread_id: "thread-1".to_string(),
+                    thread_name: Some("Thread".to_string()),
+                    turn_id: "turn-1".to_string(),
+                    reply_token_hash: Some("token".to_string()),
+                    expires_at: None,
+                    status: OutgoingMailStatus::Actionable,
+                    sent_at: "2026-05-21T10:00:00Z".to_string(),
+                    subject_tag: Some("Moss #ms_target".to_string()),
+                    subject: "Target".to_string(),
+                    summary: "target summary".to_string(),
+                    next_recommendations: Vec::new(),
+                    signature: None,
+                },
+                OutgoingMailRecord {
+                    id: "out-other".to_string(),
+                    message_id: Some("<other@example.com>".to_string()),
+                    session_id: "ms_other".to_string(),
+                    workspace_id: "ws-2".to_string(),
+                    workspace_name: Some("Other Workspace".to_string()),
+                    thread_id: "thread-2".to_string(),
+                    thread_name: Some("Other Thread".to_string()),
+                    turn_id: "turn-2".to_string(),
+                    reply_token_hash: Some("other-token".to_string()),
+                    expires_at: None,
+                    status: OutgoingMailStatus::Actionable,
+                    sent_at: "2026-05-21T11:00:00Z".to_string(),
+                    subject_tag: Some("Moss #ms_other".to_string()),
+                    subject: "Other".to_string(),
+                    summary: "other summary".to_string(),
+                    next_recommendations: Vec::new(),
+                    signature: None,
+                },
+            ],
+            commands: vec![
+                InboundMailCommand {
+                    id: "cmd-target".to_string(),
+                    mail_message_id: "<reply-target@example.com>".to_string(),
+                    in_reply_to: Some("<target@example.com>".to_string()),
+                    linked_outgoing_mail_id: "out-target".to_string(),
+                    session_id: "ms_target".to_string(),
+                    workspace_id: "ws-1".to_string(),
+                    thread_id: "thread-1".to_string(),
+                    turn_id: "turn-1".to_string(),
+                    reply_token_hash: "token".to_string(),
+                    from_hash: "from-target".to_string(),
+                    from_display: Some("u***@example.com".to_string()),
+                    received_at: "2026-05-21T10:05:00Z".to_string(),
+                    action: EmailMailCommandAction::Change,
+                    detail: Some("target change".to_string()),
+                    body_hash: "body-target".to_string(),
+                    status: InboundCommandStatus::Queued,
+                    reject_reason: None,
+                    subject_tag: Some("Moss #ms_target".to_string()),
+                },
+                InboundMailCommand {
+                    id: "cmd-other".to_string(),
+                    mail_message_id: "<reply-other@example.com>".to_string(),
+                    in_reply_to: Some("<other@example.com>".to_string()),
+                    linked_outgoing_mail_id: "out-other".to_string(),
+                    session_id: "ms_other".to_string(),
+                    workspace_id: "ws-2".to_string(),
+                    thread_id: "thread-2".to_string(),
+                    turn_id: "turn-2".to_string(),
+                    reply_token_hash: "other-token".to_string(),
+                    from_hash: "from-other".to_string(),
+                    from_display: Some("o***@example.com".to_string()),
+                    received_at: "2026-05-21T11:05:00Z".to_string(),
+                    action: EmailMailCommandAction::Status,
+                    detail: None,
+                    body_hash: "body-other".to_string(),
+                    status: InboundCommandStatus::Done,
+                    reject_reason: None,
+                    subject_tag: Some("Moss #ms_other".to_string()),
+                },
+            ],
+            sessions: vec![
+                MailSessionControl {
+                    session_id: "ms_target".to_string(),
+                    state: MailSessionState::Paused,
+                    mail_driven_enabled: true,
+                    updated_at: "2026-05-21T10:00:00Z".to_string(),
+                },
+                MailSessionControl {
+                    session_id: "ms_other".to_string(),
+                    state: MailSessionState::Enabled,
+                    mail_driven_enabled: true,
+                    updated_at: "2026-05-21T11:00:00Z".to_string(),
+                },
+            ],
+            cursor: EmailMailboxCursor::default(),
+        };
+        write_ledger(&path, &ledger).expect("write ledger");
+
+        let projection = mutate_mail_session(
+            &path,
+            MutateMailSessionRequest {
+                session_id: "ms_target".to_string(),
+                action: "delete_mail_records".to_string(),
+                command_id: None,
+            },
+        )
+        .expect("delete target mail records");
+
+        let next = read_ledger(&path).expect("read ledger");
+        assert_eq!(next.outgoing.len(), 1);
+        assert_eq!(next.outgoing[0].session_id, "ms_other");
+        assert_eq!(next.commands.len(), 1);
+        assert_eq!(next.commands[0].session_id, "ms_other");
+        assert_eq!(next.sessions.len(), 2);
+        assert!(next
+            .sessions
+            .iter()
+            .any(|session| session.session_id == "ms_target"
+                && session.state == MailSessionState::Paused));
+        assert!(projection
+            .sessions
+            .iter()
+            .all(|session| session.session_id != "ms_target"));
+        assert!(projection
+            .timeline
+            .iter()
+            .all(|event| event.session_id != "ms_target"));
+        let _ = std::fs::remove_file(path);
+    }
+
+    #[test]
+    fn mutate_delete_mail_records_requires_session_id_without_writing() {
+        let path = temp_ledger_path("delete-mail-records-missing-session");
+        let ledger = EmailSessionLedger {
+            sessions: vec![MailSessionControl {
+                session_id: "ms_target".to_string(),
+                state: MailSessionState::Enabled,
+                mail_driven_enabled: true,
+                updated_at: "2026-05-21T10:00:00Z".to_string(),
+            }],
+            ..EmailSessionLedger::default()
+        };
+        write_ledger(&path, &ledger).expect("write ledger");
+
+        let error = mutate_mail_session(
+            &path,
+            MutateMailSessionRequest {
+                session_id: " ".to_string(),
+                action: "delete_mail_records".to_string(),
+                command_id: None,
+            },
+        )
+        .expect_err("missing session id should fail");
+
+        assert!(error.contains("missing session id"));
+        let next = read_ledger(&path).expect("read ledger");
+        assert_eq!(next, ledger);
         let _ = std::fs::remove_file(path);
     }
 }

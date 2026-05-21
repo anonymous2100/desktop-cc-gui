@@ -8,6 +8,7 @@ import Mail from "lucide-react/dist/esm/icons/mail";
 import RefreshCw from "lucide-react/dist/esm/icons/refresh-cw";
 import Send from "lucide-react/dist/esm/icons/send";
 import Trash2 from "lucide-react/dist/esm/icons/trash-2";
+import X from "lucide-react/dist/esm/icons/x";
 import type {
   AppSettings,
   EmailInboundSettings,
@@ -197,7 +198,10 @@ export function EmailSenderSettings({
   const [mailSessions, setMailSessions] = useState<EmailMailSessionList | null>(null);
   const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null);
   const [action, setAction] = useState<ActionState>(null);
-  const [inboundAction, setInboundAction] = useState<"save" | "check" | "mutate" | null>(null);
+  const [inboundAction, setInboundAction] = useState<"save" | "check" | null>(null);
+  const [refreshingMailSessions, setRefreshingMailSessions] = useState(false);
+  const [cleaningMailSessions, setCleaningMailSessions] = useState(false);
+  const [deletingMailSessionId, setDeletingMailSessionId] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const didRunInitialAppSettingsSyncRef = useRef(false);
@@ -300,12 +304,32 @@ export function EmailSenderSettings({
     }
     return mailSessions.timeline.filter((event) => event.sessionId === selectedSessionId);
   }, [mailSessions, selectedSessionId]);
+  const selectedSession = useMemo(() => {
+    if (!mailSessions || !selectedSessionId) {
+      return null;
+    }
+    return mailSessions.sessions.find((session) => session.sessionId === selectedSessionId) ?? null;
+  }, [mailSessions, selectedSessionId]);
 
   const refreshMailSessions = useCallback(async () => {
     const next = await listEmailMailSessions();
     setMailSessions(next);
     return next;
   }, []);
+
+  const handleRefreshMailSessions = useCallback(async () => {
+    setRefreshingMailSessions(true);
+    setError(null);
+    setNotice(null);
+    try {
+      await refreshMailSessions();
+      setNotice(t("settings.emailMailSessionsRefreshed"));
+    } catch (refreshError) {
+      setError(refreshError instanceof Error ? refreshError.message : String(refreshError));
+    } finally {
+      setRefreshingMailSessions(false);
+    }
+  }, [refreshMailSessions, t]);
 
   const handleSave = useCallback(async () => {
     setAction("save");
@@ -435,22 +459,35 @@ export function EmailSenderSettings({
     }
   }, [refreshMailSessions, t]);
 
-  const handleSessionAction = useCallback(
-    async (
-      sessionId: string,
-      sessionAction: "enable" | "pause" | "resume" | "close" | "cleanup",
-    ) => {
-      setInboundAction("mutate");
+  const handleCleanupMailSessions = useCallback(async () => {
+    setCleaningMailSessions(true);
+    setError(null);
+    setNotice(null);
+    try {
+      const next = await mutateEmailMailSession({ sessionId: "__all__", action: "cleanup" });
+      setMailSessions(next);
+      setNotice(t("settings.emailCleanupProcessedDone"));
+    } catch (cleanupError) {
+      setError(cleanupError instanceof Error ? cleanupError.message : String(cleanupError));
+    } finally {
+      setCleaningMailSessions(false);
+    }
+  }, [t]);
+
+  const handleDeleteMailRecords = useCallback(
+    async (sessionId: string) => {
+      setDeletingMailSessionId(sessionId);
       setError(null);
       setNotice(null);
       try {
-        const next = await mutateEmailMailSession({ sessionId, action: sessionAction });
+        const next = await mutateEmailMailSession({ sessionId, action: "delete_mail_records" });
         setMailSessions(next);
-        setNotice(t("settings.emailMailSessionUpdated"));
-      } catch (mutationError) {
-        setError(mutationError instanceof Error ? mutationError.message : String(mutationError));
+        setSelectedSessionId((current) => (current === sessionId ? null : current));
+        setNotice(t("settings.emailDeleteMailRecordsDone"));
+      } catch (deleteError) {
+        setError(deleteError instanceof Error ? deleteError.message : String(deleteError));
       } finally {
-        setInboundAction(null);
+        setDeletingMailSessionId(null);
       }
     },
     [t],
@@ -938,20 +975,79 @@ export function EmailSenderSettings({
           </CardHeader>
           <CardContent className="settings-basic-sounds-card-content">
             <div className="settings-button-row">
-              <Button type="button" variant="outline" onClick={() => void refreshMailSessions()}>
-                <RefreshCw size={14} aria-hidden />
-                {t("settings.emailRefreshSessions")}
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => void handleRefreshMailSessions()}
+                disabled={refreshingMailSessions}
+              >
+                <RefreshCw
+                  size={14}
+                  aria-hidden
+                  className={refreshingMailSessions ? "is-spin" : undefined}
+                />
+                {refreshingMailSessions
+                  ? t("settings.emailRefreshingSessions")
+                  : t("settings.emailRefreshSessions")}
               </Button>
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => void handleSessionAction(selectedSessionId ?? "__all__", "cleanup")}
-                disabled={inboundAction !== null}
+                onClick={() => void handleCleanupMailSessions()}
+                disabled={cleaningMailSessions}
               >
                 <Trash2 size={14} aria-hidden />
-                {t("settings.emailCleanupProcessed")}
+                {cleaningMailSessions
+                  ? t("settings.emailCleaningProcessed")
+                  : t("settings.emailCleanupProcessed")}
               </Button>
             </div>
+            {selectedSessionId ? (
+              <div className="settings-mail-detail-panel" data-testid="mail-session-detail-panel">
+                <div className="settings-mail-detail-header">
+                  <div>
+                    <div className="settings-section-title">{t("settings.emailTimelineTitle")}</div>
+                    <div className="settings-help">
+                      {selectedSession ? sessionTitle(selectedSession) : selectedSessionId}
+                    </div>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    onClick={() => setSelectedSessionId(null)}
+                    aria-label={t("settings.emailCloseTimeline")}
+                    title={t("settings.emailCloseTimeline")}
+                  >
+                    <X size={14} aria-hidden />
+                  </Button>
+                </div>
+                <div className="settings-mail-detail-scroll">
+                  {selectedTimeline.length === 0 ? (
+                    <div className="settings-help">{t("settings.emailTimelineEmpty")}</div>
+                  ) : (
+                    selectedTimeline.map((event) => (
+                      <div key={event.id} className="settings-mail-timeline-row">
+                        <div className="settings-mail-session-main">
+                          <strong>
+                            {event.direction === "outbound"
+                              ? t("settings.emailTimelineOutbound")
+                              : t("settings.emailTimelineInbound")}
+                          </strong>
+                          <div className="settings-help">
+                            {event.action ?? event.subject ?? event.status} · {event.status} ·{" "}
+                            {formatDateTime(event.occurredAt)}
+                          </div>
+                          {event.detail ? <div className="settings-help">{event.detail}</div> : null}
+                          {event.rejectReason ? (
+                            <div className="settings-inline-error">{event.rejectReason}</div>
+                          ) : null}
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            ) : null}
             <div className="settings-session-table" role="table" aria-label={t("settings.emailMailSessionsTitle")}>
               {(mailSessions?.sessions ?? []).length === 0 ? (
                 <div className="settings-help settings-sound-hint settings-sound-hint-shadcn">
@@ -959,7 +1055,14 @@ export function EmailSenderSettings({
                 </div>
               ) : (
                 (mailSessions?.sessions ?? []).map((session) => (
-                  <div key={session.sessionId} className="settings-mail-session-row" role="row">
+                  <div
+                    key={session.sessionId}
+                    className={`settings-mail-session-row ${
+                      selectedSessionId === session.sessionId ? "is-selected" : ""
+                    }`}
+                    role="row"
+                    aria-selected={selectedSessionId === session.sessionId}
+                  >
                     <div className="settings-mail-session-main" role="cell">
                       <strong>{sessionTitle(session)}</strong>
                       <div className="settings-help">
@@ -985,6 +1088,19 @@ export function EmailSenderSettings({
                       <Button
                         type="button"
                         variant="outline"
+                        className="settings-mail-danger-action"
+                        title={t("settings.emailDeleteMailRecordsHint")}
+                        onClick={() => void handleDeleteMailRecords(session.sessionId)}
+                        disabled={deletingMailSessionId !== null}
+                      >
+                        <Trash2 size={14} aria-hidden />
+                        {deletingMailSessionId === session.sessionId
+                          ? t("settings.emailDeletingMailRecords")
+                          : t("settings.emailDeleteMailRecords")}
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
                         title={session.threadId || undefined}
                         onClick={() => handleOpenMailSession(session)}
                       >
@@ -996,27 +1112,6 @@ export function EmailSenderSettings({
                 ))
               )}
             </div>
-            {selectedSessionId ? (
-              <div className="settings-basic-group-card settings-basic-shadcn-card">
-                <div className="settings-section-title">{t("settings.emailTimelineTitle")}</div>
-                {selectedTimeline.length === 0 ? (
-                  <div className="settings-help">{t("settings.emailTimelineEmpty")}</div>
-                ) : (
-                  selectedTimeline.map((event) => (
-                    <div key={event.id} className="settings-mail-timeline-row">
-                      <div className="settings-mail-session-main">
-                        <strong>{event.direction === "outbound" ? "Moss -> User" : "User -> Moss"}</strong>
-                        <div className="settings-help">
-                          {event.action ?? event.subject ?? event.status} · {event.status} · {formatDateTime(event.occurredAt)}
-                        </div>
-                        {event.detail ? <div className="settings-help">{event.detail}</div> : null}
-                        {event.rejectReason ? <div className="settings-inline-error">{event.rejectReason}</div> : null}
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
-            ) : null}
             {notice ? <div className="settings-inline-success" role="status">{notice}</div> : null}
             {error ? <div className="settings-inline-error" role="alert">{error}</div> : null}
           </CardContent>

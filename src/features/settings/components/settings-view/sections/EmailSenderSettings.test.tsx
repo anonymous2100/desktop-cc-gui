@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { AppSettings, EmailSenderSettingsView } from "@/types";
+import type { AppSettings, EmailMailSessionList, EmailSenderSettingsView } from "@/types";
 import { EmailSenderSettings } from "./EmailSenderSettings";
 
 const getEmailSenderSettingsMock = vi.fn();
@@ -72,6 +72,58 @@ function emailView(overrides?: Partial<EmailSenderSettingsView>): EmailSenderSet
     settings: { ...emailSender },
     secretConfigured: false,
     secret: null,
+    ...overrides,
+  };
+}
+
+function mailSessionList(overrides?: Partial<EmailMailSessionList>): EmailMailSessionList {
+  return {
+    listener: {
+      enabled: true,
+      readOnly: true,
+      connectionState: "ready",
+      lastCheckedAt: null,
+      nextCheckAt: null,
+      acceptedCount: 0,
+      queuedCount: 1,
+      needsConfirmationCount: 1,
+      rejectedCount: 0,
+      ignoredCount: 0,
+      pollingIntervalSeconds: 300,
+    },
+    sessions: [
+      {
+        sessionId: "ms_thread-1",
+        workspaceId: "workspace-1",
+        threadId: "thread-1",
+        turnId: "turn-1",
+        workspaceName: "Workspace",
+        threadName: "Mail session",
+        state: "enabled",
+        lastEventAt: "2026-05-21T10:00:00Z",
+        latestAction: "change",
+        latestStatus: "needs_confirmation",
+        latestRejectReason: "missing_action",
+        outboundCount: 1,
+        inboundCount: 1,
+        queuedCount: 0,
+        needsConfirmationCount: 1,
+        latestSummary: "Done",
+      },
+    ],
+    timeline: [
+      {
+        id: "evt-1",
+        sessionId: "ms_thread-1",
+        direction: "inbound",
+        action: "change",
+        status: "needs_confirmation",
+        subject: null,
+        detail: "Use backend only",
+        rejectReason: "missing_action",
+        occurredAt: "2026-05-21T10:00:00Z",
+      },
+    ],
     ...overrides,
   };
 }
@@ -460,54 +512,7 @@ describe("EmailSenderSettings", () => {
 
   it("shows inbound listener and mail session tabs without rendering unrelated inbox mail", async () => {
     const onOpenMailSession = vi.fn();
-    listEmailMailSessionsMock.mockResolvedValue({
-      listener: {
-        enabled: true,
-        readOnly: true,
-        connectionState: "ready",
-        lastCheckedAt: null,
-        nextCheckAt: null,
-        acceptedCount: 0,
-        queuedCount: 1,
-        needsConfirmationCount: 1,
-        rejectedCount: 0,
-        ignoredCount: 0,
-        pollingIntervalSeconds: 300,
-      },
-      sessions: [
-        {
-          sessionId: "ms_thread-1",
-          workspaceId: "workspace-1",
-          threadId: "thread-1",
-          turnId: "turn-1",
-          workspaceName: "Workspace",
-          threadName: "Mail session",
-          state: "enabled",
-          lastEventAt: "2026-05-21T10:00:00Z",
-          latestAction: "change",
-          latestStatus: "needs_confirmation",
-          latestRejectReason: "missing_action",
-          outboundCount: 1,
-          inboundCount: 1,
-          queuedCount: 0,
-          needsConfirmationCount: 1,
-          latestSummary: "Done",
-        },
-      ],
-      timeline: [
-        {
-          id: "evt-1",
-          sessionId: "ms_thread-1",
-          direction: "inbound",
-          action: "change",
-          status: "needs_confirmation",
-          subject: null,
-          detail: "Use backend only",
-          rejectReason: "missing_action",
-          occurredAt: "2026-05-21T10:00:00Z",
-        },
-      ],
-    });
+    listEmailMailSessionsMock.mockResolvedValue(mailSessionList());
 
     render(
       <EmailSenderSettings
@@ -533,5 +538,116 @@ describe("EmailSenderSettings", () => {
     });
     fireEvent.click(screen.getByRole("button", { name: "settings.emailViewTimeline" }));
     await screen.findByText("Use backend only");
+  });
+
+  it("refreshes and cleans mail sessions with visible feedback", async () => {
+    listEmailMailSessionsMock.mockResolvedValue(mailSessionList());
+    mutateEmailMailSessionMock.mockResolvedValue(mailSessionList({ sessions: [], timeline: [] }));
+
+    render(
+      <EmailSenderSettings
+        t={t}
+        appSettings={baseSettings}
+        onUpdateAppSettings={vi.fn().mockResolvedValue(undefined)}
+      />,
+    );
+
+    fireEvent.click(await screen.findByRole("tab", { name: "settings.emailMailSessionsTab" }));
+    await screen.findByText("Mail session");
+
+    listEmailMailSessionsMock.mockClear();
+    fireEvent.click(screen.getByRole("button", { name: "settings.emailRefreshSessions" }));
+    await waitFor(() => {
+      expect(listEmailMailSessionsMock).toHaveBeenCalledTimes(1);
+    });
+    await screen.findByText("settings.emailMailSessionsRefreshed");
+
+    fireEvent.click(screen.getByRole("button", { name: "settings.emailCleanupProcessed" }));
+    await waitFor(() => {
+      expect(mutateEmailMailSessionMock).toHaveBeenCalledWith({
+        sessionId: "__all__",
+        action: "cleanup",
+      });
+    });
+    await screen.findByText("settings.emailCleanupProcessedDone");
+  });
+
+  it("shows mail details above the list with selected row state and close action", async () => {
+    listEmailMailSessionsMock.mockResolvedValue(mailSessionList());
+
+    render(
+      <EmailSenderSettings
+        t={t}
+        appSettings={baseSettings}
+        onUpdateAppSettings={vi.fn().mockResolvedValue(undefined)}
+      />,
+    );
+
+    fireEvent.click(await screen.findByRole("tab", { name: "settings.emailMailSessionsTab" }));
+    await screen.findByText("Mail session");
+    fireEvent.click(screen.getByRole("button", { name: "settings.emailViewTimeline" }));
+
+    const detailPanel = await screen.findByTestId("mail-session-detail-panel");
+    const table = screen.getByRole("table", { name: "settings.emailMailSessionsTitle" });
+    expect(Boolean(detailPanel.compareDocumentPosition(table) & Node.DOCUMENT_POSITION_FOLLOWING)).toBe(true);
+    expect(detailPanel.querySelector(".settings-mail-detail-scroll")).toBeTruthy();
+    expect(screen.getByText("Use backend only")).toBeTruthy();
+
+    const selectedRow = screen
+      .getAllByRole("row")
+      .find((row) => row.textContent?.includes("Mail session"));
+    expect(selectedRow?.classList.contains("is-selected")).toBe(true);
+    expect(selectedRow?.getAttribute("aria-selected")).toBe("true");
+
+    fireEvent.click(screen.getByRole("button", { name: "settings.emailCloseTimeline" }));
+    expect(screen.queryByTestId("mail-session-detail-panel")).toBeNull();
+  });
+
+  it("deletes only mail records through the typed mutation and closes stale detail", async () => {
+    listEmailMailSessionsMock.mockResolvedValue(mailSessionList());
+    mutateEmailMailSessionMock.mockResolvedValue(mailSessionList({ sessions: [], timeline: [] }));
+
+    render(
+      <EmailSenderSettings
+        t={t}
+        appSettings={baseSettings}
+        onUpdateAppSettings={vi.fn().mockResolvedValue(undefined)}
+      />,
+    );
+
+    fireEvent.click(await screen.findByRole("tab", { name: "settings.emailMailSessionsTab" }));
+    await screen.findByText("Mail session");
+    fireEvent.click(screen.getByRole("button", { name: "settings.emailViewTimeline" }));
+    await screen.findByText("Use backend only");
+
+    fireEvent.click(screen.getByRole("button", { name: "settings.emailDeleteMailRecords" }));
+    await waitFor(() => {
+      expect(mutateEmailMailSessionMock).toHaveBeenCalledWith({
+        sessionId: "ms_thread-1",
+        action: "delete_mail_records",
+      });
+    });
+    await screen.findByText("settings.emailDeleteMailRecordsDone");
+    expect(screen.queryByTestId("mail-session-detail-panel")).toBeNull();
+  });
+
+  it("keeps the current mail list visible when deleting mail records fails", async () => {
+    listEmailMailSessionsMock.mockResolvedValue(mailSessionList());
+    mutateEmailMailSessionMock.mockRejectedValue(new Error("delete failed"));
+
+    render(
+      <EmailSenderSettings
+        t={t}
+        appSettings={baseSettings}
+        onUpdateAppSettings={vi.fn().mockResolvedValue(undefined)}
+      />,
+    );
+
+    fireEvent.click(await screen.findByRole("tab", { name: "settings.emailMailSessionsTab" }));
+    await screen.findByText("Mail session");
+    fireEvent.click(screen.getByRole("button", { name: "settings.emailDeleteMailRecords" }));
+
+    await screen.findByText("delete failed");
+    expect(screen.getByText("Mail session")).toBeTruthy();
   });
 });

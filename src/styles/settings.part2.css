@@ -389,8 +389,39 @@
   background: var(--surface-card);
 }
 
+.settings-mail-session-row.is-selected {
+  border-color: color-mix(in srgb, var(--primary) 44%, var(--border-muted) 56%);
+  background: color-mix(in srgb, var(--primary) 8%, var(--surface-card) 92%);
+}
+
 .settings-mail-timeline-row {
   grid-template-columns: minmax(0, 1fr);
+}
+
+.settings-mail-detail-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 12px;
+  border: 1px solid color-mix(in srgb, var(--primary) 28%, var(--border-muted) 72%);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--primary) 6%, var(--surface-card) 94%);
+}
+
+.settings-mail-detail-header {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.settings-mail-detail-scroll {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: min(360px, 42vh);
+  overflow-y: auto;
+  padding-right: 4px;
 }
 
 .settings-mail-session-main {
@@ -409,6 +440,16 @@
   gap: 8px;
 }
 
+.settings-mail-danger-action {
+  color: var(--status-error);
+  border-color: color-mix(in srgb, var(--status-error) 32%, var(--border-muted) 68%);
+}
+
+.settings-mail-danger-action:hover:not(:disabled) {
+  color: var(--status-error);
+  background: color-mix(in srgb, var(--status-error) 10%, transparent);
+}
+
 @media (max-width: 760px) {
   .settings-form-grid {
     grid-template-columns: 1fr;
@@ -420,6 +461,10 @@
 
   .settings-mail-session-actions {
     justify-content: flex-start;
+  }
+
+  .settings-mail-detail-header {
+    align-items: stretch;
   }
 }
 
