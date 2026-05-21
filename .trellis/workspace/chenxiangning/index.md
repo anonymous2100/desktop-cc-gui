@@ -8,8 +8,8 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-15.md`
-- **Total Sessions**: 540
-- **Last Active**: 2026-05-21
+- **Total Sessions**: 551
+- **Last Active**: 2026-05-22
 <!-- @@@/auto:current-status -->
 
 ---
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-15.md` | ~925 | Active |
+| `journal-15.md` | ~1481 | Active |
 | `journal-14.md` | ~1969 | Archived |
 | `journal-13.md` | ~1947 | Archived |
 | `journal-12.md` | ~1971 | Archived |
@@ -43,6 +43,17 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 551 | 2026-05-22 | 修复 Composer readiness 测试依赖污染 | `d682d9e2` | `feature/v0.5.1` |
+| 550 | 2026-05-22 | 上移 Composer 上下文芯片 | `45a721c2` | `feature/v0.5.1` |
+| 549 | 2026-05-22 | 稳定 WebService daemon 启动测试 | `1fd8ef0e` | `feature/v0.5.1` |
+| 548 | 2026-05-22 | 收口底部 dock 与运行按钮样式 | `cfd6dc0f` | `feature/v0.5.1` |
+| 547 | 2026-05-22 | 收敛 Composer 控制面视觉契约 | `08373230` | `feature/v0.5.1` |
+| 546 | 2026-05-21 | 实现记忆引用持续模式 | `637c5474` | `feature/v0.5.1` |
+| 545 | 2026-05-21 | 收紧 Codex 空草稿失效会话恢复 | `805109d2` | `feature/v0.5.1` |
+| 544 | 2026-05-21 | 优化邮件会话列表管理 | `eff41116` | `feature/v0.5.1` |
+| 543 | 2026-05-21 | 邮件驱动 session 收口修复 | `4c2f9342` | `feature/v0.5.1` |
+| 542 | 2026-05-21 | 脱敏邮箱授权码输入 | `90f35cbc` | `feature/v0.5.1` |
+| 541 | 2026-05-21 | 邮件驱动 session 闭环收口 | `32d990a6` | `feature/v0.5.1` |
 | 540 | 2026-05-21 | 稳定 Markdown 预览刷新与大文档渲染 | `f5515768` | `feature/v0.5.0-md` |
 | 539 | 2026-05-21 | 对齐成本分段文本颜色 | `d099f94c` | `feature/v0.5.0-md` |
 | 538 | 2026-05-21 | 回滚 Codex 终止漂移恢复链路 | `4456ed67` | `feature/v0.5.0-md` |

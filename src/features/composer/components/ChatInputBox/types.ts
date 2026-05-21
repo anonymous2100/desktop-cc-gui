@@ -11,6 +11,8 @@ import type { ComposerSendReadiness } from '../../utils/composerSendReadiness';
 // Core Entity Types
 // ============================================================
 
+export type MemoryReferenceMode = 'off' | 'single' | 'always';
+
 /**
  * File tag information for backend context injection (Codex mode)
  */
@@ -305,7 +307,7 @@ export const AVAILABLE_MODES: ModeInfo[] = [
   {
     id: 'bypassPermissions',
     label: 'Auto Mode',
-    icon: 'codicon-zap',
+    icon: 'codicon-robot',
     tooltip: 'Bypass all permission checks',
     description: 'Fully automated, bypasses all permission checks [use with caution]',
   },
@@ -377,31 +379,31 @@ export const REASONING_LEVELS: ReasoningInfo[] = [
   {
     id: 'low',
     label: 'Low',
-    icon: 'codicon-circle-small',
+    icon: 'codicon-lightbulb-empty',
     description: 'Quick responses with basic reasoning',
   },
   {
     id: 'medium',
     label: 'Medium',
-    icon: 'codicon-circle-filled',
+    icon: 'codicon-lightbulb',
     description: 'Balanced thinking (default)',
   },
   {
     id: 'high',
     label: 'High',
-    icon: 'codicon-circle-large-filled',
+    icon: 'codicon-lightbulb-autofix',
     description: 'Deep reasoning for complex tasks',
   },
   {
     id: 'xhigh',
     label: 'Extra High',
-    icon: 'codicon-flame',
+    icon: 'codicon-lightbulb-sparkle',
     description: 'Extra high reasoning depth',
   },
   {
     id: 'max',
     label: 'Max',
-    icon: 'codicon-rocket',
+    icon: 'codicon-search-sparkle',
     description: 'Maximum reasoning depth',
   },
 ];
@@ -568,10 +570,10 @@ export interface ChatInputBoxProps {
   onCodexReviewQuickStart?: () => void;
   /** Trigger fork quick action (codex/claude only) */
   onForkQuickStart?: () => void;
-  /** Whether one-shot project memory reference is armed */
-  memoryReferenceArmed?: boolean;
-  /** Toggle one-shot project memory reference */
-  onToggleMemoryReference?: () => void;
+  /** Current explicit project memory reference mode */
+  memoryReferenceMode?: MemoryReferenceMode;
+  /** Set explicit project memory reference mode */
+  onSetMemoryReferenceMode?: (mode: MemoryReferenceMode) => void;
   /** Whether always thinking is enabled */
   alwaysThinkingEnabled?: boolean;
   /** Attachment list */
@@ -781,10 +783,10 @@ export interface ButtonAreaProps {
   onCodexReviewQuickStart?: () => void;
   /** Trigger fork quick action (codex/claude only) */
   onForkQuickStart?: () => void;
-  /** Whether one-shot project memory reference is armed */
-  memoryReferenceArmed?: boolean;
-  /** Toggle one-shot project memory reference */
-  onToggleMemoryReference?: () => void;
+  /** Current explicit project memory reference mode */
+  memoryReferenceMode?: MemoryReferenceMode;
+  /** Set explicit project memory reference mode */
+  onSetMemoryReferenceMode?: (mode: MemoryReferenceMode) => void;
 
   // Event callbacks
   onSubmit?: () => void;
@@ -824,8 +826,6 @@ export interface ButtonAreaProps {
   shortcutActions?: ShortcutAction[];
   /** High-signal status controls rendered on the main toolbar row */
   mainSurface?: ReactNode;
-  /** Context chips rendered after reasoning on the main toolbar row */
-  contextSurface?: ReactNode;
   /** Additional low-frequency tools rendered inside the tool popover */
   toolSurface?: ReactNode;
   /** Status panel toggle rendered inside the tool popover icon row */

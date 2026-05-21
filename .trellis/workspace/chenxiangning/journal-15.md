@@ -923,3 +923,559 @@ Follow-ups: 重新推送并运行 Release workflow，创建 v0.5.0 release。
 ### Next Steps
 
 - None - task complete
+
+
+## Session 541: 邮件驱动 session 闭环收口
+
+**Date**: 2026-05-21
+**Task**: 邮件驱动 session 闭环收口
+**Branch**: `feature/v0.5.1`
+
+### Summary
+
+(Add summary)
+
+### Main Changes
+
+## 本次交付
+
+完成邮件驱动 session continuation 的产品与技术闭环，并在收口阶段补齐边界条件、跨平台与门禁验证。
+
+## 主要改动
+
+- 新增 OpenSpec change `add-email-driven-session-continuation`，覆盖完成邮件通知、邮件回复继续 session、邮箱设置与邮件会话管理。
+- 后端新增邮件 session continuation ledger、IMAP 收信、reply token/signature 校验、允许发件人过滤、重复邮件过滤、命令队列与 session 控制。
+- 前端设置页新增邮件发送、收信监听、邮件会话管理 tab，并支持查看邮件、打开关联 session、刷新会话与清理已处理记录。
+- 完成邮件正文改为面向用户阅读：包含本轮用户请求、最终文本结果、下一步建议和 Moss context，过滤工具调用、file changes、思考内容与卡片噪音。
+- 完成邮件标题优化为包含 Moss tag、引擎/会话关键信息，便于邮箱列表快速识别。
+- 邮件回复解析支持自然语言继续/暂停/停止/状态，也支持结构化 ACTION 指令；默认收到回复后继续对应 session，并自动 arm 下一轮邮件通知。
+
+## 收口修复
+
+- 修复命令 claim 后发送失败会永久卡在 Running 的问题，失败时落定为 `needs_confirmation/send_failed`。
+- 修复 IMAP reader 乱序返回 UID 时 cursor 可能回退的问题，cursor 只推进到最大 numeric UID。
+- 修复 malformed email address 可能触发 Rust UTF-8 slicing panic 的问题。
+- 修复 React polling unmount 后异步 finally 重新调度 timer 的问题。
+- 补齐 useThreads 相关测试中的 email tauri mock，避免 heavy-test-noise 被 mock export 缺失噪音打爆。
+
+## 验证结果
+
+- `npx vitest run` 邮件与线程目标测试通过。
+- `cargo test --manifest-path src-tauri/Cargo.toml email::session_continuation` 通过。
+- `npm run lint` 通过。
+- `npm run typecheck` 通过。
+- `npm run check:runtime-contracts` 通过。
+- `npm run check:large-files:near-threshold` 通过，仅保留已有 near-threshold warnings。
+- `npm run check:large-files:gate` 通过。
+- `npm run check:heavy-test-noise` 通过，stderr payload lines 为 0。
+- `openspec validate add-email-driven-session-continuation --strict --no-interactive` 通过。
+- `git diff --check` 通过。
+
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `32d990a6` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
+
+
+## Session 542: 脱敏邮箱授权码输入
+
+**Date**: 2026-05-21
+**Task**: 脱敏邮箱授权码输入
+**Branch**: `feature/v0.5.1`
+
+### Summary
+
+(Add summary)
+
+### Main Changes
+
+## 本次交付
+
+完成邮件发送设置中授权码 / App Password 输入框的 UI 层脱敏收口，并同步回写 OpenSpec 提案。
+
+## 主要改动
+
+- 授权码输入框默认改为 `password` 类型，避免设置页和截图里直接暴露 secret。
+- 新增显示/隐藏 icon 切换，使用 lucide `Eye` / `EyeOff`，按钮具备 aria-label/title。
+- 切换仅改变当前输入框可见性，不改变 secret 保存、清除、测试发送或提交 payload 语义。
+- 同步中英文 i18n 文案：显示授权码 / 隐藏授权码。
+- 同步回写 OpenSpec：在 proposal 和 `email-sending-settings` capability 中明确“默认脱敏 + UI-only 切换”契约。
+
+## Review 结论
+
+- 变更为纯 UI 层，不触碰后端 secret 存储、Tauri bridge payload 或 SMTP/IMAP 行为。
+- 输入框仍保持原 `Label htmlFor` 可访问路径，新增 icon button 有可访问名称。
+- 测试覆盖默认 masked、显示/隐藏切换、保存后仍保持 masked。
+
+## 验证结果
+
+- `npx vitest run src/features/settings/components/settings-view/sections/EmailSenderSettings.test.tsx` 通过。
+- `npm run lint` 通过。
+- `npm run typecheck` 通过。
+- `openspec validate add-email-driven-session-continuation --strict --no-interactive` 通过。
+- `git diff --check` 通过。
+
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `90f35cbc` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
+
+
+## Session 543: 邮件驱动 session 收口修复
+
+**Date**: 2026-05-21
+**Task**: 邮件驱动 session 收口修复
+**Branch**: `feature/v0.5.1`
+
+### Summary
+
+(Add summary)
+
+### Main Changes
+
+| 项目 | 记录 |
+|------|------|
+| 用户验收 | 用户确认邮件驱动闭环测试 OK，要求回写提案并做好记录。 |
+| 邮件正文 | Completion email 改为以当前 turn 的最终 assistant message 为锚点，合并本轮 user message 之后的所有可见 assistant 文本，避免只发送末尾短确认。 |
+| 去重与时序 | 邮件回复驱动下一轮时，completion email intent 显式绑定下一轮新 turn，并只选择 armed 之后完成的 assistant final，避免复用上一轮结果导致重复邮件。 |
+| 收信轮询 | 收信监听轮询最小值从 60 秒统一调整为 10 秒，覆盖前端 settings normalize、runtime polling、Rust inbound settings normalize 与 UI input。 |
+| OpenSpec | 已回写 add-email-driven-session-continuation proposal 与 delta specs，补齐正文提取、重复邮件防护、10 秒轮询下限等验收契约。 |
+
+**关键文件**:
+- `src/features/threads/utils/conversationCompletionEmail.ts`
+- `src/features/threads/hooks/useThreadCompletionEmail.ts`
+- `src/features/threads/hooks/useMailDrivenSessionContinuation.ts`
+- `src/features/settings/hooks/useAppSettings.ts`
+- `src-tauri/src/email/session_continuation.rs`
+- `openspec/changes/add-email-driven-session-continuation/proposal.md`
+- `openspec/changes/add-email-driven-session-continuation/specs/conversation-completion-email-notification/spec.md`
+- `openspec/changes/add-email-driven-session-continuation/specs/email-sending-settings/spec.md`
+
+**验证**:
+- `npx vitest run src/features/settings/hooks/useAppSettings.test.ts src/features/threads/hooks/useThreadCompletionEmail.test.tsx src/features/threads/hooks/useMailDrivenSessionContinuation.test.tsx src/features/threads/utils/conversationCompletionEmail.test.ts`
+- `cargo test inbound_settings_preserve_ten_second_poll_interval`
+- `npm run typecheck`
+- `npm run lint`
+- `cargo fmt --check`
+- `openspec validate add-email-driven-session-continuation --strict --no-interactive`
+- `git diff --check`
+
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `4c2f9342` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
+
+
+## Session 544: 优化邮件会话列表管理
+
+**Date**: 2026-05-21
+**Task**: 优化邮件会话列表管理
+**Branch**: `feature/v0.5.1`
+
+### Summary
+
+(Add summary)
+
+### Main Changes
+
+| 项 | 内容 |
+|---|---|
+| OpenSpec | `improve-email-mail-session-list-controls` |
+| 核心改动 | 邮件会话 Settings tab 新增可反馈的刷新/清理、上方邮件详情面板、只删除本地邮件信息的行级动作。 |
+| 后端边界 | `mutate_mail_session` 新增 `delete_mail_records`，仅删除 matching `outgoing` / `commands` ledger records，保留 `sessions` control，不触碰真实 workspace/thread/runtime session 或远端邮箱。 |
+| 前端边界 | `EmailSenderSettings` 继续通过 `src/services/tauri.ts` typed bridge 调用，不新增 direct `invoke()`。 |
+| 测试 | 增加 Rust ledger mutation tests 与 `EmailSenderSettings` Vitest 覆盖刷新/清理反馈、查看邮件面板、删除成功/失败、打开会话不回归。 |
+
+**验证**:
+- `openspec validate "improve-email-mail-session-list-controls" --type change --strict --no-interactive`
+- `pnpm vitest run src/features/settings/components/settings-view/sections/EmailSenderSettings.test.tsx`
+- `cargo test --manifest-path src-tauri/Cargo.toml email::session_continuation --lib`
+- `npm run typecheck`
+- `npm run check:large-files`
+- `npm run lint -- --max-warnings=0`
+- `npm run check:runtime-contracts`
+
+**注意**:
+- 提交时刻工作区仍有其他任务遗留改动：`src/features/threads/hooks/useThreadMessaging*.tsx?` 与 `openspec/changes/fix-codex-empty-draft-stale-thread-auto-replay/`，本次未纳入提交。
+
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `eff41116` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
+
+
+## Session 545: 收紧 Codex 空草稿失效会话恢复
+
+**Date**: 2026-05-21
+**Task**: 收紧 Codex 空草稿失效会话恢复
+**Branch**: `feature/v0.5.1`
+
+### Summary
+
+修复 Codex 空草稿 thread not found/invalid id 的恢复边界，补充 OpenSpec 与回归测试。
+
+### Main Changes
+
+## 完成内容
+
+- 修复 Codex 首次发送空草稿在 refresh 抛出 `thread not found` 时无法进入 fresh replay fallback 的问题。
+- 将 legacy malformed `invalid thread id` fallback 收紧到同一 empty first-send draft 边界，避免 durable Codex 会话被静默替换。
+- 新增 OpenSpec change `fix-codex-empty-draft-stale-thread-auto-replay`，记录行为边界、非目标、风险与 rollback marker。
+- 补充 `useThreadMessaging` 回归测试，覆盖：
+  - 空草稿 refresh throw 后 fresh replay 当前 prompt。
+  - durable stale thread refresh throw 不 fresh-replace。
+  - durable malformed invalid id 不 fresh-replace。
+
+## 验证
+
+- `pnpm vitest run src/features/threads/hooks/useThreadMessaging.test.tsx src/features/threads/utils/codexConversationLiveness.test.ts`：81 tests passed。
+- `npm run typecheck`：passed。
+- `npm run lint`：passed。
+- `openspec validate fix-codex-empty-draft-stale-thread-auto-replay --strict`：passed。
+- `git diff --check`：passed。
+
+## 影响范围
+
+- Codex send-path stale binding recovery。
+- 仅 Codex empty first-send draft 可自动 fresh-create 并重放当前 prompt。
+- durable/unknown stale Codex 会话继续走保守错误/恢复路径。
+
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `805109d2` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
+
+
+## Session 546: 实现记忆引用持续模式
+
+**Date**: 2026-05-21
+**Task**: 实现记忆引用持续模式
+**Branch**: `feature/v0.5.1`
+
+### Summary
+
+为 Composer Memory Reference 增加单次/持续引用模式，调整弹层文案与选中态样式，并补充 OpenSpec change 与 focused tests。
+
+### Main Changes
+
+## 本次完成
+
+- 创建 OpenSpec change: `add-memory-reference-persistent-mode`，记录 single / always Memory Reference 行为契约。
+- 将 Composer Memory Reference 从 boolean armed 状态升级为 `off | single | always` mode。
+- 保持下游发送 contract 不变：mode 非 `off` 时仍只传 `memoryReferenceEnabled: true`。
+- 增加弹层双按钮：`单次开启引用` / `一直开启引用`。
+- 调整按钮视觉：未选中保持中性，只有当前 mode 才高亮。
+- 同步中英文 i18n、composer CSS、ChatInputBox prop 链路与测试。
+
+## 验证
+
+- `openspec validate "add-memory-reference-persistent-mode" --type change --strict --no-interactive`
+- `pnpm vitest run src/features/composer/components/ChatInputBox/ButtonArea.test.tsx src/features/composer/components/Composer.memory-reference.test.tsx`
+- `pnpm vitest run src/features/composer/components/ChatInputBox/ButtonArea.test.tsx`
+- `pnpm typecheck`
+- `pnpm lint`
+- `npm run check:large-files`
+- `git diff --check`
+
+## Review 结论
+
+未发现阻断问题。引用生命周期被限制在 Composer UI 状态内，未扩大 Memory Scout / Tauri / backend contract。
+
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `637c5474` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
+
+
+## Session 547: 收敛 Composer 控制面视觉契约
+
+**Date**: 2026-05-22
+**Task**: 收敛 Composer 控制面视觉契约
+**Branch**: `feature/v0.5.1`
+
+### Summary
+
+将 Composer 模型选择上移到 readiness target，底部工具收敛为可折叠 icon strip；补齐 Gemini 分组、selected overlay check、主题安全 icon、紧凑圆角/高度，并回写 OpenSpec 与 Trellis frontend contract。验证通过 OpenSpec strict、48 个相关 vitest、pnpm typecheck，并完成 Win/macOS/Linux 兼容性 review。
+
+### Main Changes
+
+## 本次完成
+
+- 创建并补全 OpenSpec change `stabilize-composer-control-surface`，固定 Composer 控制面行为与视觉契约。
+- 顶部 readiness target 承载模型选择，底部移除重复 model selector。
+- `modelOptions` 统一 runtime/custom/selected fallback/provider availability 合并，Gemini detected 即进入 selector group。
+- 底部 toolbar 收敛为一个可折叠 icon-only inline strip，context/memory/reasoning/usage 纳入同一行。
+- 邮件提醒、live follow、collapse middle steps、memory reference selected/armed 态统一为同色 icon + overlay check。
+- 修复 mode icon 固定色问题，使用 `currentColor` / codicon；home composer scoped CSS 同步覆盖 light/dark theme。
+- 发送按钮、composer 圆角、默认高度按紧凑工作台控件收敛。
+
+## 验证
+
+- `openspec validate stabilize-composer-control-surface --strict --no-interactive`
+- `pnpm vitest run src/features/composer/components/ChatInputBox/ContextBar.test.tsx src/features/composer/components/ChatInputBox/ButtonArea.test.tsx src/features/home/components/HomeChat.styles.test.ts src/features/composer/components/ChatInputBox/modelOptions.test.ts src/features/composer/components/ChatInputBox/selectors/ModelSelect.test.tsx src/features/composer/components/ChatInputBox/selectors/ReasoningSelect.test.tsx`
+- `pnpm typecheck`
+- `git diff --check`
+- Win/macOS/Linux review：无新增平台分支、shell 调用、硬编码绝对路径或路径分隔符处理；新增 localStorage helper 保留 `typeof window` guard；CSS 沿用项目已有 `color-mix` / CSS variable / currentColor 体系。
+
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `08373230` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
+
+
+## Session 548: 收口底部 dock 与运行按钮样式
+
+**Date**: 2026-05-22
+**Task**: 收口底部 dock 与运行按钮样式
+**Branch**: `feature/v0.5.1`
+
+### Summary
+
+回写 Composer control surface 提案和实现证据；收口 StatusPanel/Terminal 底部 dock 样式、StatusPanel 折叠吸底行为，以及 Composer 运行态 stop button 正圆火花 icon；补充 CSS/组件回归测试并完成 OpenSpec、lint、typecheck 与大文件检查。
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `cfd6dc0f` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
+
+
+## Session 549: 稳定 WebService daemon 启动测试
+
+**Date**: 2026-05-22
+**Task**: 稳定 WebService daemon 启动测试
+**Branch**: `feature/v0.5.1`
+
+### Summary
+
+(Add summary)
+
+### Main Changes
+
+| 项目 | 内容 |
+|---|---|
+| 代码提交 | `1fd8ef0e test(settings): 稳定 WebService daemon 启动测试` |
+| 主要改动 | 将 `WebServiceSettings.test.tsx` 的 mock 清理从 `vi.clearAllMocks()` 收紧为 `vi.resetAllMocks()`；daemon 启动测试明确 mock mount refresh 与启动后 refresh 两次 `getWebServerStatus()`；点击前等待按钮可用，点击后等待 daemon running UI 与 refresh 调用收尾。 |
+| 验证 | `npx vitest run src/features/settings/components/settings-view/sections/WebServiceSettings.test.tsx --reporter verbose` 通过；settings 相关 4 文件组合 Vitest 通过。 |
+| 影响范围 | test-only，未改业务逻辑。 |
+
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `1fd8ef0e` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
+
+
+## Session 550: 上移 Composer 上下文芯片
+
+**Date**: 2026-05-22
+**Task**: 上移 Composer 上下文芯片
+**Branch**: `feature/v0.5.1`
+
+### Summary
+
+将 selected skill/command/agent 上下文芯片从底部工具栏移到输入框上方独立行，并同步 OpenSpec/Trellis 契约防止后续回退。
+
+### Main Changes
+
+- UI: `ChatInputBox` 新增 `.chat-input-context-surface`，在 editor 上方渲染 `ContextBar surface="external"`。
+- UI: `ButtonArea` / `ChatInputBoxFooter` / `ButtonAreaProps` 移除 `contextSurface` 传递和底部渲染，避免 selected chips 回到底部 toolbar。
+- CSS: 删除 `.button-area-context-surface` 样式，新增输入区 context row 样式。
+- Tests: 更新 `ButtonArea.test.tsx` 的视觉顺序断言，匹配新的职责边界。
+- Specs: 回写 `openspec/changes/stabilize-composer-control-surface/**` proposal/design/tasks/spec/evidence，明确 selected context chips 属于 editor 上方 context row。
+- Trellis: 更新 `.trellis/spec/frontend/component-guidelines.md`，声明 `ButtonArea` 不再接收或渲染 selected chip surface。
+- Compatibility: Win/mac review 结论为标准 React DOM/CSS 变更，无 Tauri/backend/database/native API 改动。
+- Verification: `openspec validate stabilize-composer-control-surface --strict --no-interactive`; `pnpm -s vitest run src/features/composer/components/ChatInputBox/ButtonArea.test.tsx`; `pnpm -s tsc -p . --noEmit`; `git diff --check`。
+
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `45a721c2` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
+
+
+## Session 551: 修复 Composer readiness 测试依赖污染
+
+**Date**: 2026-05-22
+**Task**: 修复 Composer readiness 测试依赖污染
+**Branch**: `feature/v0.5.1`
+
+### Summary
+
+切断 Composer selector 对 @lobehub/icons barrel 的静态依赖，避免 CI 在 readiness 测试中触发 emoji-mart JSON ESM 加载失败。
+
+### Main Changes
+
+## 完成内容
+- 将 `ComposerReadinessBar` 的 `ModelSelect` import 从 selector barrel 改为直接文件 import，避免无关 selector/i18n 初始化链路进入该测试。
+- 将 `ModelSelect` / `ProviderSelect` 中的 Claude、Gemini 图标统一改为项目本地 `EngineIcon`，不再从 `@lobehub/icons` barrel import。
+- 清理 selector 测试中已不再需要的 `@lobehub/icons` mocks。
+
+## 根因
+`ComposerReadinessBar.test.tsx` 本身断言通过，但 suite 在模块加载阶段失败。原因是 selector barrel 静态加载 `ModelSelect`，而 `ModelSelect` 的 `@lobehub/icons` barrel import 会牵出 emoji 相关 ESM 依赖；CI 环境下落到 `@emoji-mart/data/*.json` 时触发 JSON import attribute 错误。
+
+## 验证
+- `npm exec vitest run src/features/composer/components/ChatInputBox/ComposerReadinessBar.test.tsx`
+- `npm exec vitest run src/features/composer/components/ChatInputBox/selectors/ModelSelect.test.tsx src/features/composer/components/ChatInputBox/selectors/ProviderSelect.test.tsx src/features/composer/components/ChatInputBox/selectors/ConfigSelect.test.tsx src/features/composer/components/ChatInputBox/ContextBar.test.tsx src/features/composer/components/ChatInputBox/ChatInputBoxFooter.manual-memory.test.tsx`
+- `npm exec vitest run src/features/composer/components/ChatInputBox/ComposerReadinessBar.test.tsx src/features/composer/components/ChatInputBox/ContextBar.test.tsx src/features/composer/components/ChatInputBox/ChatInputBoxFooter.manual-memory.test.tsx`
+- `npm run typecheck`
+- `npm run lint`
+
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `d682d9e2` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
