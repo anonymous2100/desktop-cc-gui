@@ -1668,3 +1668,67 @@ Validation:
 ### Next Steps
 
 - None - task complete
+
+
+## Session 556: 统一工作区会话目录读取链路
+
+**Date**: 2026-05-22
+**Task**: 统一工作区会话目录读取链路
+**Branch**: `feature/v0.5.2`
+
+### Summary
+
+实现并校准 workspace session catalog B+C 演进方案，覆盖 Claude/Codex 统一目录投影、Claude source fact cache、边界条件修复、大文件门禁拆分和 OpenSpec/Trellis 文档回写。
+
+### Main Changes
+
+## 本次完成
+
+- 基于 OpenSpec change `unify-claude-workspace-session-catalog` 完成方案 B+C 演进落地。
+- 后端统一 workspace session catalog projection，补齐 Claude/Codex session membership、metadata overlay、source completeness 与 diagnostic contract。
+- Claude 侧新增 source fact cache，并明确 cache 只缓存 bounded facts，不缓存 workspace ownership / UI overlay / full transcript。
+- 修复 Claude JSONL 行读取错误、scan cap 空结果、unreadable diagnostic、cache fingerprint 缺失、前端 catalog payload 异常值等边界条件。
+- 按 large-file governance 拆分 `claude_history.rs` 与 `session_management.rs`，避免 hard gate 超阈值。
+- 回写 OpenSpec proposal / design / implementation notes，并新增 Trellis contract 文档。
+
+## 关键验证
+
+- `openspec validate unify-claude-workspace-session-catalog --strict --no-interactive`
+- `openspec instructions apply --change "unify-claude-workspace-session-catalog" --json`
+- `cargo check --manifest-path src-tauri/Cargo.toml`
+- `cargo test --manifest-path src-tauri/Cargo.toml session_management -- --nocapture`
+- `cargo test --manifest-path src-tauri/Cargo.toml scan_session_source_file -- --nocapture`
+- `cargo test --manifest-path src-tauri/Cargo.toml source_fact_cache -- --nocapture`
+- `npx vitest run src/features/threads/hooks/useThreadActions.threadList.test.ts`
+- `npm run typecheck -- --pretty false`
+- `npm run lint`
+- `npm run check:runtime-contracts`
+- `npm run check:large-files:gate`
+- `npm run check:heavy-test-noise`
+- `node --test scripts/check-large-files.test.mjs`
+- `node --test scripts/check-heavy-test-noise.test.mjs scripts/test-batched.test.mjs`
+- `git diff --check`
+
+## 后续注意
+
+- `npm run check:large-files:near-threshold` 仍有 watch 项：`src-tauri/src/session_management.rs`、`src-tauri/src/engine/claude_history.rs` 等接近阈值，但 hard gate 已通过。
+- `npm run check:heavy-test-noise` 仅保留既有 npm config warning，无 act/stdout/stderr payload noise。
+
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `a56c9cea` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
