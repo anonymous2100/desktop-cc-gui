@@ -12,6 +12,7 @@ import type {
   DropdownItemData,
   DropdownPosition,
   ModelInfo,
+  MemoryReferenceMode,
   PermissionMode,
   ProviderId,
   ReasoningEffort,
@@ -240,8 +241,8 @@ export function ChatInputBoxFooter({
   onCodexSpeedModeChange,
   onCodexReviewQuickStart,
   onForkQuickStart,
-  memoryReferenceArmed,
-  onToggleMemoryReference,
+  memoryReferenceMode,
+  onSetMemoryReferenceMode,
   onSubmit,
   onStop,
   onModeSelect,
@@ -272,7 +273,6 @@ export function ChatInputBoxFooter({
   selectedNoteCardIds = [],
   shortcutActions,
   mainSurface,
-  contextSurface,
   toolSurface,
   panelToggleSurface,
   tooltip,
@@ -304,8 +304,8 @@ export function ChatInputBoxFooter({
   onCodexSpeedModeChange?: (mode: 'standard' | 'fast') => void;
   onCodexReviewQuickStart?: () => void;
   onForkQuickStart?: () => void;
-  memoryReferenceArmed?: boolean;
-  onToggleMemoryReference?: () => void;
+  memoryReferenceMode?: MemoryReferenceMode;
+  onSetMemoryReferenceMode?: (mode: MemoryReferenceMode) => void;
   onSubmit: () => void;
   onStop?: () => void;
   onModeSelect?: (mode: PermissionMode) => void;
@@ -336,7 +336,6 @@ export function ChatInputBoxFooter({
   selectedNoteCardIds?: string[];
   shortcutActions?: ShortcutAction[];
   mainSurface?: React.ReactNode;
-  contextSurface?: React.ReactNode;
   toolSurface?: React.ReactNode;
   panelToggleSurface?: React.ReactNode;
   tooltip: TooltipState | null;
@@ -530,8 +529,8 @@ export function ChatInputBoxFooter({
         onCodexSpeedModeChange={onCodexSpeedModeChange}
         onCodexReviewQuickStart={onCodexReviewQuickStart}
         onForkQuickStart={onForkQuickStart}
-        memoryReferenceArmed={memoryReferenceArmed}
-        onToggleMemoryReference={onToggleMemoryReference}
+        memoryReferenceMode={memoryReferenceMode}
+        onSetMemoryReferenceMode={onSetMemoryReferenceMode}
         onSubmit={onSubmit}
         onStop={onStop}
         onModeSelect={onModeSelect}
@@ -553,7 +552,6 @@ export function ChatInputBoxFooter({
         onClearAgent={onClearAgent}
         shortcutActions={shortcutActions}
         mainSurface={mainSurface}
-        contextSurface={contextSurface}
         toolSurface={toolSurface}
         panelToggleSurface={panelToggleSurface}
       />
