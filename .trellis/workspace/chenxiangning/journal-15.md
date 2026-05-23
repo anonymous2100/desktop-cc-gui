@@ -1827,3 +1827,53 @@ Validation:
 ### Next Steps
 
 - None - task complete
+
+
+## Session 559: 收尾 Claude sidebar fallback 自动化门禁
+
+**Date**: 2026-05-23
+**Task**: 收尾 Claude sidebar fallback 自动化门禁
+**Branch**: `feature/v0.5.2`
+
+### Summary
+
+(Add summary)
+
+### Main Changes
+
+本次提交完成 `harden-claude-sidebar-list-timeout-fallback` 的 OpenSpec 文档收尾，未改动运行时代码。
+
+**主要内容**:
+- 将该 change 的任务状态从 25/30 更新为 26/30。
+- 标记 `npm run typecheck` 已在 2026-05-23 通过，关闭旧的外部 typecheck blocker。
+- 在 proposal、project snapshot、proposal refresh audit 中记录自动化 gate 已闭环。
+- 保留 5.1-5.3 manual QA 与 7.1 post-merge archive 为未完成，不伪造人工验证。
+
+**验证**:
+- `openspec validate harden-claude-sidebar-list-timeout-fallback --strict --no-interactive` 通过。
+- `openspec validate --all --strict --no-interactive` 通过：299 passed, 0 failed。
+- `git diff --check` 通过。
+- 收尾前已跑：`npm run typecheck`、focused sidebar Vitest 47 tests、session-activity/app Vitest 487 tests、4 个 Rust attribution exact tests。
+
+**后续建议**:
+- 在真实 dev build 中补 5.1-5.3 manual QA。
+- PR 合并后再执行 archive prep，不提前归档。
+
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `d53657ef` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
