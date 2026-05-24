@@ -255,3 +255,57 @@
 ### Next Steps
 
 - None - task complete
+
+
+## Session 568: 修复邮件设置密钥加载 CI 断言
+
+**Date**: 2026-05-24
+**Task**: 修复邮件设置密钥加载 CI 断言
+**Branch**: `feature/v0.5.2`
+
+### Summary
+
+(Add summary)
+
+### Main Changes
+
+## Summary
+
+修复 GitHub runner 上 `check:heavy-test-noise` 第 85 批失败的问题。
+
+## Root Cause
+
+`EmailSenderSettings.test.tsx` 中 `loads a saved secret into the settings input` 使用 `findByLabelText` 等待 input 挂载后立即断言 value。该断言只证明 DOM input 已出现，不证明 `getEmailSenderSettings()` 异步返回的 `secret` 已经回填。macOS 本地运行较快时可能碰巧通过，CI runner 上会读到初始空字符串。
+
+## Fix
+
+- 将 secret value 断言包进 `waitFor`，等待 backend-loaded secret 回填完成后再校验。
+- 未修改生产逻辑，仅收紧测试异步边界。
+
+## Validation
+
+- `npx vitest run src/features/settings/components/settings-view/sections/EmailSenderSettings.test.tsx` passed.
+- CI 同批次本地复现命令 passed:
+  - `npx vitest run src/features/settings/components/settings-view/sections/SessionManagementSection.test.tsx src/features/settings/components/settings-view/sections/EmailSenderSettings.test.tsx src/features/settings/components/settings-view/sections/RuntimePoolSection.test.tsx src/features/settings/components/settings-view/sections/runtimePoolSection.utils.test.ts`
+- `npm run lint` passed.
+- `npm run typecheck` passed.
+- `npm run check:heavy-test-noise` passed: 533 test files completed, repo-owned act/stdout/stderr noise all 0.
+
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `24fd0862` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
