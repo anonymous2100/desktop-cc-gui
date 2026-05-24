@@ -735,9 +735,11 @@ async fn scan_session_source_file(
             .and_then(|m| m.get("role"))
             .and_then(|r| r.as_str())
             .unwrap_or("");
+        let is_meta = is_claude_meta_entry(&entry, msg);
 
         if (role == "user" || role == "assistant")
             && matches!(classification, ClaudeHistoryEntryClassification::Normal)
+            && !is_meta
         {
             message_count += 1;
         }
@@ -747,10 +749,6 @@ async fn scan_session_source_file(
             && role == "user"
             && matches!(classification, ClaudeHistoryEntryClassification::Normal)
         {
-            let is_meta = entry
-                .get("isMeta")
-                .and_then(|v| v.as_bool())
-                .unwrap_or(false);
             if is_meta {
                 continue;
             }
@@ -888,6 +886,14 @@ async fn scan_session_source_file(
         }),
         diagnostics,
     }
+}
+
+fn is_claude_meta_entry(entry: &Value, msg: Option<&Value>) -> bool {
+    entry
+        .get("isMeta")
+        .or_else(|| msg.and_then(|message| message.get("isMeta")))
+        .and_then(|v| v.as_bool())
+        .unwrap_or(false)
 }
 
 async fn scan_session_file(
@@ -1660,10 +1666,7 @@ pub(crate) async fn load_claude_session_from_base_dir(
         }
 
         // Skip meta entries
-        let is_meta = entry
-            .get("isMeta")
-            .and_then(|v| v.as_bool())
-            .unwrap_or(false);
+        let is_meta = is_claude_meta_entry(&entry, Some(msg));
         if is_meta {
             continue;
         }
