@@ -13,7 +13,7 @@ OpenSpec workflow and governance for `mossx`, covering change lifecycle, main sp
 - Spec artifacts: `openspec/specs/*`
 - Change workflow artifacts: `openspec/changes/<change-id>/{proposal,design,tasks,verification}.md`
 - Archive: `openspec/changes/archive/*`
-- Current workspace state: active changes = `30`, archive changes = `318`, main specs = `271`
+- Current workspace state: active changes = `32`, archive changes = `318`, main specs = `271`
 
 ## Entry Surfaces
 
@@ -43,19 +43,20 @@ OpenSpec workflow and governance for `mossx`, covering change lifecycle, main sp
 
 ### Branch Calibration Snapshot (2026-05-24)
 
-Current implementation branch for this workspace snapshot is `feature/v0.5.2`. This refresh reconciles OpenSpec proposal/project documents against current code facts and records a small hygiene cleanup for stale comments / whitespace; it does not change runtime behavior code.
+Current implementation branch for this workspace snapshot is `feature/v0.5.2`. This refresh reconciles OpenSpec proposal/project documents against current code facts, records a small hygiene cleanup for stale comments / whitespace, adds runtime evidence-gate reporting, and includes one narrow Messages timeline teardown-stability runtime fix.
 
-Strict OpenSpec validation before the original 2026-05-23 refresh passed: `openspec validate --all --strict --no-interactive` reported 299 passed, 0 failed.
+Strict OpenSpec validation after the runtime evidence-gate refresh passed: `openspec validate --all --strict --no-interactive` reported 303 passed, 0 failed.
 
 Detailed proposal triage lives in `openspec/docs/proposal-refresh-2026-05-23.md`.
 Session-management closeout and manual-QA qualifiers live in `openspec/docs/session-management-refactor-closeout-2026-05-24.md`.
+Runtime evidence and archive-readiness classification lives in `openspec/docs/runtime-evidence-gates-2026-05-24.md`.
 
 ### Inventory
 
-- Active changes: `30`
+- Active changes: `32`
 - Archive changes: `318`
 - Main specs: `271`
-- Completed task sets still active: `29`
+- Completed task sets still active: `31`
 - In-progress task sets: `1`
 
 ### In-Progress Changes
@@ -84,6 +85,7 @@ Session-management closeout and manual-QA qualifiers live in `openspec/docs/sess
 - `fix-bottom-status-dock-collapse-stability`
 - `fix-codex-deferred-completion-after-assistant-ingress`
 - `fix-codex-empty-draft-stale-thread-auto-replay`
+- `fix-claude-issue529-second-turn-blank-session`
 - `fix-stale-thread-recovery-confidence-gates`
 - `fix-markdown-preview-auto-refresh`
 - `harden-claude-sidebar-list-timeout-fallback`
@@ -99,6 +101,7 @@ Session-management closeout and manual-QA qualifiers live in `openspec/docs/sess
 - `stabilize-core-runtime-and-realtime-contracts`
 - `stabilize-file-markdown-preview-render-architecture`
 - `stabilize-markdown-preview-awareness-and-large-rendering`
+- `stabilize-runtime-performance-evidence-gates`
 - `stabilize-session-management-truth-boundaries`
 - `unify-claude-workspace-session-catalog`
 
@@ -114,6 +117,7 @@ Current-branch code inventory shows proposal substrate in:
 - Workspace session catalog: `src-tauri/src/session_management*.rs`, `src-tauri/src/engine/claude_history_inline_tests.rs`, `src/services/tauri/sessionManagement.ts`, `src/services/tauri.test.ts`.
 - Thread recovery and sidebar catalog hydration: `src/features/threads/hooks/useThreadActions*.ts*`, `src/app-shell-parts/useWorkspaceThreadListHydration.ts`, `src/features/threads/utils/threadStorage.ts`, `src/features/threads/utils/streamLatencyDiagnostics.ts`.
 - Runtime/realtime/perf gates: `src/features/threads/contracts/realtimeEventBatcher.ts`, `src/features/threads/contracts/realtimeReplayHarness.ts`, `scripts/realtime-perf-report.ts`, `vite.config.ts`, `scripts/check-bundle-chunking.mjs`.
+- Runtime evidence gates: `scripts/generate-runtime-evidence-report.mjs`, `docs/perf/runtime-evidence-gates.{json,md}`, `openspec/docs/runtime-evidence-gates-2026-05-24.md`.
 - Composer/editor surfaces: `src/features/composer/components/ChatInputBox/*`, `src/app-shell-parts/threadEditorPreservation.ts`, `src/features/layout/components/DesktopLayout.tsx`.
 
 This snapshot is evidence-oriented. It does not claim full product QA for each change; archive notes must record the exact focused tests, manual checks, and skipped/platform qualifiers.
@@ -164,6 +168,7 @@ Compatibility boundary: `listClaudeSessions`, `listProjectRelatedCodexSessions`,
 
 ## Update History
 
+- 2026-05-24: Added active change `stabilize-runtime-performance-evidence-gates` and detected active change `fix-claude-issue529-second-turn-blank-session` in the current workspace. Workspace counts are now active=32, archive=318, specs=271; completed active task sets=31 and only `add-codex-structured-launch-profile` remains in-progress. Runtime performance evidence is now classified as measured/proxy/unsupported/manual-only in `docs/perf/runtime-evidence-gates.{json,md}` and archive-readiness/compatibility cleanup guidance is recorded in `openspec/docs/runtime-evidence-gates-2026-05-24.md`; Messages timeline virtualizer teardown cleanup is the only runtime behavior change in this refresh.
 - 2026-05-24: Recalibrated session-management and stale-thread recovery proposals after code/proposal audit. Workspace counts are now active=30, archive=318, specs=271; only `add-codex-structured-launch-profile` remains in-progress. Recorded local manual QA qualifiers and the missing Windows coverage boundary in `openspec/docs/session-management-refactor-closeout-2026-05-24.md`; retained compatibility APIs as intentional compatibility / diagnostic paths rather than dead code.
 - 2026-05-23: Refreshed active proposal inventory against `feature/v0.5.2` without code changes. Historical snapshot before the 2026-05-24 calibration: active changes 28, archive 318, specs 271. Added `openspec/docs/proposal-refresh-2026-05-23.md` and injected 2026-05-23 proposal refresh notes into active proposal docs. At that time `add-codex-structured-launch-profile` and `harden-claude-sidebar-list-timeout-fallback` were the only in-progress active changes; this row is superseded by the 2026-05-24 update above.
 - 2026-05-20: Added active change `advance-harness-governance-to-90` to coordinate the remaining harness governance readiness work. Calibrated the current state as first-slice foundation-ready rather than fully closed: evidence bridge, policy chain, audit surface, event runtime, batching, virtualization, chunking, and one hub split exist, but live snapshot injection, artifact-backed gate evidence, first runtime domain-event adoption, browser scroll evidence, and webview timing evidence remain open. Refreshed inventory to active=12, archive=316, specs=269.
