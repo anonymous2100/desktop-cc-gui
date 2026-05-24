@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-15.md`
-- **Total Sessions**: 560
+- **Total Sessions**: 561
 - **Last Active**: 2026-05-24
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-15.md` | ~1936 | Active |
+| `journal-15.md` | ~1996 | Active |
 | `journal-14.md` | ~1969 | Archived |
 | `journal-13.md` | ~1947 | Archived |
 | `journal-12.md` | ~1971 | Archived |
@@ -43,6 +43,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 561 | 2026-05-24 | 收紧会话恢复与目录全量水合 | `b7083ebf` | `feature/v0.5.2` |
 | 560 | 2026-05-24 | 收紧会话目录事实边界 | `6fe26f34` | `feature/v0.5.2` |
 | 559 | 2026-05-23 | 收尾 Claude sidebar fallback 自动化门禁 | `d53657ef` | `feature/v0.5.2` |
 | 558 | 2026-05-23 | 刷新 OpenSpec 提案状态与项目索引 | `be870fef` | `feature/v0.5.2` |

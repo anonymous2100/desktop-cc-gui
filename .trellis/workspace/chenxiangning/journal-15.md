@@ -1934,3 +1934,63 @@ Validation:
 ### Next Steps
 
 - None - task complete
+
+
+## Session 561: 收紧会话恢复与目录全量水合
+
+**Date**: 2026-05-24
+**Task**: 收紧会话恢复与目录全量水合
+**Branch**: `feature/v0.5.2`
+
+### Summary
+
+(Add summary)
+
+### Main Changes
+
+## Summary
+
+完成 OpenSpec change `fix-stale-thread-recovery-confidence-gates` 的代码实现与提案回写，修复 Claude/Codex 会话恢复、Sidebar 会话列表对齐和 Windows Claude 运行态可见性问题。
+
+## Key Changes
+
+- 阻止 finalized native session identity 被 realtime `thread_session_id_updated` 或历史 `threadAliases` 改绑到另一个 finalized session。
+- 将 active Sidebar 项目会话列表统一为 `full-catalog` fact source，去掉 startup `first-page` 子集写入。
+- 让 active project `full-catalog` 内部消费 catalog `nextCursor`，直到无下一页或进入明确 degraded stop。
+- 修正 catalog `partialSource` 和 pagination 的边界，避免无真实 cursor 时显示 “加载更早的...”。
+- 手动/业务 tracked refresh 默认保持 `on-demand / full-catalog`，避免后续刷新把完整列表覆盖成子集。
+- Windows Claude command/tool/file/terminal 事件作为 non-text runtime progress，避免后端已有信息时误报 first-token pending。
+- 增加 recovery diagnostics、focused tests、OpenSpec proposal/design/tasks/specs 回写。
+
+## Validation
+
+- `npx vitest run src/features/threads/hooks/useThreadActionsSessionCatalog.test.tsx src/app-shell-parts/useWorkspaceThreadListHydration.test.tsx src/features/threads/hooks/useThreadActions.test.tsx src/features/threads/hooks/useThreadActions.threadList.test.ts src/features/threads/hooks/useThreadActions.helpers.test.ts src/features/threads/hooks/useThreadEventHandlers.test.ts src/features/threads/utils/streamLatencyDiagnostics.test.ts src/features/threads/utils/threadStorage.test.ts src/features/threads/hooks/useThreadTurnEvents.test.tsx src/features/threads/hooks/useThreads.sidebar-cache.test.tsx`
+- `cargo test --manifest-path src-tauri/Cargo.toml claude_history`
+- `npm run typecheck`
+- `npm run lint`
+- `npm run check:large-files:gate`
+- `npm run check:heavy-test-noise`
+- `openspec validate fix-stale-thread-recovery-confidence-gates --strict --no-interactive`
+
+## Remaining Manual Scope
+
+- 真实 Windows + Claude Code 手工烟测仍需补：large-context reopen、command-progress waiting、slow visible text、Sidebar/Strict count alignment、manual tracked refresh stability。
+
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `b7083ebf` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
