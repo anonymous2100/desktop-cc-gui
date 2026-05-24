@@ -354,3 +354,54 @@
 ### Next Steps
 
 - None - task complete
+
+
+## Session 570: 收敛文件底部标注交互
+
+**Date**: 2026-05-24
+**Task**: 收敛文件底部标注交互
+**Branch**: `feature/v0.5.2`
+
+### Summary
+
+(Add summary)
+
+### Main Changes
+
+| 项目 | 说明 |
+|------|------|
+| 文件底部栏 | 将编辑态 `标注给 AI` 收敛到底部当前文件栏，移除顶部标注入口与路径状态 toggle。 |
+| 视觉收敛 | 去掉底部当前文件栏、行号、标注按钮、操作按钮和 Finder 控件的多余边框，降低底部栏视觉噪声。 |
+| CodeMirror 回归 | 新增 `resolveEditorAnnotationWidgetOrder`，按 line/side/order 排序 marker 与 draft widget，防止 RangeSetBuilder 顺序错误。 |
+| OpenSpec | 补齐 `refactor-file-open-rendering-scheduler` 的 proposal/design/spec/tasks/evidence，固化 footer-scoped annotation 与 widget 排序契约。 |
+| 验证 | `FileViewPanel.test.tsx` 61 tests passed；`npm run typecheck` passed；`openspec validate refactor-file-open-rendering-scheduler --strict --no-interactive` passed。 |
+
+**Updated Files**:
+- `src/features/files/components/FileViewPanel.tsx`
+- `src/features/files/components/FileViewPanel.test.tsx`
+- `src/styles/file-view-panel.css`
+- `src/styles/file-view-panel.footer.css`
+- `openspec/changes/refactor-file-open-rendering-scheduler/proposal.md`
+- `openspec/changes/refactor-file-open-rendering-scheduler/design.md`
+- `openspec/changes/refactor-file-open-rendering-scheduler/tasks.md`
+- `openspec/changes/refactor-file-open-rendering-scheduler/specs/file-open-rendering-scheduler/spec.md`
+- `openspec/changes/refactor-file-open-rendering-scheduler/implementation-evidence.md`
+
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `33a84e1a` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
