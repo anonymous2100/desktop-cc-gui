@@ -1402,22 +1402,40 @@ fn folder_exists(metadata: &WorkspaceSessionCatalogMetadata, folder_id: &str) ->
     metadata.folders.iter().any(|folder| folder.id == folder_id)
 }
 
-fn folder_has_child_folders(metadata: &WorkspaceSessionCatalogMetadata, folder_id: &str) -> bool {
-    metadata
-        .folders
-        .iter()
-        .any(|folder| folder.parent_id.as_deref() == Some(folder_id))
-}
-
-fn existing_catalog_assignment_keys_for_folder(
-    entries: &[WorkspaceSessionCatalogEntry],
+fn folder_subtree_ids(
+    metadata: &WorkspaceSessionCatalogMetadata,
     folder_id: &str,
 ) -> HashSet<String> {
-    entries
-        .iter()
-        .filter(|entry| entry.exists_on_disk && entry.folder_id.as_deref() == Some(folder_id))
-        .flat_map(catalog_metadata_lookup_keys_for_entry)
-        .collect()
+    let mut subtree_ids = HashSet::from([folder_id.to_string()]);
+    loop {
+        let previous_len = subtree_ids.len();
+        for folder in &metadata.folders {
+            let parent_in_subtree = folder
+                .parent_id
+                .as_deref()
+                .map(|parent_id| subtree_ids.contains(parent_id))
+                .unwrap_or(false);
+            if parent_in_subtree {
+                subtree_ids.insert(folder.id.clone());
+            }
+        }
+        if subtree_ids.len() == previous_len {
+            return subtree_ids;
+        }
+    }
+}
+
+fn has_existing_catalog_assignment_in_folders(
+    entries: &[WorkspaceSessionCatalogEntry],
+    folder_ids: &HashSet<String>,
+) -> bool {
+    entries.iter().any(|entry| {
+        entry.exists_on_disk
+            && entry
+                .folder_id
+                .as_ref()
+                .is_some_and(|folder_id| folder_ids.contains(folder_id))
+    })
 }
 
 fn would_create_folder_cycle(
@@ -1800,29 +1818,21 @@ pub(crate) async fn delete_workspace_session_folder_core(
         SessionCatalogScanMode::Exhaustive,
     )
     .await?;
-    let existing_assignment_keys =
-        existing_catalog_assignment_keys_for_folder(&scope_catalog.entries, &folder_id);
 
     with_catalog_metadata_mutation(storage_path, &workspace_id, |metadata| {
         if !folder_exists(metadata, &folder_id) {
             return Err("folder not found".to_string());
         }
-        if folder_has_child_folders(metadata, &folder_id) {
-            return Err("folder is not empty; move or clear its contents first".to_string());
-        }
-        if metadata
-            .folder_id_by_session_id
-            .iter()
-            .any(|(session_key, assigned_folder_id)| {
-                assigned_folder_id == &folder_id && existing_assignment_keys.contains(session_key)
-            })
-        {
+        let subtree_ids = folder_subtree_ids(metadata, &folder_id);
+        if has_existing_catalog_assignment_in_folders(&scope_catalog.entries, &subtree_ids) {
             return Err("folder is not empty; move or clear its contents first".to_string());
         }
         metadata
             .folder_id_by_session_id
-            .retain(|_, assigned_folder_id| assigned_folder_id != &folder_id);
-        metadata.folders.retain(|folder| folder.id != folder_id);
+            .retain(|_, assigned_folder_id| !subtree_ids.contains(assigned_folder_id));
+        metadata
+            .folders
+            .retain(|folder| !subtree_ids.contains(&folder.id));
         Ok(())
     })
 }

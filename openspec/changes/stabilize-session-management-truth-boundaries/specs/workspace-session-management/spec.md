@@ -75,17 +75,19 @@ Session Management delete success MUST be treated as explicit removal evidence a
 - **THEN** the curtain MUST close or otherwise leave loading state
 - **AND** stale async load results for the deleted session MUST NOT reopen or repopulate the curtain
 
-### Requirement: Empty Session Folders MUST Ignore Stale Assignment Metadata
+### Requirement: Empty Session Folder Subtrees MUST Be Deletable
 
-Session Management folder deletion MUST distinguish real existing session assignments from stale metadata-only folder assignments. A folder that has no child folders and no existing catalog entry assigned to it MUST be deletable even if `folderIdBySessionId` still contains orphaned keys pointing at that folder; deleting it MUST remove those stale assignment keys.
+Session Management folder deletion MUST distinguish real existing session assignments from structural child folders and stale metadata-only folder assignments. A folder subtree that has no existing catalog entry assigned anywhere inside it MUST be deletable even if it contains child folders or `folderIdBySessionId` still contains orphaned keys pointing inside that subtree; deleting it MUST remove the folder subtree and those stale assignment keys.
 
-#### Scenario: zero-count folder contains stale assignment metadata
+#### Scenario: zero-count folder subtree contains stale assignment metadata
 - **WHEN** the visible strict project folder count is zero
-- **AND** the folder has no child folders
+- **AND** the target folder subtree has no existing catalog entries
+- **AND** the subtree may contain child folders
 - **AND** the only folder assignments are metadata keys for sessions that do not exist in the current catalog
 - **THEN** deleting the folder MUST succeed
-- **AND** stale assignment metadata pointing at that folder MUST be removed
+- **AND** child folders inside that empty subtree MUST be removed
+- **AND** stale assignment metadata pointing inside that subtree MUST be removed
 
-#### Scenario: folder still contains a real session
-- **WHEN** a folder has an existing catalog entry assigned to it
+#### Scenario: folder subtree still contains a real session
+- **WHEN** a folder or any descendant folder has an existing catalog entry assigned to it
 - **THEN** deleting the folder MUST still fail with a non-empty folder error
