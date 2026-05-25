@@ -802,3 +802,36 @@
 ### Next Steps
 
 - None - task complete
+
+
+## Session 581: 删除会话文件夹时保留并提升会话
+
+**Date**: 2026-05-26
+**Task**: 删除会话文件夹时保留并提升会话
+**Branch**: `feature/v0.5.3`
+
+### Summary
+
+将 folder delete 改为删除组织容器：移除 folder subtree，不再因真实 session 阻断；subtree 内 assignment 提升到父 folder 或 root，并更新 OpenSpec 与 Rust 回归。
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `934447de` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
