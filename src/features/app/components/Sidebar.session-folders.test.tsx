@@ -1,5 +1,13 @@
 // @vitest-environment jsdom
-import { act, cleanup, fireEvent, render, screen, within } from "@testing-library/react";
+import {
+  act,
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createRef } from "react";
 import { afterEach } from "vitest";
@@ -787,13 +795,17 @@ describe("Sidebar workspace session folders", () => {
       />,
     );
 
-    const parentRow = await screen.findByRole("treeitem", { name: "Parent session" });
-    fireEvent.contextMenu(parentRow.closest(".thread-row") as HTMLElement);
+    const parentRow = await screen.findByText("Parent session");
+    await act(async () => {
+      fireEvent.contextMenu(parentRow.closest(".thread-row") as HTMLElement);
+    });
     const threadMenu = await screen.findByRole("menu", { name: "threads.threadActions" });
     const moveToFolderTrigger = within(threadMenu).getByRole("menuitem", {
       name: "Move to folder",
     });
-    fireEvent.mouseEnter(moveToFolderTrigger);
+    await act(async () => {
+      fireEvent.mouseEnter(moveToFolderTrigger);
+    });
     const moveSubmenu = await screen.findByRole("menu", { name: "Move to folder" });
 
     await act(async () => {
@@ -872,16 +884,22 @@ describe("Sidebar workspace session folders", () => {
     );
 
     const folderRow = await screen.findByRole("treeitem", { name: "Planning" });
-    fireEvent.click(within(folderRow).getByRole("button", { name: "Delete folder" }));
+    await act(async () => {
+      fireEvent.click(within(folderRow).getByRole("button", { name: "Delete folder" }));
+    });
 
     expect(confirmSpy).not.toHaveBeenCalled();
     expect(deleteWorkspaceSessionFolder).not.toHaveBeenCalled();
     expect(screen.getByRole("dialog", { name: "Delete folder" })).toBeTruthy();
     expect(screen.getByText("Delete folder message")).toBeTruthy();
     const deleteDialog = screen.getByRole("dialog", { name: "Delete folder" });
-    fireEvent.click(within(deleteDialog).getByRole("button", { name: "Delete" }));
+    await act(async () => {
+      fireEvent.click(within(deleteDialog).getByRole("button", { name: "Delete" }));
+    });
 
-    expect(deleteWorkspaceSessionFolder).toHaveBeenCalledWith("ws-1", "folder-parent");
+    await waitFor(() => {
+      expect(deleteWorkspaceSessionFolder).toHaveBeenCalledWith("ws-1", "folder-parent");
+    });
     expect(await screen.findByRole("treeitem", { name: "Planning" })).toBeTruthy();
     expect(pushErrorToast).toHaveBeenCalledWith(
       expect.objectContaining({
