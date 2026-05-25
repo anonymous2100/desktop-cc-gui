@@ -769,3 +769,36 @@
 ### Next Steps
 
 - None - task complete
+
+
+## Session 580: 修正空会话文件夹树删除语义
+
+**Date**: 2026-05-26
+**Task**: 修正空会话文件夹树删除语义
+**Branch**: `feature/v0.5.3`
+
+### Summary
+
+将 session folder delete 从单 folder 判定修正为 subtree-aware：空子文件夹树可删除，真实 session 出现在任意子孙 folder 时仍阻断，并同步 OpenSpec 与 Rust 回归。
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `3303f64e` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
