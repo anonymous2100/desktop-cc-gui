@@ -63,7 +63,7 @@ vi.mock("../../shared-session/runtime/sendSharedSessionTurn", () => ({
 export const workspace: WorkspaceInfo = {
   id: "ws-1",
   name: "ccgui",
-  path: "/tmp/mossx",
+  path: "/tmp/ccgui-workspace",
   connected: true,
   settings: { sidebarCollapsed: false },
 };
