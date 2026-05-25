@@ -787,13 +787,17 @@ describe("Sidebar workspace session folders", () => {
       />,
     );
 
-    const parentRow = await screen.findByText("Parent session");
+    const parentRow = await screen.findByRole("treeitem", { name: "Parent session" });
     fireEvent.contextMenu(parentRow.closest(".thread-row") as HTMLElement);
     const threadMenu = await screen.findByRole("menu", { name: "threads.threadActions" });
-    fireEvent.mouseEnter(within(threadMenu).getByRole("menuitem", { name: "Move to folder" }));
+    const moveToFolderTrigger = within(threadMenu).getByRole("menuitem", {
+      name: "Move to folder",
+    });
+    fireEvent.mouseEnter(moveToFolderTrigger);
+    const moveSubmenu = await screen.findByRole("menu", { name: "Move to folder" });
 
     await act(async () => {
-      fireEvent.click(await screen.findByRole("menuitem", { name: "Planning" }));
+      fireEvent.click(within(moveSubmenu).getByRole("menuitem", { name: "Planning" }));
     });
 
     expect(assignWorkspaceSessionFolders).toHaveBeenCalledTimes(1);
@@ -867,17 +871,18 @@ describe("Sidebar workspace session folders", () => {
       />,
     );
 
-    expect(await screen.findByText("Planning")).toBeTruthy();
-    fireEvent.click(screen.getByRole("button", { name: "Delete folder" }));
+    const folderRow = await screen.findByRole("treeitem", { name: "Planning" });
+    fireEvent.click(within(folderRow).getByRole("button", { name: "Delete folder" }));
 
     expect(confirmSpy).not.toHaveBeenCalled();
     expect(deleteWorkspaceSessionFolder).not.toHaveBeenCalled();
     expect(screen.getByRole("dialog", { name: "Delete folder" })).toBeTruthy();
     expect(screen.getByText("Delete folder message")).toBeTruthy();
-    fireEvent.click(screen.getByRole("button", { name: "Delete" }));
+    const deleteDialog = screen.getByRole("dialog", { name: "Delete folder" });
+    fireEvent.click(within(deleteDialog).getByRole("button", { name: "Delete" }));
 
     expect(deleteWorkspaceSessionFolder).toHaveBeenCalledWith("ws-1", "folder-parent");
-    expect(await screen.findByText("Planning")).toBeTruthy();
+    expect(await screen.findByRole("treeitem", { name: "Planning" })).toBeTruthy();
     expect(pushErrorToast).toHaveBeenCalledWith(
       expect.objectContaining({
         title: "Could not delete folder",
