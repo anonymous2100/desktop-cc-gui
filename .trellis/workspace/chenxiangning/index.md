@@ -8,8 +8,8 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-16.md`
-- **Total Sessions**: 578
-- **Last Active**: 2026-05-25
+- **Total Sessions**: 579
+- **Last Active**: 2026-05-26
 <!-- @@@/auto:current-status -->
 
 ---
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-16.md` | ~738 | Active |
+| `journal-16.md` | ~771 | Active |
 | `journal-15.md` | ~1996 | Archived |
 | `journal-14.md` | ~1969 | Archived |
 | `journal-13.md` | ~1947 | Archived |
@@ -44,6 +44,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 579 | 2026-05-26 | 修复空会话文件夹删除误判 | `957a8c35` | `feature/v0.5.3` |
 | 578 | 2026-05-25 | 收敛会话删除同步状态 | `561042d1` | `feature/v0.5.3` |
 | 577 | 2026-05-25 | 稳定 Sidebar 会话文件夹测试 | `9d5e0a34` | `feature/v0.5.3` |
 | 576 | 2026-05-25 | 稳定 Sidebar 会话文件夹测试 | `032998db` | `feature/v0.5.3` |

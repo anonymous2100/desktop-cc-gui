@@ -736,3 +736,36 @@
 ### Next Steps
 
 - None - task complete
+
+
+## Session 579: 修复空会话文件夹删除误判
+
+**Date**: 2026-05-26
+**Task**: 修复空会话文件夹删除误判
+**Branch**: `feature/v0.5.3`
+
+### Summary
+
+让 session folder delete 基于真实 catalog assignment 判空；仅剩 stale folderIdBySessionId metadata 时允许删除并清理 orphan keys，同时补 OpenSpec contract 与 Rust 回归。
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `957a8c35` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
