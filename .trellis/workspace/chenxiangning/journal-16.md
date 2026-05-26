@@ -1344,3 +1344,44 @@ CI 中 SettingsView 删除会话测试仍断言旧刷新签名；更新为包含
 ### Next Steps
 
 - None - task complete
+
+
+## Session 593: Project Map 生成链路收口
+
+**Date**: 2026-05-27
+**Task**: Project Map 生成链路收口
+**Branch**: `feature/v0.5.3`
+
+### Summary
+
+(Add summary)
+
+### Main Changes
+
+| Area | Summary |
+|------|---------|
+| Auto Ingestion | 接通自动补充的 engine/model 启用确认、root-reachable 拓扑归一化、非 JSON 输出的一次 JSON-only repair。 |
+| Diagram Artifacts | 增加节点 Mermaid Markdown sidecar artifact 链路、persistence/Tauri allowlist、inspector link 展示。 |
+| OpenSpec | 回写并校验 `wire-project-map-auto-ingestion` 与 `add-project-map-node-diagram-artifacts` 两个 change。 |
+| Validation | 通过 Project Map focused Vitest、TypeScript typecheck、OpenSpec strict validate、Tauri project-map / external preview focused tests、git diff check。 |
+
+**Code Commit**: `709d62bd fix(project-map): 稳定知识地图生成链路`
+
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `709d62bd` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
