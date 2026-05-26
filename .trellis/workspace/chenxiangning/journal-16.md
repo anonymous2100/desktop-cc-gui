@@ -1509,3 +1509,68 @@ CI 中 SettingsView 删除会话测试仍断言旧刷新签名；更新为包含
 ### Next Steps
 
 - None - task complete
+
+
+## Session 597: Project Map 边界兼容性收口
+
+**Date**: 2026-05-27
+**Task**: Project Map 边界兼容性收口
+**Branch**: `feature/v0.5.3`
+
+### Summary
+
+(Add summary)
+
+### Main Changes
+
+## Summary
+- 完成 Project Map 近两天变更的边界条件与跨平台兼容性 review/fix。
+- 新增 evidence path 统一归一化与安全过滤，覆盖 Windows 分隔符、reserved device names、绝对路径、parent traversal、异常后缀等输入。
+- 修复 Tauri Project Map atomic write 在 Windows 下 rename 覆盖差异，并补充 reserved path stem 检查。
+- 增强 Project Map persistence 对空值、坏节点、NaN/Infinity、异常 artifacts、diagram/lens id 的防御。
+- 修复 heavy-test-noise 暴露的 client documentation 缺口。
+- 按 large-file governance 建议拆分 ProjectMapPanel trace chips、task drawer、display helpers，并回写 OpenSpec proposal / verification / design。
+
+## Validation
+- npm exec vitest run src/features/project-map/components/ProjectMapPanel.test.tsx src/features/project-map/services/projectMapGenerationWorker.test.ts src/features/project-map/services/projectMapPersistence.test.ts src/features/project-map/utils/evidencePaths.test.ts src/features/project-map/utils/autoIngestion.test.ts
+- npm run typecheck
+- cargo test --manifest-path src-tauri/Cargo.toml project_map
+- npm run check:large-files:near-threshold
+- npm run check:large-files:gate
+- npm run check:heavy-test-noise
+- openspec validate stabilize-project-map-incremental-generation --strict
+- openspec validate wire-project-map-auto-ingestion --strict
+- git diff --check
+
+## Key Files
+- src/features/project-map/utils/evidencePaths.ts
+- src/features/project-map/components/ProjectMapPanel.tsx
+- src/features/project-map/components/ProjectMapTaskDrawer.tsx
+- src/features/project-map/components/ProjectMapTraceChips.tsx
+- src/features/project-map/utils/display.ts
+- src/features/project-map/services/projectMapPersistence.ts
+- src/features/project-map/services/projectMapGenerationWorker.ts
+- src/features/project-map/utils/autoIngestion.ts
+- src-tauri/src/project_map.rs
+- src/features/client-documentation/clientDocumentationData.ts
+- openspec/changes/stabilize-project-map-incremental-generation/
+- openspec/changes/wire-project-map-auto-ingestion/
+
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `4b215d62` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
