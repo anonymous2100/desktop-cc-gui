@@ -3,6 +3,7 @@ import { invoke } from "@tauri-apps/api/core";
 import type {
   ProjectMapAutoIngestionSettings,
   ProjectMapCandidate,
+  ProjectMapDiagramDocument,
   ProjectMapDataset,
   ProjectMapEvidenceRecord,
   ProjectMapLens,
@@ -15,6 +16,7 @@ import type {
   ProjectMapStorageLocation,
   ProjectMapViewState,
 } from "../types";
+import { normalizeProjectMapNodeTopology } from "../utils/incrementalGeneration";
 import { deriveProjectMapStorageKey } from "../utils/storageKey";
 
 export const PROJECT_MAP_SCHEMA_VERSION = 2;
@@ -36,6 +38,7 @@ export type ProjectMapReadResponse = {
   candidates: Record<string, unknown>;
   evidence: Record<string, unknown>;
   runs: Record<string, unknown>;
+  diagrams?: unknown;
 };
 
 export type ProjectMapWriteFile = {
@@ -180,6 +183,7 @@ export function createEmptyProjectMapDataset(input: {
     runs: [],
     candidates: [],
     evidenceRecords: [],
+    diagramDocuments: [],
     autoIngestionSettings: { ...DEFAULT_AUTO_INGESTION_SETTINGS },
     memoryCursor: {
       lastCheckedAt: DEFAULT_MEMORY_CURSOR.lastCheckedAt,
@@ -273,6 +277,17 @@ function isProjectMapCandidate(value: unknown): value is ProjectMapCandidate {
 
 function isProjectMapEvidenceRecord(value: unknown): value is ProjectMapEvidenceRecord {
   return isRecord(value) && typeof value.id === "string" && isRecord(value.source);
+}
+
+function isProjectMapDiagramDocument(value: unknown): value is ProjectMapDiagramDocument {
+  return (
+    isRecord(value) &&
+    typeof value.id === "string" &&
+    typeof value.nodeId === "string" &&
+    typeof value.title === "string" &&
+    typeof value.relativePath === "string" &&
+    typeof value.path === "string"
+  );
 }
 
 function sanitizeManifest(
@@ -410,8 +425,11 @@ export function buildDatasetFromProjectMapRead(
     isRecord(response.lenses) ? response.lenses.items : response.lenses,
     isProjectMapLens,
   );
-  const nodes = Object.values(response.lensNodes).flatMap((value) =>
-    safeArray(isRecord(value) ? value.items : value, isProjectMapNode),
+  const nodes = normalizeProjectMapNodeTopology(
+    Object.values(response.lensNodes).flatMap((value) =>
+      safeArray(isRecord(value) ? value.items : value, isProjectMapNode),
+    ),
+    { attachOrphansToRoot: true },
   );
 
   if (!manifest || !profile) {
@@ -432,6 +450,10 @@ export function buildDatasetFromProjectMapRead(
     ),
     evidenceRecords: Object.values(response.evidence).flatMap((value) =>
       safeArray(isRecord(value) ? value.items : [value], isProjectMapEvidenceRecord),
+    ),
+    diagramDocuments: safeArray(
+      isRecord(response.diagrams) ? response.diagrams.items : response.diagrams,
+      isProjectMapDiagramDocument,
     ),
     autoIngestionSettings: sanitizeSettings(response.settings),
     memoryCursor: sanitizeCursor(response.cursor),
@@ -467,7 +489,18 @@ export function serializeProjectMapDataset(dataset: ProjectMapDataset): ProjectM
       relativePath: "evidence/latest.json",
       content: JSON.stringify({ items: dataset.evidenceRecords ?? [] }, null, 2),
     },
+    {
+      relativePath: "diagrams/manifest.json",
+      content: JSON.stringify({ items: dataset.diagramDocuments ?? [] }, null, 2),
+    },
   ];
+
+  for (const diagram of dataset.diagramDocuments ?? []) {
+    files.push({
+      relativePath: diagram.relativePath,
+      content: diagram.content,
+    });
+  }
 
   for (const lensId of lensIds) {
     const lensPathSegment = lensPathSegmentById.get(lensId) ?? "overview";

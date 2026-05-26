@@ -24,6 +24,10 @@ This creates a misleading product surface. Users see a scheduler-like control, b
 - The scheduler will respect `checkIntervalMinutes`, last check time, active queued/running auto runs, and React StrictMode remounts.
 - The auto run will carry Project Memory evidence into the worker prompt and use the existing Project Map queue/active-slot lifecycle.
 - Default `createCandidate` mode will keep generated updates as candidate nodes for manual confirm/reject.
+- Auto-generated nodes will be normalized into the existing root topology so automatic ingestion cannot create unreachable orphan subgraphs.
+- Enabling Auto Ingestion will require an explicit engine/model confirmation before `enabled=true` is persisted, preventing hidden fallback runs such as `codex/default`.
+- Worker validation will perform one JSON-only repair turn when the first AI response is natural language or malformed JSON, then keep the run failed if the repaired response is still invalid.
+- Generation and Auto Ingestion configuration dialogs will use content-adaptive width: the current compact dialog width is the minimum desktop width, while longer paths/source chips may expand the dialog up to the viewport-safe maximum instead of clipping labels or forcing awkward horizontal overflow.
 - `autoApplyEvidenceBacked` remains visible as an advanced option only if it has an explicit path; otherwise it must not silently disable ingestion.
 
 ## 技术方案对比
@@ -65,9 +69,12 @@ Use Option B. It is the least surprising architecture: Auto Ingestion becomes an
   - `src/features/project-map/types.ts`
   - `src/i18n/locales/*.part5.ts`
 - Affected behavior:
-  - Auto Ingestion footer settings become operational.
-  - Automatic work is visible in the Project Map background task drawer.
-  - Project Memory messages are marked processed only after a successful auto run.
+- Auto Ingestion footer settings become operational.
+- Automatic work is visible in the Project Map background task drawer.
+- Project Memory messages are marked processed only after a successful auto run.
+- Auto-generated nodes remain reachable from the Project Map root, including when the AI payload omits the existing parent node.
+- The enable flow stores the selected engine/model with the setting before any scheduler run can start.
+- Non-JSON AI output gets one bounded repair retry through the same engine/model before the run is marked failed.
 - Dependencies:
   - No new external dependency.
 
@@ -78,3 +85,7 @@ Use Option B. It is the least surprising architecture: Auto Ingestion becomes an
 - Auto Ingestion does not queue duplicate auto runs while one is pending or running.
 - Successful auto runs mark consumed Project Memory messages processed; failed runs do not.
 - Default `createCandidate` mode produces candidate state requiring manual confirmation rather than silently mutating active map facts.
+- Auto Ingestion merge/read paths preserve a single root-reachable graph topology and repair persisted orphan roots.
+- Clicking enable shows engine/model selection first; cancelling keeps Auto Ingestion disabled, and confirming persists the chosen engine/model.
+- If the first AI response does not contain a valid Project Map JSON payload, the worker requests one JSON-only repair response and succeeds only when that repaired payload validates.
+- Configuration dialogs keep their compact baseline width for normal content, expand when read sources or write paths need more room, and still collapse to a single-column viewport-safe layout on narrow screens.

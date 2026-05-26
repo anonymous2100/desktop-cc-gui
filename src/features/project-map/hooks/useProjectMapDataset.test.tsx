@@ -168,6 +168,8 @@ function datasetWithAutoIngestion(input: {
   threshold?: number;
   interval?: number;
   lastCheckedAt?: string;
+  engine?: string;
+  model?: string;
 }): ProjectMapDataset {
   const dataset = datasetWithPromptNodes(input);
   return {
@@ -175,6 +177,8 @@ function datasetWithAutoIngestion(input: {
     autoIngestionSettings: {
       ...dataset.autoIngestionSettings,
       enabled: true,
+      engine: input.engine ?? dataset.autoIngestionSettings.engine,
+      model: input.model ?? dataset.autoIngestionSettings.model,
       newSessionThreshold: input.threshold ?? 1,
       checkIntervalMinutes: input.interval ?? 5,
       applyMode: "createCandidate",
@@ -1058,7 +1062,12 @@ describe("useProjectMapDataset", () => {
       workspaceId: spring.id,
     });
     vi.mocked(readProjectMapDataset).mockResolvedValue({
-      dataset: datasetWithAutoIngestion({ workspace: spring, storageKey: springKey }),
+      dataset: datasetWithAutoIngestion({
+        workspace: spring,
+        storageKey: springKey,
+        engine: "claude",
+        model: "claude-sonnet-4-5",
+      }),
       response: emptyReadResponse(springKey, `/repo/springboot-demo/.ccgui/project-map/${springKey}`),
     });
     vi.mocked(projectMemoryList).mockResolvedValue({
@@ -1079,6 +1088,8 @@ describe("useProjectMapDataset", () => {
               expect.objectContaining({
                 kind: "auto",
                 status: "pending",
+                engine: "claude",
+                model: "claude-sonnet-4-5",
                 requestScope: { kind: "auto", messageHashes: [expect.any(String)] },
                 generationIntent: "autoIngestion",
                 autoIngestion: expect.objectContaining({

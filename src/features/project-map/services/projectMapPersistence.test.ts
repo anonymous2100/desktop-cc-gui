@@ -13,6 +13,20 @@ describe("project map persistence mapper", () => {
       ...mockProjectMapData,
       candidates: [],
       evidenceRecords: [],
+      diagramDocuments: [
+        {
+          id: "auth-service-flow",
+          nodeId: "auth-service",
+          title: "AuthService Token Flow",
+          kind: "sequence",
+          summary: "Token issue and refresh flow.",
+          sourceRefs: ["src/AuthService.ts"],
+          relativePath: "diagrams/auth-service-flow.md",
+          path: "/repo/.ccgui/project-map/mossx-abcd/diagrams/auth-service-flow.md",
+          content: "# AuthService Token Flow\n\n```mermaid\nsequenceDiagram\nA->>B: token\n```\n",
+          createdAt: "2026-05-26T00:00:00.000Z",
+        },
+      ],
     });
 
     expect(files.map((file) => file.relativePath)).toEqual(
@@ -28,8 +42,12 @@ describe("project map persistence mapper", () => {
         "runs/latest.json",
         "candidates/latest.json",
         "evidence/latest.json",
+        "diagrams/manifest.json",
+        "diagrams/auth-service-flow.md",
       ]),
     );
+    expect(files.find((file) => file.relativePath === "diagrams/auth-service-flow.md")?.content)
+      .toContain("sequenceDiagram");
   });
 
   it("serializes unsafe lens ids into platform-safe node file paths", () => {
@@ -101,6 +119,21 @@ describe("project map persistence mapper", () => {
       candidates: {},
       evidence: {},
       runs: {},
+      diagrams: {
+        items: [
+          {
+            id: "auth-service-flow",
+            nodeId: "auth-service",
+            title: "AuthService Token Flow",
+            kind: "sequence",
+            summary: "Token issue and refresh flow.",
+            sourceRefs: ["src/AuthService.ts"],
+            relativePath: "diagrams/auth-service-flow.md",
+            path: "/repo/.ccgui/project-map/mossx-abcd/diagrams/auth-service-flow.md",
+            createdAt: "2026-05-26T00:00:00.000Z",
+          },
+        ],
+      },
     };
 
     const dataset = buildDatasetFromProjectMapRead(response, {
@@ -139,6 +172,10 @@ describe("project map persistence mapper", () => {
       },
     ]);
     expect(dataset?.nodes.length).toBeGreaterThan(0);
+    expect(dataset?.diagramDocuments?.[0]).toMatchObject({
+      id: "auth-service-flow",
+      relativePath: "diagrams/auth-service-flow.md",
+    });
   });
 
   it("loads old snapshots without view-state and ignores malformed layout payloads", () => {
@@ -197,6 +234,42 @@ describe("project map persistence mapper", () => {
       },
       updatedAt: undefined,
     });
+  });
+
+  it("repairs persisted orphan roots so loaded maps remain reachable from the project root", () => {
+    const rootNode = mockProjectMapData.nodes.find((node) => node.id === "project-core")!;
+    const orphanNode = {
+      ...mockProjectMapData.nodes.find((node) => node.id === "hub-api")!,
+      id: "auto-memory-claim",
+      title: "Auto Memory Claim",
+      parentId: undefined,
+      children: [],
+      candidate: true,
+    };
+    const dataset = buildDatasetFromProjectMapRead(
+      {
+        storageKey: "mossx-abcd",
+        storageDir: "/repo/.ccgui/project-map/mossx-abcd",
+        exists: true,
+        manifest: mockProjectMapData.manifest,
+        profile: mockProjectMapData.profile,
+        lenses: { items: mockProjectMapData.lenses },
+        lensNodes: {
+          overview: { items: [rootNode, orphanNode] },
+        },
+        candidates: {},
+        evidence: {},
+        runs: {},
+      },
+      { projectName: "mossx", workspacePath: "/repo", workspaceId: "ws-1" },
+    );
+
+    expect(dataset?.nodes.find((node) => node.id === "auto-memory-claim")).toMatchObject({
+      parentId: "project-core",
+    });
+    expect(dataset?.nodes.find((node) => node.id === "project-core")?.children).toContain(
+      "auto-memory-claim",
+    );
   });
 
   it("restores queued runs even before generated lenses exist", () => {

@@ -71,6 +71,29 @@ export type ProjectMapRelatedArtifact = {
   ref?: string;
 };
 
+export type ProjectMapDiagramArtifact = {
+  id: string;
+  label: string;
+  path: string;
+  kind?: "flowchart" | "sequence" | "state" | "class" | "er" | "timeline" | "mindmap" | "other" | string;
+  summary?: string;
+  sourceRefs?: string[];
+};
+
+export type ProjectMapDiagramDocument = {
+  id: string;
+  nodeId: string;
+  title: string;
+  kind: NonNullable<ProjectMapDiagramArtifact["kind"]>;
+  summary: string;
+  sourceRefs: string[];
+  relativePath: string;
+  path: string;
+  content: string;
+  createdAt: string;
+  updatedAt?: string;
+};
+
 export type ProjectMapSource = {
   type: ProjectMapSourceType;
   label: string;
@@ -93,6 +116,7 @@ export type ProjectMapNodeDetail = {
   keyFacts: string[];
   keyLogic: string[];
   riskSignals: string[];
+  diagramArtifacts?: ProjectMapDiagramArtifact[];
   relatedArtifacts: ProjectMapRelatedArtifact[];
 };
 
@@ -312,6 +336,7 @@ export type ProjectMapDataset = {
   runs: ProjectMapRunMetadata[];
   candidates?: ProjectMapCandidate[];
   evidenceRecords?: ProjectMapEvidenceRecord[];
+  diagramDocuments?: ProjectMapDiagramDocument[];
   autoIngestionSettings: ProjectMapAutoIngestionSettings;
   memoryCursor: ProjectMapMemoryIngestionCursor;
 };

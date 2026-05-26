@@ -179,6 +179,26 @@ describe("ProjectMapPanel", () => {
     expect(screen.getByText("mossx")).toBeTruthy();
   });
 
+  it("requires engine and model selection before enabling auto ingestion", async () => {
+    renderMockProjectMapPanel();
+
+    fireEvent.click(screen.getByRole("checkbox", { name: "projectMap.settings.autoIngestion" }));
+
+    expect(screen.getByRole("dialog", { name: "projectMap.settings.configureAutoIngestion" })).toBeTruthy();
+    expect(screen.getByLabelText("projectMap.settings.engine")).toBeTruthy();
+    expect(screen.getByLabelText("projectMap.settings.model")).toBeTruthy();
+
+    fireEvent.click(screen.getByRole("button", { name: "projectMap.settings.cancelEnable" }));
+
+    await waitFor(() => {
+      expect(screen.queryByRole("dialog", { name: "projectMap.settings.configureAutoIngestion" })).toBeNull();
+    });
+    expect(
+      (screen.getByRole("checkbox", { name: "projectMap.settings.autoIngestion" }) as HTMLInputElement)
+        .checked,
+    ).toBe(false);
+  });
+
   it("keeps crowded overview and focused graph cards mutually exclusive", () => {
     const crowdedDataset = createCrowdedProjectMapDataset();
     const view = render(<ProjectMapPanel workspaceName="mossx" dataset={crowdedDataset} />);
@@ -638,6 +658,16 @@ describe("ProjectMapPanel", () => {
                   { type: "symbol", label: "README.md" },
                   { type: "conversation", label: "Design chat" },
                 ],
+                diagramArtifacts: [
+                  {
+                    id: "auth-service-flow",
+                    label: "AuthService Token Flow",
+                    path: ".ccgui/project-map/mossx-abcd/diagrams/auth-service-flow.md",
+                    kind: "sequence",
+                    summary: "Login and refresh token flow.",
+                    sourceRefs: ["src/AuthService.ts"],
+                  },
+                ],
               },
               sources: [
                 {
@@ -666,6 +696,12 @@ describe("ProjectMapPanel", () => {
     );
 
     const detailPanel = screen.getByLabelText("projectMap.detailPanel");
+    expect(within(detailPanel).getByText("projectMap.detail.diagrams")).toBeTruthy();
+    fireEvent.click(within(detailPanel).getByRole("button", { name: /auth-service-flow\.md/i }));
+    expect(openEvidenceFile).toHaveBeenCalledWith(
+      ".ccgui/project-map/mossx-abcd/diagrams/auth-service-flow.md",
+      undefined,
+    );
     fireEvent.click(within(detailPanel).getByRole("button", { name: /ProjectMapPanel\.tsx:42/i }));
     expect(openEvidenceFile).toHaveBeenCalledWith(
       "src/features/project-map/components/ProjectMapPanel.tsx",

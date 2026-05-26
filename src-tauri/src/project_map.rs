@@ -2,6 +2,7 @@ use std::collections::HashMap;
 use std::fs;
 use std::io::Write;
 use std::path::{Component, Path, PathBuf};
+use std::sync::atomic::{AtomicU64, Ordering};
 
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -10,6 +11,8 @@ use tauri::State;
 use crate::app_paths;
 use crate::state::AppState;
 use crate::types::WorkspaceEntry;
+
+static PROJECT_MAP_ATOMIC_WRITE_COUNTER: AtomicU64 = AtomicU64::new(0);
 
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -28,6 +31,7 @@ pub(crate) struct ProjectMapReadResponse {
     candidates: HashMap<String, Value>,
     evidence: HashMap<String, Value>,
     runs: HashMap<String, Value>,
+    diagrams: Option<Value>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -193,6 +197,11 @@ fn validate_relative_project_map_path(path: &str) -> Result<PathBuf, String> {
         [dir, file] if matches!(dir.as_str(), "runs" | "candidates" | "evidence") => {
             is_safe_project_map_json_file(file)
         }
+        [dir, file] if dir == "diagrams" => {
+            file == "manifest.json"
+                || (file.ends_with(".md")
+                    && is_safe_project_map_segment(file.trim_end_matches(".md")))
+        }
         _ => false,
     };
     if !allowed {
@@ -205,7 +214,8 @@ fn atomic_write(path: &Path, content: &str) -> Result<(), String> {
     if let Some(parent) = path.parent() {
         fs::create_dir_all(parent).map_err(|err| format!("Failed to create directory: {err}"))?;
     }
-    let temp_path = path.with_extension(format!("tmp-{}", std::process::id()));
+    let nonce = PROJECT_MAP_ATOMIC_WRITE_COUNTER.fetch_add(1, Ordering::Relaxed);
+    let temp_path = path.with_extension(format!("tmp-{}-{nonce}", std::process::id()));
     {
         let mut file = fs::File::create(&temp_path)
             .map_err(|err| format!("Failed to create temp project map file: {err}"))?;
@@ -324,6 +334,7 @@ pub(crate) async fn project_map_read(
         candidates: read_json_dir(&root.join("candidates")),
         evidence: read_json_dir(&root.join("evidence")),
         runs: read_json_dir(&root.join("runs")),
+        diagrams: read_json(&root.join("diagrams").join("manifest.json")),
     })
 }
 
@@ -358,10 +369,12 @@ pub(crate) async fn project_map_write_snapshot(
 #[cfg(test)]
 mod tests {
     use super::{
-        hash_workspace_identity, sanitize_project_name, storage_key,
+        atomic_write, hash_workspace_identity, sanitize_project_name, storage_key,
         validate_relative_project_map_path,
     };
     use crate::types::{WorkspaceEntry, WorkspaceKind, WorkspaceSettings};
+    use std::thread;
+    use uuid::Uuid;
 
     #[test]
     fn storage_hash_normalizes_platform_separators() {
@@ -404,12 +417,42 @@ mod tests {
         assert!(validate_relative_project_map_path("lenses/api-domain/nodes.json").is_ok());
         assert!(validate_relative_project_map_path("runs/latest.json").is_ok());
         assert!(validate_relative_project_map_path("evidence/latest.json").is_ok());
+        assert!(validate_relative_project_map_path("diagrams/manifest.json").is_ok());
+        assert!(validate_relative_project_map_path("diagrams/auth-service-flow.md").is_ok());
         assert!(validate_relative_project_map_path("../src/main.rs").is_err());
         assert!(validate_relative_project_map_path("lenses/api/../../manifest.json").is_err());
         assert!(validate_relative_project_map_path("lenses/api/domain/nodes.json").is_err());
         assert!(validate_relative_project_map_path("lenses/API/nodes.json").is_err());
         assert!(validate_relative_project_map_path("lenses/con/nodes.json").is_err());
         assert!(validate_relative_project_map_path("runs/archive/latest.json").is_err());
+        assert!(validate_relative_project_map_path("diagrams/auth/service.md").is_err());
+        assert!(validate_relative_project_map_path("diagrams/auth-service-flow.json").is_err());
+        assert!(validate_relative_project_map_path("diagrams/CON.md").is_err());
         assert!(validate_relative_project_map_path("random.json").is_err());
+    }
+
+    #[test]
+    fn atomic_write_supports_concurrent_commits_to_same_file() {
+        let root = std::env::temp_dir().join(format!("project-map-atomic-{}", Uuid::new_v4()));
+        let target = root.join("diagrams").join("auth-service-flow.md");
+
+        let handles = (0..8)
+            .map(|index| {
+                let target = target.clone();
+                thread::spawn(move || {
+                    atomic_write(&target, &format!("content-{index}"))
+                        .expect("write should commit");
+                })
+            })
+            .collect::<Vec<_>>();
+
+        for handle in handles {
+            handle.join().expect("thread should finish");
+        }
+
+        let content = std::fs::read_to_string(&target).expect("read committed content");
+        assert!(content.starts_with("content-"));
+
+        std::fs::remove_dir_all(root).expect("cleanup root");
     }
 }

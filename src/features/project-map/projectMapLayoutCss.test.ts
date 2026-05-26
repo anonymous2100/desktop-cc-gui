@@ -8,7 +8,7 @@ const projectMapCss = readFileSync(
 
 function readRuleBody(selector: string): string {
   const escapedSelector = selector.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  const match = projectMapCss.match(new RegExp(`${escapedSelector}\\s*\\{([^}]*)\\}`));
+  const match = projectMapCss.match(new RegExp(`(?:^|\\n)${escapedSelector}\\s*\\{([^}]*)\\}`, "m"));
   return match?.[1] ?? "";
 }
 

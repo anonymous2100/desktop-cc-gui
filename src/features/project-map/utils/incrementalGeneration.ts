@@ -1,5 +1,6 @@
 import type {
   ProjectMapDataset,
+  ProjectMapDiagramArtifact,
   ProjectMapGenerationScope,
   ProjectMapLens,
   ProjectMapLensStats,
@@ -31,6 +32,7 @@ const CONFIDENCE_RANK = {
   medium: 2,
   high: 3,
 } as const;
+const PROJECT_CORE_NODE_ID = "project-core";
 
 function dedupeBy<T>(items: T[], getKey: (item: T) => string): T[] {
   const seen = new Set<string>();
@@ -114,6 +116,14 @@ function artifactKey(artifact: ProjectMapNode["detail"]["relatedArtifacts"][numb
   ].join(":");
 }
 
+function diagramArtifactKey(artifact: ProjectMapDiagramArtifact): string {
+  return [
+    safeKeyText(artifact.id),
+    artifact.path ?? "",
+    safeKeyText(artifact.label),
+  ].join(":");
+}
+
 function textKey(value: string): string {
   return value.trim().replace(/\s+/g, " ").toLowerCase();
 }
@@ -138,6 +148,18 @@ function mergeArtifacts(
       .map(normalizeMergedArtifact)
       .filter((artifact): artifact is ProjectMapRelatedArtifact => Boolean(artifact)),
     artifactKey,
+  );
+}
+
+function mergeDiagramArtifacts(
+  existing: ProjectMapNode["detail"]["diagramArtifacts"] | undefined,
+  generated: ProjectMapNode["detail"]["diagramArtifacts"] | undefined,
+): ProjectMapDiagramArtifact[] {
+  return dedupeBy(
+    [...(existing ?? []), ...(generated ?? [])].filter(
+      (artifact) => artifact.id.trim().length > 0 && artifact.label.trim().length > 0 && artifact.path.trim().length > 0,
+    ),
+    diagramArtifactKey,
   );
 }
 
@@ -319,6 +341,10 @@ function mergeNode(existing: ProjectMapNode, generated: ProjectMapNode): Project
       keyFacts: mergeTextArray(existing.detail.keyFacts, generated.detail.keyFacts),
       keyLogic: mergeTextArray(existing.detail.keyLogic, generated.detail.keyLogic),
       riskSignals: mergeTextArray(existing.detail.riskSignals, generated.detail.riskSignals),
+      diagramArtifacts: mergeDiagramArtifacts(
+        existing.detail.diagramArtifacts,
+        generated.detail.diagramArtifacts,
+      ),
       relatedArtifacts: mergeArtifacts(
         existing.detail.relatedArtifacts,
         generated.detail.relatedArtifacts,
@@ -335,11 +361,41 @@ function mergeNode(existing: ProjectMapNode, generated: ProjectMapNode): Project
   };
 }
 
-function normalizeChildren(nodes: ProjectMapNode[]): ProjectMapNode[] {
+function getProjectMapMergeRoot(nodes: ProjectMapNode[]): ProjectMapNode | null {
+  return (
+    nodes.find((node) => node.id === PROJECT_CORE_NODE_ID) ??
+    nodes.find((node) => !node.parentId) ??
+    nodes[0] ??
+    null
+  );
+}
+
+export function normalizeProjectMapNodeTopology(
+  nodes: ProjectMapNode[],
+  options: { attachOrphansToRoot?: boolean } = {},
+): ProjectMapNode[] {
   const nodeIds = new Set(nodes.map((node) => node.id));
+  const rootNode = getProjectMapMergeRoot(nodes);
+  const rootNodeId = rootNode?.id ?? null;
+  const normalizedParents = nodes.map((node) => {
+    const parentId =
+      node.parentId && node.parentId !== node.id && nodeIds.has(node.parentId)
+        ? node.parentId
+        : undefined;
+    if (options.attachOrphansToRoot && rootNodeId && node.id !== rootNodeId && !parentId) {
+      return {
+        ...node,
+        parentId: rootNodeId,
+      };
+    }
+    return {
+      ...node,
+      parentId,
+    };
+  });
   const childIdsByParent = new Map<string, string[]>();
-  for (const node of nodes) {
-    if (!node.parentId || !nodeIds.has(node.parentId)) {
+  for (const node of normalizedParents) {
+    if (!node.parentId) {
       continue;
     }
     const children = childIdsByParent.get(node.parentId) ?? [];
@@ -347,9 +403,8 @@ function normalizeChildren(nodes: ProjectMapNode[]): ProjectMapNode[] {
     childIdsByParent.set(node.parentId, children);
   }
 
-  return nodes.map((node) => ({
+  return normalizedParents.map((node) => ({
     ...node,
-    parentId: node.parentId && nodeIds.has(node.parentId) ? node.parentId : undefined,
     children: dedupeBy(
       [...node.children, ...(childIdsByParent.get(node.id) ?? [])].filter(
         (childId) => childId !== node.id && nodeIds.has(childId),
@@ -405,7 +460,9 @@ export function mergeProjectMapGenerationResult(input: MergeInput): {
       allowedExistingIds,
     }),
   );
-  const nodes = normalizeChildren([...mergedExisting, ...appended]);
+  const nodes = normalizeProjectMapNodeTopology([...mergedExisting, ...appended], {
+    attachOrphansToRoot: input.scope.kind === "auto",
+  });
 
   return {
     profile: mergeProfile(input.dataset.profile, input.profile),
@@ -439,7 +496,7 @@ export function pruneProjectMapNode(input: PruneInput): { ok: true; dataset: Pro
   const deletedIds = target.parentId
     ? collectDescendantIds(input.dataset.nodes, input.nodeId)
     : new Set(input.dataset.nodes.map((node) => node.id));
-  const nodes = normalizeChildren(
+  const nodes = normalizeProjectMapNodeTopology(
     input.dataset.nodes
       .filter((node) => !deletedIds.has(node.id))
       .map((node) => ({

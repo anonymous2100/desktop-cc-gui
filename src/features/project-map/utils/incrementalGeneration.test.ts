@@ -75,6 +75,37 @@ describe("project map incremental generation", () => {
     expect(merged.profile.buildSystems).toContain("vite");
   });
 
+  it("attaches auto-ingestion top-level additions to the existing root", () => {
+    const generatedAutoNode = nodePatch(mockProjectMapData.nodes[0]!, {
+      id: "auto-memory-claim",
+      title: "Auto Memory Claim",
+      parentId: undefined,
+      children: [],
+      candidate: true,
+      sources: [{ type: "conversation", label: "memory", path: "src/memory.ts" }],
+    });
+    const scope: ProjectMapRunMetadata["requestScope"] = {
+      kind: "auto",
+      messageHashes: ["hash-1"],
+    };
+
+    const merged = mergeProjectMapGenerationResult({
+      dataset: mockProjectMapData,
+      profile: mockProjectMapData.profile,
+      lenses: mockProjectMapData.lenses,
+      nodes: [generatedAutoNode],
+      scope,
+      run: run(scope),
+    });
+
+    expect(merged.nodes.find((node) => node.id === "auto-memory-claim")).toMatchObject({
+      parentId: "project-core",
+    });
+    expect(merged.nodes.find((node) => node.id === "project-core")?.children).toContain(
+      "auto-memory-claim",
+    );
+  });
+
   it("scopes node completion to the selected node and source-backed children", () => {
     const target = mockProjectMapData.nodes.find((node) => node.id === "hub-api")!;
     const unrelatedBefore = mockProjectMapData.nodes.find((node) => node.id === "hub-risk")!;

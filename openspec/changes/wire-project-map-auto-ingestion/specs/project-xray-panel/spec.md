@@ -52,3 +52,77 @@ The Project Knowledge Map SHALL keep automatic Project Memory ingestion conserva
 - **WHEN** unprocessed Project Memory reaches the threshold
 - **THEN** the system SHALL still enqueue a real auto run
 - **AND** weak or memory-only claims SHALL remain candidates rather than being silently trusted
+
+### Requirement: Auto Ingestion enablement configuration
+
+The Project Knowledge Map SHALL require an explicit engine and model selection before Auto Ingestion becomes enabled.
+
+#### Scenario: Enable flow selects engine and model
+- **GIVEN** Auto Ingestion is currently disabled
+- **WHEN** the user clicks the Auto Ingestion enable control
+- **THEN** the system SHALL show engine and model controls before persisting `enabled=true`
+- **AND** confirmation SHALL persist the selected `engine` and `model` together with `enabled=true`
+
+#### Scenario: Cancelled enable flow remains disabled
+- **GIVEN** Auto Ingestion is currently disabled
+- **WHEN** the user opens the enable configuration flow and cancels it
+- **THEN** the system SHALL keep `enabled=false`
+- **AND** the scheduler SHALL NOT enqueue auto runs from hidden default engine or model values
+
+### Requirement: Auto Ingestion graph reachability
+
+The Project Knowledge Map SHALL preserve a single navigable root topology after automatic ingestion.
+
+#### Scenario: Auto-generated top-level concepts remain reachable
+- **GIVEN** an Auto Ingestion run returns a new node whose parent is the existing project root
+- **AND** the AI payload does not repeat the existing project root node
+- **WHEN** the generated result is merged into the dataset
+- **THEN** the new node SHALL keep its parent link to the existing root
+- **AND** the existing root SHALL include the new node in its children
+
+#### Scenario: Persisted orphan roots are repaired on read
+- **GIVEN** a persisted Project Map snapshot contains non-root nodes with no parent link
+- **WHEN** the snapshot is read into the Project Map dataset
+- **THEN** those orphan nodes SHALL be attached to the project root
+- **AND** the map SHALL remain navigable from the project root
+
+### Requirement: Project Map structured output repair
+
+The Project Knowledge Map worker SHALL keep strict JSON validation while allowing one bounded repair attempt for invalid AI output.
+
+#### Scenario: Non-JSON first response is repaired
+- **GIVEN** a Project Map generation run receives an AI response that does not contain a valid JSON payload
+- **WHEN** the worker detects the structured output validation failure
+- **THEN** the worker SHALL request one JSON-only repair response from the same configured engine and model
+- **AND** the run SHALL continue only if the repaired response validates as a Project Map payload
+
+#### Scenario: Repair failure keeps the run failed
+- **GIVEN** a Project Map generation run receives invalid structured output
+- **AND** the one repair response is also invalid
+- **WHEN** validation completes
+- **THEN** the run SHALL remain failed
+- **AND** no Project Map dataset write or Auto Ingestion processed marker update SHALL be treated as successful
+
+### Requirement: Project Map generation dialog layout
+
+The Project Knowledge Map SHALL render generation configuration dialogs with compact defaults and content-adaptive desktop width.
+
+#### Scenario: Confirmation dialog expands for wide content
+- **GIVEN** the Confirm Generation dialog contains long write paths or multiple read source chips
+- **WHEN** the dialog is rendered on a desktop-sized viewport
+- **THEN** the dialog SHALL keep the existing compact width as its minimum width
+- **AND** the dialog SHALL expand when content needs more horizontal room
+- **AND** the dialog SHALL remain bounded by the viewport-safe maximum width
+- **AND** labels, title text, source chips, and footer actions SHALL NOT be clipped by the dialog edge
+
+#### Scenario: Narrow viewport remains usable
+- **GIVEN** the Confirm Generation dialog is rendered on a narrow viewport
+- **WHEN** available width is below the desktop layout threshold
+- **THEN** the dialog SHALL use a single-column layout
+- **AND** long write paths and source chips SHALL wrap or truncate within the dialog instead of forcing page-level horizontal overflow
+
+#### Scenario: Enable dialog keeps inline model refresh action
+- **GIVEN** the Auto Ingestion enable dialog is rendered with engine and model controls
+- **WHEN** the model refresh action is visible
+- **THEN** the refresh action SHALL share the model control row on desktop
+- **AND** the layout SHALL avoid a dedicated blank row for the refresh action

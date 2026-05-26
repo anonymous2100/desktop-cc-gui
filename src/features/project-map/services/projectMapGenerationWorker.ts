@@ -11,6 +11,8 @@ import type { AppServerEvent } from "../../../types";
 import type { EngineType } from "../../../types";
 import type {
   ProjectMapDataset,
+  ProjectMapDiagramArtifact,
+  ProjectMapDiagramDocument,
   ProjectMapGenerationIntent,
   ProjectMapGenerationScope,
   ProjectMapLens,
@@ -47,6 +49,17 @@ type ProjectMapAiPayload = {
   profile?: ProjectMapProfile;
   lenses?: ProjectMapLens[];
   nodes?: ProjectMapNode[];
+  diagrams?: ProjectMapAiDiagramPayload[];
+};
+
+type ProjectMapAiDiagramPayload = {
+  id?: string;
+  nodeId?: string;
+  title?: string;
+  kind?: string;
+  summary?: string;
+  sourceRefs?: unknown;
+  mermaid?: string;
 };
 
 type CodexTurnWaiter = {
@@ -57,6 +70,7 @@ type CodexTurnWaiter = {
 const MAX_CONTEXT_FILES = 24;
 const MAX_EVIDENCE_PROMPT_CHARS = 52_000;
 const MAX_EVIDENCE_FILE_CHARS = 5_000;
+const MAX_INVALID_OUTPUT_REPAIR_CHARS = 12_000;
 const MIN_EVIDENCE_FILE_CHARS = 900;
 const FILE_HEADER_PROMPT_OVERHEAD = 140;
 const MAX_SAFE_ID_LENGTH = 64;
@@ -70,7 +84,7 @@ const SUPPORTED_SOURCE_TYPES = new Set<ProjectMapSource["type"]>([
   "conversation",
 ]);
 const PROJECT_MAP_JSON_SCHEMA_EXAMPLE =
-  '{"profile": {"primaryLanguage": "unknown", "languages": [], "shapes": [], "frameworks": [], "interfaceKinds": [], "buildSystems": []}, "lenses": [], "nodes": [{"id": "...", "lensId": "...", "nodeKind": "...", "title": "...", "summary": "...", "detail": {"coreDescription": "...", "keyFacts": [], "keyLogic": [], "riskSignals": [], "relatedArtifacts": []}, "parentId": null, "children": [], "sources": [], "confidence": "high|medium|low|unknown", "stale": false, "candidate": false}]}';
+  '{"profile": {"primaryLanguage": "unknown", "languages": [], "shapes": [], "frameworks": [], "interfaceKinds": [], "buildSystems": []}, "lenses": [], "nodes": [{"id": "...", "lensId": "...", "nodeKind": "...", "title": "...", "summary": "...", "detail": {"coreDescription": "...", "keyFacts": [], "keyLogic": [], "riskSignals": [], "diagramArtifacts": [], "relatedArtifacts": []}, "parentId": null, "children": [], "sources": [], "confidence": "high|medium|low|unknown", "stale": false, "candidate": false}], "diagrams": [{"id": "...", "nodeId": "...", "title": "...", "kind": "flowchart|sequence|state|class|er|timeline|mindmap|other", "summary": "...", "sourceRefs": ["path"], "mermaid": "graph TD\\nA-->B"}]}';
 
 const IMPORTANT_FILE_NAMES = new Set([
   "package.json",
@@ -718,8 +732,14 @@ function buildNodeScopeContext(input: {
 }): string {
   const scope = input.scope;
   if (scope.kind !== "node") {
+    const rootNode =
+      input.dataset.nodes.find((node) => node.id === "project-core") ??
+      input.dataset.nodes.find((node) => !node.parentId) ??
+      input.dataset.nodes[0] ??
+      null;
     return [
       `Project: ${input.dataset.manifest.projectName}`,
+      rootNode ? `Root node: ${rootNode.id} | ${rootNode.title}` : "Root node: missing",
       `Known lenses: ${input.dataset.lenses.map((lens) => `${lens.id}:${lens.status}`).join(", ") || "(none)"}`,
       `Existing nodes: ${input.dataset.nodes.length}`,
     ].join("\n");
@@ -802,6 +822,12 @@ function buildPromptOutputRules(intent: ProjectMapGenerationIntent): string[] {
           "Return profile/lens/node additions or corrections for the compact map; absence from output is not deletion.",
           "Use existing ids when updating known concepts; create new stable kebab-case ids only for new evidence-backed concepts.",
         ]
+      : intent === "autoIngestion"
+        ? [
+            "Return incremental additions or corrections for the existing map; absence from output is not deletion.",
+            "New top-level concepts must set parentId to the existing Root node id from the context. Do not create a second root.",
+            "Use existing ids when updating known concepts; create new stable kebab-case ids only for new evidence-backed concepts.",
+          ]
       : [
           "Return nodes for the target node/subtree only. You may omit profile and lenses or return empty arrays.",
           "Use existing node ids when correcting existing nodes; new child ids must be stable kebab-case.",
@@ -816,6 +842,9 @@ function buildPromptOutputRules(intent: ProjectMapGenerationIntent): string[] {
     "If evidence is missing or truncated, use confidence low/unknown. Never guess high confidence.",
     "Never encode deletion. Mark stale/candidate for human pruning when evidence is weak or contradicted.",
     "Node summary <= 120 chars. Detail arrays <= 5 items each. Keep Chinese explanation with English technical terms.",
+    "Representation rules: think internally before output. Use text for definitions, facts, and short risks. Use a Mermaid diagram only when it makes flow, state, dependency, layering, sequence, or data movement clearer than text.",
+    "Do not create decorative diagrams. If a diagram repeats keyFacts/keyLogic, omit it. Prefer at most one diagram per high-signal node. Omit diagrams for weak, unknown, or low-evidence claims.",
+    "When a diagram is useful, put Mermaid source in top-level diagrams[]. Do not embed Mermaid in node detail text. The diagram nodeId must match a node returned in nodes[].",
     `Schema example must itself be valid JSON: ${PROJECT_MAP_JSON_SCHEMA_EXAMPLE}`,
   ];
 }
@@ -891,6 +920,38 @@ function buildPrompt(input: {
     "Project Memory entries are conversation-derived evidence. Treat them as memory-priority support, not as code proof by themselves.",
     memoryEvidenceText || "(no project memory evidence)",
     "END_PROJECT_MEMORY_EVIDENCE",
+  ].join("\n");
+}
+
+function truncateForRepairPrompt(text: string): string {
+  const trimmed = text.trim();
+  if (trimmed.length <= MAX_INVALID_OUTPUT_REPAIR_CHARS) {
+    return trimmed;
+  }
+  return `${trimmed.slice(0, MAX_INVALID_OUTPUT_REPAIR_CHARS)}\n...[truncated invalid output]`;
+}
+
+function buildJsonRepairPrompt(input: {
+  originalPrompt: string;
+  invalidOutput: string;
+  validationError: string;
+}): string {
+  return [
+    "You are repairing a Project Knowledge Map generator response.",
+    `The previous response failed validation: ${input.validationError}`,
+    "Return pure JSON only. No markdown fence. No explanation. Do not ask questions. Do not call tools.",
+    "The JSON must match the Project Map payload shape and include at least one valid node when evidence supports it.",
+    "If the previous response contains usable facts, convert them into the JSON schema. If it does not, regenerate from the original evidence prompt below.",
+    "Required schema example:",
+    PROJECT_MAP_JSON_SCHEMA_EXAMPLE,
+    "",
+    "INVALID_PREVIOUS_RESPONSE_START",
+    truncateForRepairPrompt(input.invalidOutput),
+    "INVALID_PREVIOUS_RESPONSE_END",
+    "",
+    "ORIGINAL_GENERATION_PROMPT_START",
+    input.originalPrompt,
+    "ORIGINAL_GENERATION_PROMPT_END",
   ].join("\n");
 }
 
@@ -1439,6 +1500,160 @@ function normalizeRelatedArtifacts(value: unknown): ProjectMapRelatedArtifact[] 
   return artifacts;
 }
 
+function normalizeDiagramArtifacts(value: unknown): ProjectMapDiagramArtifact[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value.flatMap((rawArtifact): ProjectMapDiagramArtifact[] => {
+    if (!isRecord(rawArtifact)) {
+      return [];
+    }
+    const id = asTrimmedString(rawArtifact.id);
+    const label = asTrimmedString(rawArtifact.label);
+    const path = asTrimmedString(rawArtifact.path);
+    if (!id || !label || !path) {
+      return [];
+    }
+    return [{
+      id,
+      label,
+      path,
+      kind: asTrimmedString(rawArtifact.kind) || undefined,
+      summary: asTrimmedString(rawArtifact.summary) || undefined,
+      sourceRefs: normalizeStringArray(rawArtifact.sourceRefs, []),
+    }];
+  }).slice(0, 6);
+}
+
+function normalizeDiagramKind(value: unknown): NonNullable<ProjectMapDiagramArtifact["kind"]> {
+  const kind = asTrimmedString(value);
+  return [
+    "flowchart",
+    "sequence",
+    "state",
+    "class",
+    "er",
+    "timeline",
+    "mindmap",
+  ].includes(kind)
+    ? kind
+    : "other";
+}
+
+function stripMermaidFence(value: string): string {
+  const trimmed = value.trim();
+  const match = trimmed.match(/^```\s*mermaid\s*\n([\s\S]*?)\n?```$/i);
+  return (match ? match[1] : trimmed).trim();
+}
+
+function buildDiagramArtifactPath(input: {
+  dataset: ProjectMapDataset;
+  run: ProjectMapRunMetadata;
+  relativePath: string;
+}): string {
+  const storageRoot = asTrimmedString(input.run.writePath) ||
+    `.ccgui/project-map/${input.dataset.manifest.storageKey}`;
+  const separator = storageRoot.includes("\\") ? "\\" : "/";
+  return `${storageRoot.replace(/[\\/]+$/g, "")}${separator}${input.relativePath.replace(/\//g, separator)}`;
+}
+
+function buildDiagramMarkdown(input: {
+  title: string;
+  summary: string;
+  sourceRefs: string[];
+  mermaid: string;
+}): string {
+  const sourceLines = input.sourceRefs.length > 0
+    ? ["", "## Sources", "", ...input.sourceRefs.map((sourceRef) => `- ${sourceRef}`)]
+    : [];
+  return [
+    `# ${input.title}`,
+    "",
+    input.summary,
+    ...sourceLines,
+    "",
+    "```mermaid",
+    input.mermaid,
+    "```",
+    "",
+  ].filter((line) => line !== undefined).join("\n");
+}
+
+function normalizeDiagramPayloads(input: {
+  diagrams: unknown;
+  dataset: ProjectMapDataset;
+  nodes: ProjectMapNode[];
+  run: ProjectMapRunMetadata;
+  now: string;
+}): {
+  documents: ProjectMapDiagramDocument[];
+  artifactsByNodeId: Map<string, ProjectMapDiagramArtifact[]>;
+} {
+  const rawDiagrams = Array.isArray(input.diagrams) ? input.diagrams : [];
+  const nodesById = new Map(input.nodes.map((node) => [node.id, node]));
+  const usedIds = new Set<string>();
+  const documents: ProjectMapDiagramDocument[] = [];
+  const artifactsByNodeId = new Map<string, ProjectMapDiagramArtifact[]>();
+
+  for (const rawDiagram of rawDiagrams) {
+    if (!isRecord(rawDiagram)) {
+      continue;
+    }
+    const nodeId = asTrimmedString(rawDiagram.nodeId);
+    const node = nodesById.get(nodeId);
+    const mermaid = stripMermaidFence(asTrimmedString(rawDiagram.mermaid));
+    if (!node || !mermaid) {
+      continue;
+    }
+
+    const title = asTrimmedString(rawDiagram.title) || `${node.title} Diagram`;
+    const id = uniqueProjectMapPathSegment(
+      asTrimmedString(rawDiagram.id) || `${nodeId}-${title}`,
+      usedIds,
+      `${nodeId}-diagram`,
+    );
+    const kind = normalizeDiagramKind(rawDiagram.kind);
+    const summary = asTrimmedString(rawDiagram.summary) || `Mermaid diagram for ${node.title}.`;
+    const sourceRefs = normalizeStringArray(rawDiagram.sourceRefs, [])
+      .filter((sourceRef) => sourceRef.length <= 240)
+      .slice(0, 8);
+    const relativePath = `diagrams/${id}.md`;
+    const path = buildDiagramArtifactPath({
+      dataset: input.dataset,
+      run: input.run,
+      relativePath,
+    });
+    const artifact: ProjectMapDiagramArtifact = {
+      id,
+      label: title,
+      path,
+      kind,
+      summary,
+      sourceRefs,
+    };
+    documents.push({
+      id,
+      nodeId,
+      title,
+      kind,
+      summary,
+      sourceRefs,
+      relativePath,
+      path,
+      content: buildDiagramMarkdown({ title, summary, sourceRefs, mermaid }),
+      createdAt: input.now,
+      updatedAt: input.now,
+    });
+    artifactsByNodeId.set(nodeId, [
+      ...(artifactsByNodeId.get(nodeId) ?? []),
+      artifact,
+    ]);
+  }
+
+  return { documents, artifactsByNodeId };
+}
+
 function normalizeStringArray(value: unknown, fallback: string[]): string[] {
   const items = Array.isArray(value)
     ? value.filter((item): item is string => typeof item === "string" && item.trim().length > 0)
@@ -1575,6 +1790,7 @@ function normalizeNode(input: {
       riskSignals: Array.isArray(input.node.detail?.riskSignals)
         ? input.node.detail.riskSignals.slice(0, 6)
         : [],
+      diagramArtifacts: normalizeDiagramArtifacts(input.node.detail?.diagramArtifacts),
       relatedArtifacts: normalizeRelatedArtifacts(input.node.detail?.relatedArtifacts),
     },
     parentId: typeof input.node.parentId === "string" ? input.node.parentId : undefined,
@@ -1592,7 +1808,10 @@ function normalizeNode(input: {
   };
 }
 
-function normalizeGeneratedChildren(nodes: ProjectMapNode[]): ProjectMapNode[] {
+function normalizeGeneratedChildren(
+  nodes: ProjectMapNode[],
+  existingNodeIds: Set<string>,
+): ProjectMapNode[] {
   const childIdsByParent = new Map<string, string[]>();
   for (const node of nodes) {
     if (!node.parentId) {
@@ -1603,11 +1822,12 @@ function normalizeGeneratedChildren(nodes: ProjectMapNode[]): ProjectMapNode[] {
     childIdsByParent.set(node.parentId, children);
   }
   const nodeIds = new Set(nodes.map((node) => node.id));
+  const validNodeIds = new Set([...existingNodeIds, ...nodeIds]);
   return nodes.map((node) => ({
     ...node,
-    parentId: node.parentId && nodeIds.has(node.parentId) ? node.parentId : undefined,
+    parentId: node.parentId && validNodeIds.has(node.parentId) ? node.parentId : undefined,
     children: Array.from(new Set([...(node.children ?? []), ...(childIdsByParent.get(node.id) ?? [])])).filter(
-      (childId) => childId !== node.id && nodeIds.has(childId),
+      (childId) => childId !== node.id && validNodeIds.has(childId),
     ),
   }));
 }
@@ -1689,6 +1909,7 @@ function applyAiPayload(input: {
   const lensIds = new Set(lenses.map((lens) => lens.id));
   const now = nowIso();
   const rawNodes = Array.isArray(input.payload.nodes) ? input.payload.nodes : [];
+  const existingNodeIds = new Set(input.dataset.nodes.map((node) => node.id));
   const normalizedNodes = applyAutoIngestionCandidateSafety(
     normalizeGeneratedChildren(
       rawNodes
@@ -1696,18 +1917,42 @@ function applyAiPayload(input: {
           normalizeNode({ node, lensIds, lensIdByRawId, fallbackSources, run: input.run, now }),
         )
         .filter((node): node is ProjectMapNode => Boolean(node)),
+      existingNodeIds,
     ),
     input.run,
   );
   if (normalizedNodes.length === 0) {
     throw new Error("AI output did not produce any valid project-map nodes.");
   }
+  const diagramResult = normalizeDiagramPayloads({
+    diagrams: input.payload.diagrams,
+    dataset: input.dataset,
+    nodes: normalizedNodes,
+    run: input.run,
+    now,
+  });
+  const nodesWithDiagramArtifacts = normalizedNodes.map((node) => {
+    const diagramArtifacts = diagramResult.artifactsByNodeId.get(node.id) ?? [];
+    if (diagramArtifacts.length === 0) {
+      return node;
+    }
+    return {
+      ...node,
+      detail: {
+        ...node.detail,
+        diagramArtifacts: [
+          ...(node.detail.diagramArtifacts ?? []),
+          ...diagramArtifacts,
+        ],
+      },
+    };
+  });
 
   const merged = mergeProjectMapGenerationResult({
     dataset: input.dataset,
     profile: normalizeProfile(input.payload.profile, input.dataset.profile),
     lenses,
-    nodes: normalizedNodes,
+    nodes: nodesWithDiagramArtifacts,
     scope,
     run: input.run,
   });
@@ -1734,6 +1979,10 @@ function applyAiPayload(input: {
         observedAt: now,
       })),
     ].slice(-200),
+    diagramDocuments: [
+      ...(input.dataset.diagramDocuments ?? []),
+      ...diagramResult.documents,
+    ].slice(-200),
   };
 }
 
@@ -1755,7 +2004,30 @@ export async function runProjectMapGenerationWorker({
   const prompt = buildPrompt({ dataset, run, evidence });
   const output = await runAiTurn({ workspaceId, run, prompt, update });
   await update({ phase: "validatingOutput", progress: 78, log: "Validating structured JSON output." });
-  const payload = parseJsonPayload(output);
+  let payload: ProjectMapAiPayload;
+  try {
+    payload = parseJsonPayload(output);
+  } catch (validationError) {
+    const validationMessage = validationError instanceof Error ? validationError.message : String(validationError);
+    await update({
+      phase: "validatingOutput",
+      progress: 80,
+      log: `Structured JSON validation failed: ${validationMessage}. Requesting one JSON-only repair attempt.`,
+    });
+    const repairPrompt = buildJsonRepairPrompt({
+      originalPrompt: prompt,
+      invalidOutput: output,
+      validationError: validationMessage,
+    });
+    const repairedOutput = await runAiTurn({ workspaceId, run, prompt: repairPrompt, update });
+    await update({ phase: "validatingOutput", progress: 84, log: "Validating repaired structured JSON output." });
+    try {
+      payload = parseJsonPayload(repairedOutput);
+    } catch (repairError) {
+      const repairMessage = repairError instanceof Error ? repairError.message : String(repairError);
+      throw new Error(`${repairMessage} First validation error: ${validationMessage}`);
+    }
+  }
   const nextDataset = applyAiPayload({ dataset, payload, evidence, run });
   await update({ phase: "writingMap", progress: 92, log: "Validated map data; writing project-map files." });
   return nextDataset;
