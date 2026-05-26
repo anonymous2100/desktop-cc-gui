@@ -1144,3 +1144,43 @@ CI 中 SettingsView 删除会话测试仍断言旧刷新签名；更新为包含
 ### Next Steps
 
 - None - task complete
+
+
+## Session 589: 打磨知识地图头部折叠工具栏
+
+**Date**: 2026-05-27
+**Task**: 打磨知识地图头部折叠工具栏
+**Branch**: `feature/v0.5.3`
+
+### Summary
+
+(Add summary)
+
+### Main Changes
+
+| 项目 | 内容 |
+|------|------|
+| 代码提交 | `ee43559b fix(project-map): 打磨知识地图头部折叠工具栏` |
+| 主要改动 | Project Map 顶部 chrome 支持折叠为紧凑 toolbar；展开态的读取、任务、画像、收起等操作统一为轻量 icon+文本 toolbar item，去掉厚重 button 块感；折叠态保留项目名与节点/Lens 摘要，展开入口放右侧。 |
+| 提案回写 | 更新 `improve-project-map-interactive-layout` proposal/design/tasks/delta spec，并同步主线 `project-xray-panel` spec，补充 collapsible chrome 与 icon-and-text toolbar action 行为契约。 |
+| 验证 | `ProjectMapPanel.test.tsx` 24 tests passed；`git diff --check` passed；`openspec validate improve-project-map-interactive-layout --strict` passed；`openspec validate --specs` 272 passed。 |
+| 边界 | 未纳入旁路 `wire-project-map-auto-ingestion` 未提交 WIP。 |
+
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `ee43559b` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
