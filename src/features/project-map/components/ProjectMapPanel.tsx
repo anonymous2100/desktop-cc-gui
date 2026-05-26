@@ -11,6 +11,9 @@ import ChevronLeft from "lucide-react/dist/esm/icons/chevron-left";
 import ChevronRight from "lucide-react/dist/esm/icons/chevron-right";
 import ChevronUp from "lucide-react/dist/esm/icons/chevron-up";
 import Crosshair from "lucide-react/dist/esm/icons/crosshair";
+import Folder from "lucide-react/dist/esm/icons/folder";
+import Globe2 from "lucide-react/dist/esm/icons/globe-2";
+import HardDrive from "lucide-react/dist/esm/icons/hard-drive";
 import LinkIcon from "lucide-react/dist/esm/icons/link";
 import ListChecks from "lucide-react/dist/esm/icons/list-checks";
 import RefreshCcw from "lucide-react/dist/esm/icons/refresh-ccw";
@@ -556,6 +559,7 @@ export function ProjectMapPanel({
   const [viewHistory, setViewHistory] = useState<GraphViewSnapshot[]>([]);
   const [hoverNodeId, setHoverNodeId] = useState<string | null>(null);
   const [isLensStripCollapsed, setIsLensStripCollapsed] = useState(true);
+  const [isProjectMapChromeCollapsed, setIsProjectMapChromeCollapsed] = useState(false);
   const [isDetailCollapsed, setIsDetailCollapsed] = useState(false);
   const [isTaskDrawerOpen, setIsTaskDrawerOpen] = useState(false);
   const [selectedGraphNodeIds, setSelectedGraphNodeIds] = useState<Set<string>>(new Set());
@@ -1249,85 +1253,125 @@ export function ProjectMapPanel({
   };
 
   return (
-    <section className="project-map-panel" aria-label={t("projectMap.panelTitle")}>
-      <header className="project-map-topbar">
-        <div className="project-map-header-copy">
-          <div className="project-map-title-line">
-            <span className="project-map-eyebrow">{t("projectMap.eyebrow")}</span>
-            <h2>{t("projectMap.title", { projectName })}</h2>
-          </div>
-          <div className="project-map-meta-row">
-            <span className="project-map-meta-pill is-primary">
-              {t("projectMap.lastGenerated", {
-                value: formatDateTime(dataset.manifest.updatedAt),
-              })}
-            </span>
-            <span className="project-map-meta-pill">
-              {t("projectMap.storageKey", { value: dataset.manifest.storageKey })}
-            </span>
-            <span className="project-map-meta-pill is-profile">
-              {t("projectMap.profileSummary", {
-                language: profileSummary.language,
-                shapes: profileSummary.shapes,
-              })}
-            </span>
-          </div>
-        </div>
-        <div className="project-map-actions">
-          {isPersistenceBacked ? (
-            <div
-              className="project-map-storage-switch"
-              role="group"
-              aria-label={t("projectMap.storage.readLocation")}
+    <section
+      className={cn("project-map-panel", isProjectMapChromeCollapsed && "is-chrome-collapsed")}
+      aria-label={t("projectMap.panelTitle")}
+    >
+      <header className={cn("project-map-topbar", isProjectMapChromeCollapsed && "is-collapsed")}>
+        {isProjectMapChromeCollapsed ? (
+          <>
+            <div className="project-map-compact-title">
+              <strong>{projectName}</strong>
+              <span>{t("projectMap.compactSummary", { nodes: dataset.nodes.length, lenses: detectedLensCount })}</span>
+            </div>
+            <button
+              className="project-map-toolbar-action project-map-chrome-toggle"
+              type="button"
+              aria-expanded={false}
+              onClick={() => setIsProjectMapChromeCollapsed(false)}
             >
-              <span>{t("projectMap.storage.readLocation")}</span>
+              <ChevronDown aria-hidden />
+              {t("projectMap.expandChrome")}
+            </button>
+          </>
+        ) : (
+          <>
+            <div className="project-map-header-copy">
+              <div className="project-map-title-line">
+                <span className="project-map-eyebrow">{t("projectMap.eyebrow")}</span>
+                <h2>{t("projectMap.title", { projectName })}</h2>
+              </div>
+              <div className="project-map-meta-row">
+                <span className="project-map-meta-pill is-primary">
+                  {t("projectMap.lastGenerated", {
+                    value: formatDateTime(dataset.manifest.updatedAt),
+                  })}
+                </span>
+                <span className="project-map-meta-pill">
+                  {t("projectMap.storageKey", { value: dataset.manifest.storageKey })}
+                </span>
+                <span className="project-map-meta-pill is-profile">
+                  {t("projectMap.profileSummary", {
+                    language: profileSummary.language,
+                    shapes: profileSummary.shapes,
+                  })}
+                </span>
+              </div>
+            </div>
+            <div className="project-map-actions" role="group" aria-label={t("projectMap.chromeControls")}>
               <button
+                className="project-map-toolbar-action project-map-chrome-toggle"
                 type="button"
-                className={cn(datasetController.activeReadLocation === "global" && "is-active")}
-                aria-pressed={datasetController.activeReadLocation === "global"}
-                onClick={() => datasetController.switchReadLocation("global")}
+                aria-expanded
+                onClick={() => setIsProjectMapChromeCollapsed(true)}
               >
-                {t("projectMap.storage.global")}
+                <ChevronUp aria-hidden />
+                {t("projectMap.collapseChrome")}
+              </button>
+              {isPersistenceBacked ? (
+                <div
+                  className="project-map-storage-switch"
+                  role="group"
+                  aria-label={t("projectMap.storage.readLocation")}
+                >
+                  <span className="project-map-storage-label">
+                    <HardDrive aria-hidden />
+                    {t("projectMap.storage.readLocation")}
+                  </span>
+                  <button
+                    type="button"
+                    className={cn(datasetController.activeReadLocation === "global" && "is-active")}
+                    aria-pressed={datasetController.activeReadLocation === "global"}
+                    onClick={() => datasetController.switchReadLocation("global")}
+                  >
+                    <Globe2 aria-hidden />
+                    {t("projectMap.storage.global")}
+                  </button>
+                  <button
+                    type="button"
+                    className={cn(datasetController.activeReadLocation === "project" && "is-active")}
+                    aria-pressed={datasetController.activeReadLocation === "project"}
+                    onClick={() => datasetController.switchReadLocation("project")}
+                  >
+                    <Folder aria-hidden />
+                    {t("projectMap.storage.project")}
+                  </button>
+                </div>
+              ) : null}
+              {candidateCount > 0 ? (
+                <button
+                  className="project-map-candidate-badge"
+                  type="button"
+                  onClick={handleCandidateReviewClick}
+                  title={t("projectMap.candidateBadgeHint")}
+                >
+                  {t("projectMap.candidateBadge", { count: candidateCount })}
+                </button>
+              ) : null}
+              <button
+                className={cn(
+                  "project-map-toolbar-action project-map-task-button",
+                  generationQueue.length > 0 && "has-active-task",
+                )}
+                type="button"
+                aria-expanded={isTaskDrawerOpen}
+                onClick={() => setIsTaskDrawerOpen((current) => !current)}
+              >
+                <ListChecks aria-hidden />
+                {t("projectMap.tasks.button")}
+                <span>{generationQueue.length}</span>
               </button>
               <button
+                className="project-map-toolbar-action project-map-profile-action"
                 type="button"
-                className={cn(datasetController.activeReadLocation === "project" && "is-active")}
-                aria-pressed={datasetController.activeReadLocation === "project"}
-                onClick={() => datasetController.switchReadLocation("project")}
+                onClick={datasetController.openGlobalCollection}
               >
-                {t("projectMap.storage.project")}
+                <Sparkles aria-hidden />
+                {t("projectMap.collectFramework")}
               </button>
             </div>
-          ) : null}
-          {candidateCount > 0 ? (
-            <button
-              className="project-map-candidate-badge"
-              type="button"
-              onClick={handleCandidateReviewClick}
-              title={t("projectMap.candidateBadgeHint")}
-            >
-              {t("projectMap.candidateBadge", { count: candidateCount })}
-            </button>
-          ) : null}
-          <button
-            className={cn("project-map-task-button", generationQueue.length > 0 && "has-active-task")}
-            type="button"
-            aria-expanded={isTaskDrawerOpen}
-            onClick={() => setIsTaskDrawerOpen((current) => !current)}
-          >
-            <ListChecks aria-hidden />
-            {t("projectMap.tasks.button")}
-            <span>{generationQueue.length}</span>
-          </button>
-          <button
-            className="project-map-primary-button"
-            type="button"
-            onClick={datasetController.openGlobalCollection}
-          >
-            <Sparkles aria-hidden />
-            {t("projectMap.collectFramework")}
-          </button>
-        </div>
+          </>
+        )}
       </header>
 
       <main className="project-map-stage" aria-label={t("projectMap.stageAria")}>
@@ -1337,65 +1381,67 @@ export function ProjectMapPanel({
             queuedCount={queuedGenerationRuns.length}
           />
         ) : null}
-        <div className={cn("project-map-lens-shell", isLensStripCollapsed && "is-collapsed")}>
-        <div className="project-map-stage-toolbar">
-          <div className="project-map-breadcrumb" aria-label={t("projectMap.breadcrumb")}>
-            <button type="button" onClick={handleBackToOverview}>
-              <Network aria-hidden />
-              {t("projectMap.breadcrumbRoot")}
-            </button>
-            {activeLens && focusNodeId ? (
-              <>
-                <span>/</span>
-                <strong>{activeLens.title}</strong>
-              </>
+        {!isProjectMapChromeCollapsed ? (
+          <div className={cn("project-map-lens-shell", isLensStripCollapsed && "is-collapsed")}>
+            <div className="project-map-stage-toolbar">
+              <div className="project-map-breadcrumb" aria-label={t("projectMap.breadcrumb")}>
+                <button type="button" onClick={handleBackToOverview}>
+                  <Network aria-hidden />
+                  {t("projectMap.breadcrumbRoot")}
+                </button>
+                {activeLens && focusNodeId ? (
+                  <>
+                    <span>/</span>
+                    <strong>{activeLens.title}</strong>
+                  </>
+                ) : null}
+              </div>
+              <div className="project-map-stage-stats">
+                <span>{t("projectMap.totalNodes", { count: dataset.nodes.length })}</span>
+                <span>{t("projectMap.lensStats", { detected: detectedLensCount, candidate: candidateLensCount })}</span>
+                <span>{t("projectMap.staleNodes", { count: staleCount })}</span>
+                <span>{t("projectMap.candidateNodes", { count: candidateCount })}</span>
+                <button
+                  className="project-map-lens-toggle"
+                  type="button"
+                  aria-expanded={!isLensStripCollapsed}
+                  onClick={() => setIsLensStripCollapsed((current) => !current)}
+                >
+                  {isLensStripCollapsed ? <ChevronDown aria-hidden /> : <ChevronUp aria-hidden />}
+                  {isLensStripCollapsed ? t("projectMap.expandLenses") : t("projectMap.collapseLenses")}
+                </button>
+              </div>
+            </div>
+
+            {!isLensStripCollapsed ? (
+              <div className="project-map-domain-strip" aria-label={t("projectMap.domainStrip")}>
+                <button
+                  className={cn("project-map-domain-chip", !focusNodeId && "is-active")}
+                  type="button"
+                  onClick={handleBackToOverview}
+                >
+                  <span>{t("projectMap.breadcrumbRoot")}</span>
+                </button>
+                {hubNodes.map((node) => (
+                  <button
+                    key={node.id}
+                    className={cn("project-map-domain-chip", focusNodeId === node.id && "is-active")}
+                    type="button"
+                    onClick={() => {
+                      handleNodeSelect(node);
+                      handleDrillIn(node);
+                      setIsLensStripCollapsed(true);
+                    }}
+                  >
+                    <span>{lensIndex.get(node.lensId)?.shortTitle ?? node.lensId}</span>
+                    <strong>{node.title}</strong>
+                    <em>{t(`projectMap.lensStatus.${lensIndex.get(node.lensId)?.status ?? "candidate"}`)}</em>
+                  </button>
+                ))}
+              </div>
             ) : null}
           </div>
-          <div className="project-map-stage-stats">
-            <span>{t("projectMap.totalNodes", { count: dataset.nodes.length })}</span>
-            <span>{t("projectMap.lensStats", { detected: detectedLensCount, candidate: candidateLensCount })}</span>
-            <span>{t("projectMap.staleNodes", { count: staleCount })}</span>
-            <span>{t("projectMap.candidateNodes", { count: candidateCount })}</span>
-            <button
-              className="project-map-lens-toggle"
-              type="button"
-              aria-expanded={!isLensStripCollapsed}
-              onClick={() => setIsLensStripCollapsed((current) => !current)}
-            >
-              {isLensStripCollapsed ? <ChevronDown aria-hidden /> : <ChevronUp aria-hidden />}
-              {isLensStripCollapsed ? t("projectMap.expandLenses") : t("projectMap.collapseLenses")}
-            </button>
-          </div>
-        </div>
-
-        {!isLensStripCollapsed ? (
-          <div className="project-map-domain-strip" aria-label={t("projectMap.domainStrip")}>
-            <button
-              className={cn("project-map-domain-chip", !focusNodeId && "is-active")}
-              type="button"
-              onClick={handleBackToOverview}
-            >
-              <span>{t("projectMap.breadcrumbRoot")}</span>
-            </button>
-            {hubNodes.map((node) => (
-              <button
-                key={node.id}
-                className={cn("project-map-domain-chip", focusNodeId === node.id && "is-active")}
-                type="button"
-                onClick={() => {
-                  handleNodeSelect(node);
-                  handleDrillIn(node);
-                  setIsLensStripCollapsed(true);
-                }}
-              >
-                <span>{lensIndex.get(node.lensId)?.shortTitle ?? node.lensId}</span>
-                <strong>{node.title}</strong>
-                <em>{t(`projectMap.lensStatus.${lensIndex.get(node.lensId)?.status ?? "candidate"}`)}</em>
-              </button>
-            ))}
-        </div>
         ) : null}
-        </div>
 
         {datasetController.status === "error" && !controlledDataset ? (
           <div className="project-map-empty-state">
@@ -2272,6 +2318,26 @@ function ProjectMapSettingsPanel({
               autoIngestionSettings: {
                 ...current.autoIngestionSettings,
                 newSessionThreshold: nextThreshold,
+              },
+            }));
+          }}
+        />
+      </label>
+      <label>
+        {t("projectMap.settings.interval")}
+        <input
+          type="number"
+          min={5}
+          max={1440}
+          value={settings.checkIntervalMinutes}
+          disabled={disabled}
+          onChange={(event) => {
+            const nextInterval = Math.max(5, Math.min(1440, Number(event.currentTarget.value) || 30));
+            void onUpdate((current) => ({
+              ...current,
+              autoIngestionSettings: {
+                ...current.autoIngestionSettings,
+                checkIntervalMinutes: nextInterval,
               },
             }));
           }}

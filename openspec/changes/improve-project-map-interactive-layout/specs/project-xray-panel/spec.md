@@ -82,3 +82,25 @@ The Project Knowledge Map SHALL preserve the current graph viewport during ordin
 - **AND** the user selects another visible graph node
 - **THEN** the selected node and inspector SHALL update
 - **AND** the graph viewport pan and zoom SHALL remain unchanged
+
+### Requirement: Project Map collapsible chrome
+
+The Project Knowledge Map SHALL allow users to collapse the header chrome into a compact toolbar while preserving access to map content and core context.
+
+#### Scenario: User collapses the header chrome
+- **WHEN** the user activates the header collapse control
+- **THEN** the project map header SHALL render as a compact single-row toolbar
+- **AND** the lens summary chrome SHALL be hidden
+- **AND** the compact toolbar SHALL keep project identity and map summary visible
+- **AND** the graph canvas SHALL move up to use the reclaimed vertical space
+
+#### Scenario: Header action controls share a toolbar height
+- **WHEN** the expanded header renders storage, task, profile, candidate, and chrome controls
+- **THEN** those controls SHALL use a consistent toolbar height
+- **AND** concise i18n labels SHALL be used for visible button text
+
+#### Scenario: Header actions render as toolbar items
+- **WHEN** the expanded or collapsed header renders primary chrome actions
+- **THEN** those actions SHALL use icon-and-text presentation
+- **AND** they SHALL avoid button-shaped borders and heavy filled backgrounds
+- **AND** they SHALL preserve semantic button behavior for interactive controls

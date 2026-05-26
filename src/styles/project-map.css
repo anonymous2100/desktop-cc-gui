@@ -1,4 +1,6 @@
 .project-map-panel {
+  --project-map-toolbar-control-height: 22px;
+  --project-map-compact-chrome-height: 28px;
   --project-map-bg: var(--surface-messages, var(--background, #0d0f14));
   --project-map-surface: var(--surface-card, var(--card, #1f2028));
   --project-map-surface-strong: var(--surface-card-strong, var(--card, #262830));
@@ -43,6 +45,14 @@
   padding: 7px 12px;
   border-bottom: 1px solid color-mix(in srgb, var(--project-map-border) 70%, transparent);
   background: color-mix(in srgb, var(--project-map-surface) 96%, transparent);
+}
+
+.project-map-topbar.is-collapsed {
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  min-height: var(--project-map-compact-chrome-height);
+  padding: 3px 8px 3px 10px;
+  background: color-mix(in srgb, var(--project-map-surface-muted) 94%, transparent);
 }
 
 .project-map-header-copy {
@@ -120,56 +130,105 @@
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  gap: 6px;
-  flex-wrap: wrap;
+  gap: 12px;
+  flex-wrap: nowrap;
   min-width: 0;
+  overflow: hidden;
 }
 
 .project-map-storage-switch {
   display: inline-flex;
   align-items: center;
-  gap: 2px;
+  gap: 7px;
   min-width: 0;
-  min-height: 28px;
-  border: 1px solid color-mix(in srgb, var(--project-map-border-strong) 70%, transparent);
-  border-radius: 8px;
-  padding: 2px;
-  background: var(--project-map-surface-muted);
+  height: var(--project-map-toolbar-control-height);
+  box-sizing: border-box;
+  border: 0;
+  border-radius: 0;
+  padding: 0;
+  background: transparent;
   color: var(--project-map-text-muted);
-  font-size: 10px;
-  font-weight: 650;
+  font-size: 11px;
+  font-weight: 700;
 }
 
-.project-map-storage-switch span {
+.project-map-storage-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
   overflow: hidden;
-  max-width: 130px;
-  padding: 0 5px;
+  max-width: 68px;
+  padding: 0;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .project-map-storage-switch button {
-  min-height: 22px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  height: var(--project-map-toolbar-control-height);
   border: 0;
-  border-radius: 6px;
-  padding: 0 7px;
+  border-radius: 0;
+  padding: 0 1px;
   background: transparent;
   color: var(--project-map-text-subtle);
   font: inherit;
   letter-spacing: 0;
+  line-height: 1;
   cursor: pointer;
 }
 
 .project-map-storage-switch button.is-active {
-  background: var(--project-map-surface);
   color: var(--project-map-accent);
-  box-shadow: 0 1px 4px var(--project-map-shadow);
+  box-shadow: inset 0 -2px 0 color-mix(in srgb, var(--project-map-accent) 62%, transparent);
+}
+
+.project-map-storage-switch svg,
+.project-map-toolbar-action svg {
+  flex: 0 0 auto;
+  width: 13px;
+  height: 13px;
+  stroke-width: 2.2;
+}
+
+.project-map-toolbar-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  height: var(--project-map-toolbar-control-height);
+  box-sizing: border-box;
+  border: 0;
+  border-radius: 0;
+  padding: 0 1px;
+  background: transparent;
+  color: var(--project-map-accent);
+  font-size: 11px;
+  font-weight: 720;
+  letter-spacing: 0;
+  line-height: 1;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.project-map-toolbar-action:hover,
+.project-map-storage-switch button:hover {
+  color: var(--project-map-text-strong);
+}
+
+.project-map-toolbar-action:focus-visible,
+.project-map-storage-switch button:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--project-map-accent) 54%, transparent);
+  outline-offset: 3px;
 }
 
 .project-map-primary-button,
 .project-map-empty-action,
+.project-map-chrome-toggle:not(.project-map-toolbar-action),
 .project-map-icon-button,
-.project-map-task-button,
+.project-map-task-button:not(.project-map-toolbar-action),
 .project-map-node-actions button,
 .project-map-back-button,
 .project-map-dialog footer button {
@@ -177,15 +236,43 @@
   align-items: center;
   justify-content: center;
   gap: 5px;
-  min-height: 28px;
+  height: var(--project-map-toolbar-control-height);
+  box-sizing: border-box;
   border: 1px solid color-mix(in srgb, var(--project-map-accent) 38%, transparent);
   border-radius: 8px;
-  padding: 0 9px;
+  padding: 0 8px;
   font-size: 11px;
   font-weight: 650;
   letter-spacing: 0;
+  line-height: 1;
   white-space: nowrap;
   cursor: pointer;
+}
+
+.project-map-chrome-toggle {
+  flex: 0 0 auto;
+}
+
+.project-map-compact-title {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 8px;
+  color: var(--project-map-text-muted);
+  font-size: 11px;
+}
+
+.project-map-compact-title strong {
+  overflow: hidden;
+  color: var(--project-map-text-strong);
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.project-map-compact-title span {
+  flex: 0 0 auto;
+  color: var(--project-map-text-subtle);
 }
 
 .project-map-primary-button {
@@ -202,7 +289,7 @@
 }
 
 .project-map-icon-button,
-.project-map-task-button,
+.project-map-task-button:not(.project-map-toolbar-action),
 .project-map-node-actions button,
 .project-map-back-button {
   background: var(--project-map-surface);
@@ -211,25 +298,27 @@
 
 .project-map-primary-button svg,
 .project-map-empty-action svg,
+.project-map-chrome-toggle svg,
 .project-map-icon-button svg,
 .project-map-task-button svg,
 .project-map-node-actions svg,
 .project-map-back-button svg,
 .project-map-dialog footer svg {
-  width: 15px;
-  height: 15px;
+  width: 13px;
+  height: 13px;
 }
 
 .project-map-candidate-badge {
   display: inline-flex;
   align-items: center;
-  min-height: 24px;
-  border: 1px solid color-mix(in srgb, var(--project-map-warning) 34%, transparent);
-  border-radius: 8px;
-  padding: 0 8px;
+  height: var(--project-map-toolbar-control-height);
+  box-sizing: border-box;
+  border: 0;
+  border-radius: 7px;
+  padding: 0 7px;
   background: color-mix(in srgb, var(--project-map-warning) 14%, var(--project-map-surface));
   color: var(--project-map-warning);
-  font-size: 11px;
+  font-size: 10.5px;
   font-weight: 650;
   white-space: nowrap;
   cursor: pointer;
@@ -244,21 +333,19 @@
 }
 
 .project-map-task-button.has-active-task {
-  border-color: color-mix(in srgb, var(--project-map-warning) 52%, transparent);
-  background: color-mix(in srgb, var(--project-map-warning) 12%, var(--project-map-surface));
   color: var(--project-map-warning);
 }
 
 .project-map-task-button span {
   display: inline-flex;
-  min-width: 18px;
-  height: 18px;
+  min-width: 15px;
+  height: 14px;
   align-items: center;
   justify-content: center;
   border-radius: 999px;
-  background: color-mix(in srgb, var(--project-map-accent) 18%, transparent);
+  background: color-mix(in srgb, var(--project-map-accent) 14%, transparent);
   color: var(--project-map-accent);
-  font-size: 10px;
+  font-size: 9px;
   font-weight: 760;
 }
 
@@ -281,6 +368,11 @@
   min-height: 0;
   overflow: hidden;
   padding: 8px 18px 16px;
+}
+
+.project-map-panel.is-chrome-collapsed .project-map-stage {
+  grid-template-rows: auto minmax(0, 1fr);
+  padding: 6px 10px 10px;
 }
 
 .project-map-task-banner {
@@ -460,45 +552,64 @@
 .project-map-settings {
   display: flex;
   align-items: center;
-  gap: 12px;
-  min-height: 40px;
+  gap: 14px;
+  min-height: 36px;
   border-top: 1px solid color-mix(in srgb, var(--project-map-border) 56%, transparent);
-  padding: 6px 18px;
+  padding: 4px 16px;
   background: color-mix(in srgb, var(--project-map-surface) 94%, transparent);
   color: var(--project-map-text-subtle);
   font-size: 11px;
+  line-height: 1;
+  overflow: hidden;
+  white-space: nowrap;
 }
 
 .project-map-settings > div {
-  display: grid;
-  gap: 1px;
-  min-width: 220px;
+  display: inline-flex;
+  min-width: 0;
+  max-width: 320px;
+  align-items: baseline;
+  gap: 8px;
+  overflow: hidden;
 }
 
 .project-map-settings strong {
+  flex: 0 0 auto;
   color: var(--project-map-text-strong);
   font-size: 12px;
 }
 
+.project-map-settings > div span {
+  overflow: hidden;
+  min-width: 0;
+  text-overflow: ellipsis;
+}
+
 .project-map-settings label {
   display: inline-flex;
+  flex: 0 0 auto;
   align-items: center;
   gap: 6px;
   white-space: nowrap;
 }
 
 .project-map-settings input[type="number"] {
-  width: 54px;
+  width: 48px;
 }
 
 .project-map-settings input[type="number"],
 .project-map-settings select {
+  box-sizing: border-box;
   min-height: 24px;
   border: 1px solid color-mix(in srgb, var(--project-map-border-strong) 78%, transparent);
   border-radius: 6px;
   background: var(--project-map-surface);
   color: var(--project-map-text-strong);
   font-size: 11px;
+}
+
+.project-map-settings select {
+  max-width: 160px;
 }
 
 .project-map-dialog-backdrop {
@@ -709,6 +820,11 @@
   box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--project-map-surface) 70%, transparent);
   cursor: grab;
   touch-action: none;
+}
+
+.project-map-panel.is-chrome-collapsed .project-map-graph-canvas,
+.project-map-panel.is-chrome-collapsed .project-map-empty-state {
+  grid-row: 2;
 }
 
 .project-map-graph-canvas:active {
@@ -1635,7 +1751,7 @@ button.project-map-trace-chip {
     justify-content: flex-end;
   }
 
-  .project-map-storage-switch span {
+  .project-map-storage-label {
     display: none;
   }
 
@@ -1657,6 +1773,8 @@ button.project-map-trace-chip {
 
   .project-map-actions {
     justify-content: flex-start;
+    flex-wrap: wrap;
+    overflow: visible;
   }
 
   .project-map-meta-pill:not(.is-primary) {
@@ -1672,6 +1790,8 @@ button.project-map-trace-chip {
 
   .project-map-actions {
     justify-content: flex-start;
+    flex-wrap: wrap;
+    overflow: visible;
   }
 
   .project-map-meta-pill:not(.is-primary) {

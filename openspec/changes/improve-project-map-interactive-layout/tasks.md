@@ -38,3 +38,7 @@
 ## 7. Regression Closure
 
 - [x] 7.1 [P0][依赖: 4.*][输入: node selection + open detail panel][输出: viewport stable across ordinary selection][验证: `ProjectMapPanel.test.tsx` keeps viewport transform unchanged after selecting another node] 收窄自动 fit 触发边界，避免普通节点点击重置 graph viewport。
+
+## 8. Header Chrome Polish
+
+- [x] 8.1 [P1][依赖: 5.*][输入: Project Map header/lens toolbar][输出: collapsible compact chrome + unified toolbar control height + icon-and-text actions][验证: `ProjectMapPanel.test.tsx` collapses the project map chrome into a compact header] 将红框头部区域做成可折叠 chrome，折叠后对齐 editor toolbar 视觉节奏，并精简 i18n 文案；主要操作改为 icon+文本的轻量 toolbar item，去掉 button 块感。

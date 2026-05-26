@@ -26,6 +26,8 @@ This change turns the graph into an interactive map surface while preserving cog
   - active layout preset
   - optional updated timestamp
 - Add interactive graph controls:
+  - collapse the Project Map header chrome into a compact toolbar aligned with adjacent editor toolbars
+  - render header actions as lightweight icon-and-text toolbar items instead of button-shaped controls
   - drag blank canvas to pan
   - drag a node to reposition and pin it
   - multi-select nodes and drag them as a group
@@ -95,6 +97,7 @@ Use Option B. The existing renderer already owns pan/zoom, node cards, edges, an
 - Layout preset switching recomputes unpinned positions and preserves pinned positions.
 - Mini map reflects graph bounds and allows clicking to move the viewport.
 - Selecting another node while the detail panel is open does not refit the graph or reset the current viewport.
+- The header chrome can collapse into a compact single-row toolbar, and visible header actions share a consistent lightweight icon-and-text treatment.
 - Old Project Map snapshots with no `viewState` load without crashing and render graph nodes.
 - Deleting a node removes its persisted layout entry.
 - Existing evidence link, drilldown, detail panel, task drawer, and global/node generation interactions remain available.

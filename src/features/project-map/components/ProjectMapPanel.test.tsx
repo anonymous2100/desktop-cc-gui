@@ -168,6 +168,17 @@ describe("ProjectMapPanel", () => {
     expect(view.container.querySelector("textarea, [contenteditable='true']")).toBeNull();
   });
 
+  it("collapses the project map chrome into a compact header", () => {
+    const view = renderMockProjectMapPanel();
+
+    fireEvent.click(screen.getByRole("button", { name: "projectMap.collapseChrome" }));
+
+    expect(view.container.querySelector(".project-map-panel")?.classList.contains("is-chrome-collapsed")).toBe(true);
+    expect(view.container.querySelector(".project-map-lens-shell")).toBeNull();
+    expect(screen.getByRole("button", { name: "projectMap.expandChrome" })).toBeTruthy();
+    expect(screen.getByText("mossx")).toBeTruthy();
+  });
+
   it("keeps crowded overview and focused graph cards mutually exclusive", () => {
     const crowdedDataset = createCrowdedProjectMapDataset();
     const view = render(<ProjectMapPanel workspaceName="mossx" dataset={crowdedDataset} />);
@@ -303,6 +314,10 @@ describe("ProjectMapPanel", () => {
     expect(screen.getByRole("button", { name: "projectMap.autoLayout" })).toBeTruthy();
     expect(screen.getByRole("button", { name: "projectMap.resetLayout" })).toBeTruthy();
     expect(screen.getByLabelText("projectMap.layoutPreset")).toBeTruthy();
+    expect(view.container.querySelector(".project-map-settings")).toBeTruthy();
+    expect(screen.getByLabelText("projectMap.settings.threshold")).toBeTruthy();
+    expect(screen.getByLabelText("projectMap.settings.interval")).toBeTruthy();
+    expect(screen.getByLabelText("projectMap.settings.applyMode")).toBeTruthy();
 
     const miniMap = screen.getByRole("button", { name: "projectMap.miniMap" });
     miniMap.getBoundingClientRect = () => ({
@@ -694,7 +709,7 @@ describe("ProjectMapPanel", () => {
     };
     renderMockProjectMapPanel({ dataset: datasetWithLegacyArtifact });
 
-    fireEvent.click(screen.getByRole("button", { name: /projectMap\.collectFramework|收集|Collect/ }));
+    fireEvent.click(screen.getByRole("button", { name: "projectMap.collectFramework" }));
 
     expect(screen.getByRole("dialog", { name: "projectMap.confirmation.title" })).toBeTruthy();
     expect(screen.getByText("projectMap.confirmation.writePath")).toBeTruthy();

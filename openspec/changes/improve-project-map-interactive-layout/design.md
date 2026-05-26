@@ -76,6 +76,12 @@ The graph auto-fit effect runs only when the graph structure or framing context 
 
 Manual Reset view remains available as an explicit viewport command.
 
+### Decision 7: Header chrome can collapse to an editor-aligned toolbar
+
+The Project Map header and lens summary area are treated as chrome, not map content. The chrome can collapse into a compact single-row toolbar that keeps the project identity visible while letting the graph align visually with an adjacent file editor toolbar.
+
+Top-level action controls use one shared toolbar control height so Task, Profile, storage switch, candidate, and chrome toggle controls do not drift vertically. The primary header controls render as flat icon-and-text toolbar actions instead of button-shaped pills; this keeps the chrome aligned with editor toolbars while preserving semantic button behavior for keyboard and screen reader access.
+
 ## Risks / Trade-offs
 
 - [Risk] Persisted positions can become stale after generation changes. → Mitigation: only apply layouts for existing node ids; new nodes get generated positions; deleted nodes prune stale layout.
@@ -83,6 +89,7 @@ Manual Reset view remains available as an explicit viewport command.
 - [Risk] More interaction state can make `ProjectMapPanel.tsx` larger. → Mitigation: put geometry and view-state normalization into utilities.
 - [Risk] Multi-select conflicts with drilldown buttons. → Mitigation: button targets stop propagation; node drag starts only from card body.
 - [Risk] Selection-driven rerenders can look like graph reset if they trigger viewport fit. → Mitigation: gate auto-fit behind a structural signature and cover ordinary node selection with a regression test.
+- [Risk] Collapsing the header can hide useful context. → Mitigation: keep a compact project title and node/lens summary visible, with an explicit Expand control.
 
 ## Data Flow
 
