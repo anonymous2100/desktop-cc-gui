@@ -1436,3 +1436,36 @@ CI 中 SettingsView 删除会话测试仍断言旧刷新签名；更新为包含
 ### Next Steps
 
 - None - task complete
+
+
+## Session 595: 校准项目知识地图 OpenSpec 规范证据
+
+**Date**: 2026-05-27
+**Task**: 校准项目知识地图 OpenSpec 规范证据
+**Branch**: `feature/v0.5.3`
+
+### Summary
+
+同步 Project Knowledge Map 主 specs、治理快照与 verification artifacts；未改 src 代码；OpenSpec strict validation 通过。
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `c03ae308` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
