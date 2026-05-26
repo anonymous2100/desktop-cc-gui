@@ -62,7 +62,7 @@
 
 ## Implementation Calibration
 
-当前代码事实（2026-05-26）已经从 P0 UI shell 推进到 P2 app-session AI worker 队列阶段。Project Knowledge Map 已不再使用 runtime mock 作为默认数据源；确认生成后会进入可见队列，由单 active slot worker 在当前 app session 内接管并推进。该 change 尚未达到 native durable worker / stale scan / auto-ingestion review 完整闭环。
+当前代码事实（2026-05-27）已经从 P0 UI shell 推进到 P2 app-session AI worker + Project Memory Auto Ingestion 队列阶段。Project Knowledge Map 已不再使用 runtime mock 作为默认数据源；确认生成或自动补充触发后会进入可见队列，由单 active slot worker 在当前 app session 内接管并推进。该 change 尚未达到 native durable worker / stale scan / rebuild backup UI / 三平台实机证据完整闭环。
 
 已落地范围：
 
@@ -72,7 +72,7 @@
 - 默认运行态会读取用户级 `~/.ccgui/project-map/<project-name>-<short-hash>/` 与项目内 `.ccgui/project-map/<project-name>-<short-hash>/` 两类 persisted dataset；当前新生成请求默认写用户级目录，用户可在 confirmation dialog 选择 project-local 写入。无 persisted map 时展示 empty state，不再展示 mock 项目知识。
 - `mockProjectMapData` 仅保留为测试 fixture / controlled demo data，不再作为用户项目的事实源。
 - graph 渲染为 profile-driven lens spider overview，不再使用固定左侧 layer rail。
-- UI 已支持 lens strip 折叠、canvas pan/zoom、节点选择、hover、一跳聚焦、节点右上角下钻 / 上钻 icon、浮动 inspector 折叠。
+- UI 已支持 lens strip 折叠、canvas pan/zoom、节点选择、hover、一跳聚焦、节点右上角下钻 / 上钻 icon、浮动 inspector 折叠、canvas controls 默认折叠并以 local UI preference 记忆用户显式折叠态。
 - dataset schema 覆盖混合语言 / 混合项目形态场景：Business、Modules、API Surface、Data Model、Runtime & Build、Dependencies、Tests & Quality、Risk、Evidence。
 - 用户可见文案已接入 `zh.part5.ts` / `en.part5.ts`，中文场景保留 English technical terms。
 - Tauri 已新增 `project_map_read` / `project_map_write_snapshot`，按 workspace identity 派生 storage key，并约束写入在所选 storage root 的 `project-map/<project-name>-<short-hash>/**` 下；project-local 模式对应工作区内 `.ccgui/project-map/<project-name>-<short-hash>/**`。
@@ -87,7 +87,12 @@
 - Queue 中的 pending run 可取消，取消后变为 `cancelled` 并进入 recent；recent 支持清理 completed / failed / cancelled，不影响 active slot 或 pending queue。
 - Active slot 展示 phase、progress、thread id、latest log 和错误信息；用户可感知当前处于 Preparing Sources / Asking AI / Validating / Writing / Completed / Failed 哪个阶段。
 - 当前 worker 是前端会话级 worker：ProjectMapPanel 在中心层隐藏时仍保持挂载并继续执行；应用退出、workspace 切换或窗口卸载后不作为 daemon 继续运行。
-- auto ingestion settings 与 project memory cursor substrate 已落地，默认关闭；开启后当前实现以 `createCandidate` substrate 为主，能基于已识别 evidence path 创建低置信候选并写入 processed marker，但候选确认/应用闭环仍未接入 UI。
+- Project Memory Auto Ingestion 已从 settings-only substrate 接入真实 Project Map generation queue：启用前必须选择 engine/model；调度尊重 `checkIntervalMinutes`、`memoryCursor.lastCheckedAt`、threshold 与 pending/running auto-run 去重；auto run 会携带 Project Memory evidence 进入同一 worker prompt / active-slot 生命周期；成功后才写 processed marker，失败或取消不消费消息。
+- Auto Ingestion 默认保持 `createCandidate` conservative semantics；`autoApplyEvidenceBacked` 不再是伪开关，仍会创建真实 auto run，但 weak / memory-only claims 仍保留 candidate。
+- 自动补充和普通生成的 AI structured output 保持 strict JSON validation，并在首次 prose / malformed JSON 失败后仅执行一次同 engine/model 的 JSON-only repair turn；repair 仍失败时 run 保持 failed，不写半成品地图。
+- Auto-generated nodes 已通过 merge/read normalization 保持单 root-reachable topology；AI payload 可以引用既有 root parent，即使 payload 未重复 root 节点，持久化 orphan roots 也会在读取时修复到项目 root。
+- 候选审核入口已落地：全局 candidate badge 可定位候选节点；inspector 对 pending candidate 提供 confirm/reject；confirm 需通过 evidence gate，失败时不修改 active map。
+- 节点 diagram artifacts 已落地：AI 可为适合图解的节点生成 Mermaid Markdown sidecar，写入 Project Map `diagrams/` allowlist 路径，并通过既有文件预览链路打开。
 
 尚未落地范围：
 
@@ -95,10 +100,10 @@
 - structured patch validation substrate 已有；当前 global run 已接入完整 dataset JSON 生成 / parse / normalize / 写入，node-scoped run 已限定为目标节点与子树合并路径，后续仍需更细粒度 patch schema 与 deterministic claim validation。
 - `markStaleNodesBySourceHash` substrate 已有，但 source hash stale detection 仍未接入真实项目扫描与自动刷新链路。
 - Rust `create_backup` substrate 已有，但一键 rebuild + backup UI 仍未完成。
-- auto ingestion substrate 已有，但真正 AI 分析、候选审核 UI、candidate apply/reject 入口与自动补充 review 闭环仍待完成。
+- 自动补充 review 的主链路已接入真实 queue、candidate-safe merge、processed marker 与 candidate confirm/reject；仍缺 native daemon continuation 与跨 app-session durable worker。
 - 未完成 Windows / macOS / Linux 实机 graph + persistence 证据；当前只有 focused Vitest、Rust unit tests、OpenSpec validation 与本地代码层 smoke。
 
-因此，本 change 当前状态应理解为：P0 visual shell complete，P1 persistence + request queue mostly complete，P2 app-session AI worker complete；native durable worker、首笔 queued persistence optimistic failure semantics、真实 stale scan、rebuild backup UI、auto-ingestion AI + candidate review UI、三平台手工证据仍 pending。
+因此，本 change 当前状态应理解为：P0 visual shell complete，P1 persistence + request queue complete，P2 app-session AI worker + auto-ingestion queue complete；native durable worker、真实 stale scan、rebuild backup UI、三平台手工证据仍 pending。
 
 ## Goals
 
@@ -174,10 +179,10 @@
 - 每个非空节点至少包含：简短摘要、所属层级、sources、confidence、lastGeneratedAt。
 - 证据优先级为 code > spec > tests > commit > memory。
 - 没有证据的结论不得以确定事实展示；必须显示 unknown / needs evidence / low confidence。
-- [待实现] 用户问答中形成的项目知识可被 AI 捕获为候选，并在确认与校验后写入对应节点（当前实现尚未接入 conversation → candidate 写入链路）。
+- 用户问答中形成的项目知识可被 AI 捕获为候选，并在确认与校验后写入对应节点；当前已具备 candidate confirm/reject 与 evidence gate，conversation → candidate 自动捕获仍需后续专门 change 接线。
 - 开启自动补充后，项目记忆中达到阈值的新会话会触发分析；成功补充后对应 session id + message hash 被标记为 processed，后续不重复消费。
 - 自动补充默认只创建候选，不直接写入地图；用户确认后才持久化。
-- [待实现] 自动补充可以创建新节点，但不得修改无关节点（当前实现仅生成低置信候选，未形成节点级新建/更新闭环）。
+- 自动补充可以通过真实 auto run 创建或更新 candidate-safe 节点，并通过 topology normalization 保持 root 可达；不得修改无关节点。
 - [待实现] 一键重建地图必须先创建 backup，再写入新地图（当前仅有 rust backup substrate，尚未有前端触发入口）。
 - P0 mock `ProjectMapDataset` 仅允许作为测试 fixture；真实项目默认从 `.ccgui/project-map/<project-name>-<short-hash>/` 恢复已有地图，无数据时展示空态。
 - 首次生成完成且 Task banner 消失后，graph canvas 必须仍占据中心幕布的弹性区域，节点、连线、zoom controls 和 inspector 不得因 grid row 重排而高度为 0。
