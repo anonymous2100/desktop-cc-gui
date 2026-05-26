@@ -41,6 +41,7 @@ This change turns the graph into an interactive map surface while preserving cog
   - old snapshots with no view-state render exactly through generated layout
   - malformed or missing layout entries are ignored
   - deleted nodes prune stale layout entries during persistence updates
+- Keep viewport fitting scoped to structural graph changes so ordinary node selection does not reset pan/zoom or the user's current visual context.
 - Add tests for interaction, persistence compatibility, and no-overlap behavior.
 
 ## 技术方案对比
@@ -93,6 +94,7 @@ Use Option B. The existing renderer already owns pan/zoom, node cards, edges, an
 - Auto layout moves unpinned nodes, respects pinned nodes, and leaves nodes non-overlapping.
 - Layout preset switching recomputes unpinned positions and preserves pinned positions.
 - Mini map reflects graph bounds and allows clicking to move the viewport.
+- Selecting another node while the detail panel is open does not refit the graph or reset the current viewport.
 - Old Project Map snapshots with no `viewState` load without crashing and render graph nodes.
 - Deleting a node removes its persisted layout entry.
 - Existing evidence link, drilldown, detail panel, task drawer, and global/node generation interactions remain available.

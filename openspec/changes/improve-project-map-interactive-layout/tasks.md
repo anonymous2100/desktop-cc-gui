@@ -34,3 +34,7 @@
 - [x] 6.2 [P0][依赖: 6.1][输入: TypeScript project][输出: typecheck pass][验证: `npm run typecheck`] 运行类型检查。
 - [x] 6.3 [P0][依赖: 6.2][输入: style/large-file guards][输出: quality gates][验证: `npm run lint && npm run check:large-files && git diff --check`] 运行质量门禁。
 - [x] 6.4 [P0][依赖: 6.3][输入: OpenSpec change][输出: strict validation pass][验证: `openspec validate improve-project-map-interactive-layout --strict`] 最终 OpenSpec 校验。
+
+## 7. Regression Closure
+
+- [x] 7.1 [P0][依赖: 4.*][输入: node selection + open detail panel][输出: viewport stable across ordinary selection][验证: `ProjectMapPanel.test.tsx` keeps viewport transform unchanged after selecting another node] 收窄自动 fit 触发边界，避免普通节点点击重置 graph viewport。

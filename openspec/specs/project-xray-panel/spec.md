@@ -77,3 +77,14 @@ The Project Knowledge Map SHALL provide a compact mini map that shows graph dist
 #### Scenario: Mini map stays display-only for nodes
 - **WHEN** the mini map renders graph dots and viewport bounds
 - **THEN** it SHALL NOT expose duplicate node buttons or duplicate inspector controls
+
+### Requirement: Project Map viewport stability
+
+The Project Knowledge Map SHALL preserve the current graph viewport during ordinary node selection and SHALL only auto-fit the viewport for structural graph framing changes.
+
+#### Scenario: User selects another node while details are open
+- **WHEN** the detail panel is open
+- **AND** the graph has an existing viewport pan and zoom
+- **AND** the user selects another visible graph node
+- **THEN** the selected node and inspector SHALL update
+- **AND** the graph viewport pan and zoom SHALL remain unchanged

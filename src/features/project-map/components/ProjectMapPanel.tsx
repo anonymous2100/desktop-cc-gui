@@ -576,9 +576,31 @@ export function ProjectMapPanel({
   } | null>(null);
   const nodeDragRef = useRef<GraphNodeDragState | null>(null);
   const suppressNextNodeClickRef = useRef(false);
+  const lastAutoFitGraphKeyRef = useRef<string | null>(null);
   const visibleNodes = useMemo(
     () => resolveVisibleProjectMapNodes(dataset, focusNodeId),
     [dataset, focusNodeId],
+  );
+  const visibleNodeIdSignature = useMemo(
+    () => visibleNodes.map((node) => node.id).join("|"),
+    [visibleNodes],
+  );
+  const autoFitGraphKey = useMemo(
+    () =>
+      [
+        dataset.manifest.storageKey,
+        focusNodeId ?? "overview",
+        dataset.viewState?.layoutPreset ?? "radial",
+        visibleNodeIdSignature,
+        isDetailCollapsed ? "detail-collapsed" : "detail-open",
+      ].join("::"),
+    [
+      dataset.manifest.storageKey,
+      dataset.viewState?.layoutPreset,
+      focusNodeId,
+      isDetailCollapsed,
+      visibleNodeIdSignature,
+    ],
   );
   const selectedNode =
     (selectedNodeId ? nodeIndex.get(selectedNodeId) : null) ??
@@ -834,8 +856,15 @@ export function ProjectMapPanel({
   }, [generationQueue.length]);
 
   useEffect(() => {
+    if (!graphLayout.rootNodeId || !graphLayout.bounds) {
+      return;
+    }
+    if (lastAutoFitGraphKeyRef.current === autoFitGraphKey) {
+      return;
+    }
+    lastAutoFitGraphKeyRef.current = autoFitGraphKey;
     fitGraphToViewport();
-  }, [fitGraphToViewport]);
+  }, [autoFitGraphKey, fitGraphToViewport, graphLayout.bounds, graphLayout.rootNodeId]);
 
   useEffect(() => {
     const visibleNodeIds = new Set(visibleNodes.map((node) => node.id));

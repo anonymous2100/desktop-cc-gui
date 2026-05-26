@@ -70,12 +70,19 @@ Use click to select, `Shift`/`Meta` click to toggle multi-select. Dragging any s
 
 Mini map renders simplified dots/edges from the same layout. Clicking the mini map recenters the viewport; it does not duplicate node labels or inspector controls. This keeps it compact and avoids accessibility duplication.
 
+### Decision 6: Automatic viewport fitting is structural only
+
+The graph auto-fit effect runs only when the graph structure or framing context changes: project storage key, focus/drill scope, visible node set, layout preset, or detail-panel collapsed state. Ordinary node selection, hover, inspector updates, drag-preview cleanup, and persisted position updates MUST NOT refit the viewport.
+
+Manual Reset view remains available as an explicit viewport command.
+
 ## Risks / Trade-offs
 
 - [Risk] Persisted positions can become stale after generation changes. → Mitigation: only apply layouts for existing node ids; new nodes get generated positions; deleted nodes prune stale layout.
 - [Risk] Auto layout could produce disorienting motion. → Mitigation: bounded animation and pinned anchors.
 - [Risk] More interaction state can make `ProjectMapPanel.tsx` larger. → Mitigation: put geometry and view-state normalization into utilities.
 - [Risk] Multi-select conflicts with drilldown buttons. → Mitigation: button targets stop propagation; node drag starts only from card body.
+- [Risk] Selection-driven rerenders can look like graph reset if they trigger viewport fit. → Mitigation: gate auto-fit behind a structural signature and cover ordinary node selection with a regression test.
 
 ## Data Flow
 

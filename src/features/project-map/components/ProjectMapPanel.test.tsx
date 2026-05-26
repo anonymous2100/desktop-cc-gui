@@ -355,6 +355,47 @@ describe("ProjectMapPanel", () => {
     expect(viewport.style.transform).toContain("translate(-239px");
   });
 
+  it("keeps the viewport stable when selecting another node with the detail panel open", () => {
+    const view = renderMockProjectMapPanel();
+    const canvas = view.container.querySelector(".project-map-graph-canvas") as HTMLElement;
+    const detailPanel = screen.getByLabelText("projectMap.detailPanel") as HTMLElement;
+
+    canvas.getBoundingClientRect = () => ({
+      x: 0,
+      y: 0,
+      left: 0,
+      top: 0,
+      right: 1200,
+      bottom: 720,
+      width: 1200,
+      height: 720,
+      toJSON: () => ({}),
+    });
+    detailPanel.getBoundingClientRect = () => ({
+      x: 704,
+      y: 16,
+      left: 704,
+      top: 16,
+      right: 1182,
+      bottom: 704,
+      width: 478,
+      height: 688,
+      toJSON: () => ({}),
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: "projectMap.resetView" }));
+    fireEvent.click(within(detailPanel).getByRole("button", { name: "projectMap.collapseDetail" }));
+    fireEvent.click(screen.getByRole("button", { name: /接口表面 API Surface/i }));
+
+    const viewport = view.container.querySelector(".project-map-graph-viewport") as HTMLElement;
+    const transformAfterOpeningDetail = viewport.style.transform;
+    expect(transformAfterOpeningDetail).toContain("translate(-239px");
+
+    fireEvent.click(screen.getByRole("button", { name: /风险 Risk/i }));
+
+    expect(viewport.style.transform).toBe(transformAfterOpeningDetail);
+  });
+
   it("zooms the graph canvas around the mouse wheel anchor", () => {
     const view = renderMockProjectMapPanel();
     const canvas = view.container.querySelector(".project-map-graph-canvas") as HTMLElement;
