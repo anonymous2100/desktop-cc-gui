@@ -14,7 +14,10 @@ import {
   readProjectMapDataset,
   writeProjectMapDataset,
 } from "../services/projectMapPersistence";
-import { runProjectMapGenerationWorker } from "../services/projectMapGenerationWorker";
+import {
+  runProjectMapGenerationWorker,
+  type ProjectMapRunUpdate,
+} from "../services/projectMapGenerationWorker";
 import {
   __resetProjectMapWorkerClaimsForTests,
   useProjectMapDataset,
@@ -1311,6 +1314,314 @@ describe("useProjectMapDataset", () => {
         }),
       }),
     );
+  });
+
+  it("keeps in-flight worker updates bound to their original workspace after switching projects", async () => {
+    const mossx = workspace({ id: "ws-mossx", name: "mossx", path: "/repo/mossx" });
+    const spring = workspace({
+      id: "ws-spring",
+      name: "springboot-demo",
+      path: "/repo/springboot-demo",
+    });
+    const mossxKey = deriveProjectMapStorageKey({
+      projectName: mossx.name,
+      workspacePath: mossx.path,
+      workspaceId: mossx.id,
+    });
+    const springKey = deriveProjectMapStorageKey({
+      projectName: spring.name,
+      workspacePath: spring.path,
+      workspaceId: spring.id,
+    });
+    vi.mocked(readProjectMapDataset).mockImplementation(({ workspaceId }) => {
+      if (workspaceId === mossx.id) {
+        return Promise.resolve({
+          dataset: null,
+          response: emptyReadResponse(mossxKey, `/repo/mossx/.ccgui/project-map/${mossxKey}`),
+        });
+      }
+      return Promise.resolve({
+        dataset: null,
+        response: emptyReadResponse(
+          springKey,
+          `/repo/springboot-demo/.ccgui/project-map/${springKey}`,
+        ),
+      });
+    });
+    vi.mocked(writeProjectMapDataset).mockResolvedValue(undefined);
+    let capturedRunUpdate: ((update: ProjectMapRunUpdate) => Promise<void>) | null = null;
+    let resolveWorker: ((dataset: ProjectMapDataset) => void) | null = null;
+    vi.mocked(runProjectMapGenerationWorker).mockImplementation(
+      ({ onRunUpdate }) =>
+        new Promise((resolve) => {
+          capturedRunUpdate = onRunUpdate;
+          resolveWorker = resolve;
+        }),
+    );
+
+    const { result, rerender } = renderHook(
+      ({ activeWorkspace }: { activeWorkspace: WorkspaceInfo }) =>
+        useProjectMapDataset(activeWorkspace),
+      { initialProps: { activeWorkspace: mossx } },
+    );
+
+    await waitFor(() => expect(result.current.status).toBe("empty"));
+
+    act(() => {
+      result.current.openGlobalCollection();
+    });
+
+    const request = result.current.pendingRequest;
+    expect(request).not.toBeNull();
+
+    await act(async () => {
+      await result.current.confirmGenerationRequest(request!);
+    });
+
+    await waitFor(() => expect(runProjectMapGenerationWorker).toHaveBeenCalledTimes(1));
+
+    rerender({ activeWorkspace: spring });
+
+    await waitFor(() => {
+      expect(result.current.dataset.manifest.storageKey).toBe(springKey);
+      expect(result.current.status).toBe("empty");
+    });
+
+    await act(async () => {
+      await capturedRunUpdate?.({
+        phase: "askingAi",
+        progress: 40,
+        log: "Still collecting mossx evidence.",
+      });
+    });
+
+    expect(writeProjectMapDataset).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        workspaceId: mossx.id,
+        expectedStorageKey: mossxKey,
+        dataset: expect.objectContaining({
+          manifest: expect.objectContaining({ storageKey: mossxKey }),
+        }),
+      }),
+    );
+    expect(result.current.dataset.manifest.storageKey).toBe(springKey);
+
+    const runningDataset = vi.mocked(runProjectMapGenerationWorker).mock.calls[0]?.[0].dataset;
+    expect(runningDataset).toBeDefined();
+
+    await act(async () => {
+      resolveWorker?.({
+        ...runningDataset!,
+        nodes: [
+          ...runningDataset!.nodes,
+          {
+            id: "mossx-worker-node",
+            lensId: "overview",
+            nodeKind: "module",
+            title: "mossx worker node",
+            summary: "Belongs to mossx only",
+            detail: {
+              coreDescription: "Belongs to mossx only",
+              keyFacts: [],
+              keyLogic: [],
+              riskSignals: [],
+              relatedArtifacts: [],
+            },
+            children: [],
+            sources: [{ type: "file", label: "package.json", path: "package.json" }],
+            confidence: "medium",
+            stale: false,
+            candidate: false,
+            lastGeneratedAt: "2026-05-26T02:00:00.000Z",
+            generatedBy: {
+              engine: "codex",
+              model: "gpt-5.3-codex-spark",
+              runId: request!.id,
+            },
+          },
+        ],
+      });
+      await Promise.resolve();
+    });
+
+    await waitFor(() => {
+      expect(writeProjectMapDataset).toHaveBeenLastCalledWith(
+        expect.objectContaining({
+          workspaceId: mossx.id,
+          expectedStorageKey: mossxKey,
+          dataset: expect.objectContaining({
+            manifest: expect.objectContaining({ storageKey: mossxKey }),
+            nodes: expect.arrayContaining([
+              expect.objectContaining({ id: "mossx-worker-node" }),
+            ]),
+          }),
+        }),
+      );
+    });
+    expect(result.current.dataset.manifest.storageKey).toBe(springKey);
+    expect(result.current.dataset.nodes.some((node) => node.id === "mossx-worker-node")).toBe(false);
+  });
+
+  it("does not let an in-flight global worker overwrite the project storage view", async () => {
+    const spring = workspace({
+      id: "ws-spring",
+      name: "springboot-demo",
+      path: "/repo/springboot-demo",
+    });
+    const springKey = deriveProjectMapStorageKey({
+      projectName: spring.name,
+      workspacePath: spring.path,
+      workspaceId: spring.id,
+    });
+    const globalDataset = datasetWithPromptNodes({ workspace: spring, storageKey: springKey });
+    const projectDataset: ProjectMapDataset = {
+      ...createEmptyProjectMapDataset({
+        identity: {
+          projectName: spring.name,
+          workspacePath: spring.path,
+          workspaceId: spring.id,
+        },
+        storageKey: springKey,
+      }),
+      nodes: [
+        {
+          id: "project-storage-node",
+          lensId: "overview",
+          nodeKind: "module",
+          title: "Project storage node",
+          summary: "Only visible in project storage",
+          detail: {
+            coreDescription: "Only visible in project storage",
+            keyFacts: [],
+            keyLogic: [],
+            riskSignals: [],
+            relatedArtifacts: [],
+          },
+          children: [],
+          sources: [{ type: "file", label: "README", path: "README.md" }],
+          confidence: "medium",
+          stale: false,
+          candidate: false,
+          lastGeneratedAt: "2026-05-26T02:00:00.000Z",
+          generatedBy: {
+            engine: "codex",
+            model: "gpt-5.3-codex-spark",
+            runId: "project-seed",
+          },
+        },
+      ],
+    };
+    const globalDir = `/home/user/.ccgui/project-map/${springKey}`;
+    const projectDir = `/repo/springboot-demo/.ccgui/project-map/${springKey}`;
+    vi.mocked(readProjectMapDataset).mockImplementation(({ storageMode }) =>
+      Promise.resolve({
+        dataset: storageMode === "project" ? projectDataset : globalDataset,
+        response: {
+          ...emptyReadResponse(springKey, storageMode === "project" ? projectDir : globalDir),
+          exists: true,
+        },
+      }),
+    );
+    vi.mocked(writeProjectMapDataset).mockResolvedValue(undefined);
+    let resolveWorker: ((dataset: ProjectMapDataset) => void) | null = null;
+    vi.mocked(runProjectMapGenerationWorker).mockImplementation(
+      ({ dataset }) =>
+        new Promise((resolve) => {
+          resolveWorker = resolve;
+          void dataset;
+        }),
+    );
+
+    const { result } = renderHook(() => useProjectMapDataset(spring));
+
+    await waitFor(() => expect(result.current.status).toBe("persisted"));
+
+    await act(async () => {
+      await result.current.updateDataset((current) => ({
+        ...current,
+        runs: [
+          {
+            id: "global-active-run",
+            kind: "global",
+            status: "running",
+            phase: "askingAi",
+            engine: "codex",
+            model: "gpt-5.3-codex-spark",
+            startedAt: "2026-05-26T01:55:00.000Z",
+            completedAt: null,
+            scope: "global",
+            storageLocation: "global",
+          },
+        ],
+      }));
+    });
+
+    await waitFor(() => expect(runProjectMapGenerationWorker).toHaveBeenCalledTimes(1));
+
+    act(() => {
+      result.current.switchReadLocation("project");
+    });
+
+    await waitFor(() => {
+      expect(result.current.activeReadLocation).toBe("project");
+      expect(result.current.dataset.nodes.some((node) => node.id === "project-storage-node")).toBe(true);
+    });
+
+    const runningDataset = vi.mocked(runProjectMapGenerationWorker).mock.calls[0]?.[0].dataset;
+    expect(runningDataset).toBeDefined();
+
+    await act(async () => {
+      resolveWorker?.({
+        ...runningDataset!,
+        nodes: [
+          ...runningDataset!.nodes,
+          {
+            id: "global-worker-node",
+            lensId: "overview",
+            nodeKind: "module",
+            title: "Global worker node",
+            summary: "Only belongs to global storage",
+            detail: {
+              coreDescription: "Only belongs to global storage",
+              keyFacts: [],
+              keyLogic: [],
+              riskSignals: [],
+              relatedArtifacts: [],
+            },
+            children: [],
+            sources: [{ type: "file", label: "package.json", path: "package.json" }],
+            confidence: "medium",
+            stale: false,
+            candidate: false,
+            lastGeneratedAt: "2026-05-26T02:00:00.000Z",
+            generatedBy: {
+              engine: "codex",
+              model: "gpt-5.3-codex-spark",
+              runId: "global-active-run",
+            },
+          },
+        ],
+      });
+      await Promise.resolve();
+    });
+
+    await waitFor(() => {
+      expect(writeProjectMapDataset).toHaveBeenLastCalledWith(
+        expect.objectContaining({
+          workspaceId: spring.id,
+          storageLocation: "global",
+          expectedStorageKey: springKey,
+          dataset: expect.objectContaining({
+            nodes: expect.arrayContaining([
+              expect.objectContaining({ id: "global-worker-node" }),
+            ]),
+          }),
+        }),
+      );
+    });
+    expect(result.current.activeReadLocation).toBe("project");
+    expect(result.current.dataset.nodes.some((node) => node.id === "project-storage-node")).toBe(true);
+    expect(result.current.dataset.nodes.some((node) => node.id === "global-worker-node")).toBe(false);
   });
 
   it("does not duplicate an in-flight generation run after remount", async () => {

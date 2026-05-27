@@ -4,8 +4,16 @@ import { mockProjectMapData } from "../mockProjectMapData";
 import {
   buildDatasetFromProjectMapRead,
   serializeProjectMapDataset,
+  writeProjectMapDataset,
   type ProjectMapReadResponse,
 } from "./projectMapPersistence";
+
+function manifestForStorageKey(storageKey: string) {
+  return {
+    ...mockProjectMapData.manifest,
+    storageKey,
+  };
+}
 
 describe("project map persistence mapper", () => {
   it("serializes manifest, profile, lenses, lens nodes, settings, cursor, candidates, evidence, and runs", () => {
@@ -97,7 +105,7 @@ describe("project map persistence mapper", () => {
       storageKey: "mossx-abcd",
       storageDir: "/repo/.ccgui/project-map/mossx-abcd",
       exists: true,
-      manifest: mockProjectMapData.manifest,
+      manifest: manifestForStorageKey("mossx-abcd"),
       profile: {
         ...mockProjectMapData.profile,
         frameworks: [
@@ -199,13 +207,48 @@ describe("project map persistence mapper", () => {
     });
   });
 
+  it("quarantines persisted snapshots whose manifest belongs to another storage key", () => {
+    const dataset = buildDatasetFromProjectMapRead(
+      {
+        storageKey: "mossx-abcd",
+        storageDir: "/repo/.ccgui/project-map/mossx-abcd",
+        exists: true,
+        manifest: manifestForStorageKey("springboot-demo-8e13fe53"),
+        profile: mockProjectMapData.profile,
+        lenses: { items: mockProjectMapData.lenses },
+        lensNodes: {},
+        candidates: {},
+        evidence: {},
+        runs: {},
+      },
+      { projectName: "mossx", workspacePath: "/repo", workspaceId: "ws-1" },
+    );
+
+    expect(dataset).toBeNull();
+  });
+
+  it("rejects frontend dataset writes when the expected storage key does not match the manifest", async () => {
+    await expect(
+      writeProjectMapDataset({
+        workspaceId: "ws-mossx",
+        dataset: {
+          ...mockProjectMapData,
+          manifest: manifestForStorageKey("springboot-demo-8e13fe53"),
+        },
+        expectedStorageKey: "mossx-abcd",
+      }),
+    ).rejects.toThrow(
+      "Project map ownership mismatch: expected mossx-abcd, received springboot-demo-8e13fe53.",
+    );
+  });
+
   it("falls back when persisted auto ingestion settings contain non-finite numbers", () => {
     const dataset = buildDatasetFromProjectMapRead(
       {
         storageKey: "mossx-abcd",
         storageDir: "/repo/.ccgui/project-map/mossx-abcd",
         exists: true,
-        manifest: mockProjectMapData.manifest,
+        manifest: manifestForStorageKey("mossx-abcd"),
         profile: mockProjectMapData.profile,
         lenses: { items: mockProjectMapData.lenses },
         lensNodes: {},
@@ -234,7 +277,7 @@ describe("project map persistence mapper", () => {
         storageKey: "mossx-abcd",
         storageDir: "/repo/.ccgui/project-map/mossx-abcd",
         exists: true,
-        manifest: mockProjectMapData.manifest,
+        manifest: manifestForStorageKey("mossx-abcd"),
         profile: mockProjectMapData.profile,
         lenses: { items: mockProjectMapData.lenses },
         lensNodes: {
@@ -251,7 +294,7 @@ describe("project map persistence mapper", () => {
         storageKey: "mossx-abcd",
         storageDir: "/repo/.ccgui/project-map/mossx-abcd",
         exists: true,
-        manifest: mockProjectMapData.manifest,
+        manifest: manifestForStorageKey("mossx-abcd"),
         profile: mockProjectMapData.profile,
         lenses: { items: mockProjectMapData.lenses },
         lensNodes: {
@@ -292,7 +335,7 @@ describe("project map persistence mapper", () => {
         storageKey: "mossx-abcd",
         storageDir: "/repo/.ccgui/project-map/mossx-abcd",
         exists: true,
-        manifest: mockProjectMapData.manifest,
+        manifest: manifestForStorageKey("mossx-abcd"),
         profile: mockProjectMapData.profile,
         lenses: { items: mockProjectMapData.lenses },
         lensNodes: {
@@ -387,7 +430,7 @@ describe("project map persistence mapper", () => {
         storageKey: "mossx-abcd",
         storageDir: "/repo/.ccgui/project-map/mossx-abcd",
         exists: true,
-        manifest: mockProjectMapData.manifest,
+        manifest: manifestForStorageKey("mossx-abcd"),
         profile: mockProjectMapData.profile,
         lenses: { items: mockProjectMapData.lenses },
         lensNodes: {
@@ -449,7 +492,7 @@ describe("project map persistence mapper", () => {
         storageKey: "mossx-abcd",
         storageDir: "/repo/.ccgui/project-map/mossx-abcd",
         exists: true,
-        manifest: mockProjectMapData.manifest,
+        manifest: manifestForStorageKey("mossx-abcd"),
         profile: mockProjectMapData.profile,
         lenses: { items: mockProjectMapData.lenses },
         lensNodes: {
@@ -491,7 +534,7 @@ describe("project map persistence mapper", () => {
         storageKey: "mossx-abcd",
         storageDir: "/repo/.ccgui/project-map/mossx-abcd",
         exists: true,
-        manifest: mockProjectMapData.manifest,
+        manifest: manifestForStorageKey("mossx-abcd"),
         profile: mockProjectMapData.profile,
         lenses: { items: [] },
         lensNodes: {},

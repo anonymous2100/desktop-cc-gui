@@ -393,6 +393,8 @@ export function useProjectMapDataset(
   const loadSequenceRef = useRef(0);
   const datasetRef = useRef(dataset);
   const workspaceIdRef = useRef(workspaceId);
+  const activeReadLocationRef = useRef(activeReadLocation);
+  const expectedStorageKey = useMemo(() => deriveProjectMapStorageKey(identity), [identity]);
 
   useEffect(() => {
     datasetRef.current = dataset;
@@ -401,6 +403,10 @@ export function useProjectMapDataset(
   useEffect(() => {
     workspaceIdRef.current = workspaceId;
   }, [workspaceId]);
+
+  useEffect(() => {
+    activeReadLocationRef.current = activeReadLocation;
+  }, [activeReadLocation]);
 
   const activeRunId = useMemo(
     () => getNextActiveRun(dataset.runs)?.id ?? null,
@@ -430,18 +436,17 @@ export function useProjectMapDataset(
         dataset: nextDataset,
         createBackup,
         storageLocation: persistLocation,
+        expectedStorageKey,
       });
       setDataset(nextDataset);
       setStatus("persisted");
     },
-    [activeReadLocation, workspaceId],
+    [activeReadLocation, expectedStorageKey, workspaceId],
   );
 
   const loadDatasetFromLocation = useCallback(async (readLocation: ProjectMapStorageLocation) => {
     const loadSequence = loadSequenceRef.current + 1;
     loadSequenceRef.current = loadSequence;
-    const expectedStorageKey = deriveProjectMapStorageKey(identity);
-
     if (!workspaceId) {
       setDataset(createEmptyProjectMapDataset({ identity, storageKey: expectedStorageKey }));
       setStatus("empty");
@@ -509,7 +514,7 @@ export function useProjectMapDataset(
       setActiveReadLocation(readLocation);
       setDataset(createEmptyProjectMapDataset({ identity, storageKey: expectedStorageKey }));
     }
-  }, [identity, workspaceId]);
+  }, [expectedStorageKey, identity, workspaceId]);
 
   const reload = useCallback(async () => {
     await loadDatasetFromLocation(activeReadLocation);
@@ -531,7 +536,11 @@ export function useProjectMapDataset(
   }, [loadDatasetFromLocation]);
 
   useEffect(() => {
-    if (!workspaceId || status !== "persisted") {
+    if (
+      !workspaceId ||
+      status !== "persisted" ||
+      dataset.manifest.storageKey !== expectedStorageKey
+    ) {
       return;
     }
     const activeRun = activeRunId
@@ -546,16 +555,31 @@ export function useProjectMapDataset(
       return;
     }
     activeProjectMapWorkerKeys.add(workerKey);
+    const workerStorageKey = datasetRef.current.manifest.storageKey;
+    const workerStorageLocation = resolveRunStorageLocation(
+      datasetRef.current,
+      activeRun.id,
+      activeReadLocation,
+    );
+    const workerDatasetRef: { current: ProjectMapDataset } = { current: datasetRef.current };
+    const isActiveWorkerWorkspace = () =>
+      workspaceIdRef.current === workspaceId &&
+      activeReadLocationRef.current === workerStorageLocation &&
+      datasetRef.current.manifest.storageKey === workerStorageKey;
+    const getWorkerDatasetSnapshot = () =>
+      isActiveWorkerWorkspace() ? datasetRef.current : workerDatasetRef.current;
 
     const persistWorkerDataset = async (
       nextDataset: ProjectMapDataset,
       createBackup = false,
     ) => {
-      const runStorageLocation =
-        activeRunId !== null
-          ? resolveRunStorageLocation(nextDataset, activeRunId, activeReadLocation)
-          : activeReadLocation;
-      if (workspaceIdRef.current === workspaceId) {
+      if (nextDataset.manifest.storageKey !== workerStorageKey) {
+        throw new Error(
+          `Project map worker ownership mismatch: expected ${workerStorageKey}, received ${nextDataset.manifest.storageKey}.`,
+        );
+      }
+      workerDatasetRef.current = nextDataset;
+      if (isActiveWorkerWorkspace()) {
         datasetRef.current = nextDataset;
         setDataset(nextDataset);
         setStatus("persisted");
@@ -564,16 +588,18 @@ export function useProjectMapDataset(
         workspaceId,
         dataset: nextDataset,
         createBackup,
-        storageLocation: runStorageLocation,
+        storageLocation: workerStorageLocation,
+        expectedStorageKey: workerStorageKey,
       });
     };
 
     const updateRun = async (update: ProjectMapRunUpdate) => {
-      if (isRunCancelled(datasetRef.current, activeRun.id)) {
+      const currentWorkerDataset = getWorkerDatasetSnapshot();
+      if (isRunCancelled(currentWorkerDataset, activeRun.id)) {
         return;
       }
       const nextDataset = createDatasetWithRunUpdate(
-        datasetRef.current,
+        currentWorkerDataset,
         activeRun.id,
         update,
       );
@@ -583,14 +609,14 @@ export function useProjectMapDataset(
     void (async () => {
       try {
         const runStartedAt = new Date().toISOString();
-        const runningDataset = createDatasetWithRunUpdate(datasetRef.current, activeRun.id, {
+        const runningDataset = createDatasetWithRunUpdate(workerDatasetRef.current, activeRun.id, {
           status: "running",
           phase: "preparingSources",
           progress: Math.max(activeRun.progress ?? 0, 10),
           log: "Worker claimed the active slot.",
         });
         await persistWorkerDataset(runningDataset);
-        if (isRunCancelled(datasetRef.current, activeRun.id)) {
+        if (isRunCancelled(getWorkerDatasetSnapshot(), activeRun.id)) {
           return;
         }
         const runningRun =
@@ -607,13 +633,14 @@ export function useProjectMapDataset(
           run: runningRun,
           onRunUpdate: updateRun,
         });
-        if (isRunCancelled(datasetRef.current, activeRun.id)) {
+        if (isRunCancelled(getWorkerDatasetSnapshot(), activeRun.id)) {
           return;
         }
         const completedAt = new Date().toISOString();
+        const latestWorkerDataset = getWorkerDatasetSnapshot();
         const generatedWithLatestRuns = {
           ...generatedDataset,
-          runs: datasetRef.current.runs,
+          runs: latestWorkerDataset.runs,
         };
         const completedRun =
           generatedWithLatestRuns.runs.find((run) => run.id === activeRun.id) ?? activeRun;
@@ -661,15 +688,19 @@ export function useProjectMapDataset(
         };
         await persistWorkerDataset(withCompletedTime);
       } catch (workerError) {
-        if (isRunCancelled(datasetRef.current, activeRun.id)) {
+        if (isRunCancelled(getWorkerDatasetSnapshot(), activeRun.id)) {
           return;
         }
         const message = errorMessage(workerError);
-        const failedDataset = createDatasetWithFailedRun(datasetRef.current, activeRun.id, message);
+        const failedDataset = createDatasetWithFailedRun(
+          getWorkerDatasetSnapshot(),
+          activeRun.id,
+          message,
+        );
         try {
           await persistWorkerDataset(failedDataset);
         } catch (persistFailureError) {
-          if (workspaceIdRef.current === workspaceId) {
+          if (isActiveWorkerWorkspace()) {
             datasetRef.current = failedDataset;
             setDataset(failedDataset);
             setStatus("persisted");
@@ -679,14 +710,21 @@ export function useProjectMapDataset(
           }
           return;
         }
-        if (workspaceIdRef.current === workspaceId) {
+        if (isActiveWorkerWorkspace()) {
           setError(message);
         }
       } finally {
         activeProjectMapWorkerKeys.delete(workerKey);
       }
     })();
-  }, [activeReadLocation, activeRunId, status, workspaceId]);
+  }, [
+    activeReadLocation,
+    activeRunId,
+    dataset.manifest.storageKey,
+    expectedStorageKey,
+    status,
+    workspaceId,
+  ]);
 
   useEffect(() => {
     const checkedAt = new Date().toISOString();

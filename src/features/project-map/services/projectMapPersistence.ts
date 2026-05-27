@@ -484,11 +484,16 @@ function sanitizeProjectMapDiagramDocumentsPayload(value: unknown): ProjectMapDi
 function sanitizeManifest(
   value: unknown,
   identity: ProjectMapStorageIdentity,
+  expectedStorageKey: string,
 ): ProjectMapManifest | null {
   if (!isRecord(value) || typeof value.schemaVersion !== "number") {
     return null;
   }
   if (value.schemaVersion > PROJECT_MAP_SCHEMA_VERSION) {
+    return null;
+  }
+  const persistedStorageKey = typeof value.storageKey === "string" ? value.storageKey.trim() : "";
+  if (persistedStorageKey && persistedStorageKey !== expectedStorageKey) {
     return null;
   }
 
@@ -497,10 +502,7 @@ function sanitizeManifest(
     projectName: typeof value.projectName === "string" ? value.projectName : identity.projectName,
     workspacePath:
       typeof value.workspacePath === "string" ? value.workspacePath : identity.workspacePath,
-    storageKey:
-      typeof value.storageKey === "string"
-        ? value.storageKey
-        : deriveProjectMapStorageKey(identity),
+    storageKey: persistedStorageKey || expectedStorageKey,
     createdAt: typeof value.createdAt === "string" ? value.createdAt : new Date().toISOString(),
     updatedAt: typeof value.updatedAt === "string" ? value.updatedAt : new Date().toISOString(),
     lastRunId: typeof value.lastRunId === "string" ? value.lastRunId : null,
@@ -614,7 +616,8 @@ export function buildDatasetFromProjectMapRead(
   response: ProjectMapReadResponse,
   identity: ProjectMapStorageIdentity,
 ): ProjectMapDataset | null {
-  const manifest = sanitizeManifest(response.manifest, identity);
+  const expectedStorageKey = response.storageKey || deriveProjectMapStorageKey(identity);
+  const manifest = sanitizeManifest(response.manifest, identity, expectedStorageKey);
   const profile = sanitizeProfile(response.profile);
   const lenses = safeArray(
     isRecord(response.lenses) ? response.lenses.items : response.lenses,
@@ -727,7 +730,16 @@ export async function writeProjectMapDataset(input: {
   dataset: ProjectMapDataset;
   createBackup?: boolean;
   storageLocation?: ProjectMapStorageLocation;
+  expectedStorageKey?: string;
 }): Promise<void> {
+  if (
+    input.expectedStorageKey &&
+    input.dataset.manifest.storageKey !== input.expectedStorageKey
+  ) {
+    throw new Error(
+      `Project map ownership mismatch: expected ${input.expectedStorageKey}, received ${input.dataset.manifest.storageKey}.`,
+    );
+  }
   await withProjectMapWriteTimeout(
     invoke("project_map_write_snapshot", {
       workspaceId: input.workspaceId,

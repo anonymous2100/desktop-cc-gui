@@ -211,6 +211,32 @@ fn validate_relative_project_map_path(path: &str) -> Result<PathBuf, String> {
     Ok(relative)
 }
 
+fn validate_project_map_snapshot_ownership(
+    storage_key: &str,
+    files: &[ProjectMapWriteFile],
+) -> Result<(), String> {
+    for file in files {
+        let relative = validate_relative_project_map_path(&file.relative_path)?;
+        if relative != PathBuf::from("manifest.json") {
+            continue;
+        }
+        let manifest: Value = serde_json::from_str(&file.content)
+            .map_err(|err| format!("Failed to parse project map manifest: {err}"))?;
+        let manifest_storage_key = manifest
+            .get("storageKey")
+            .and_then(Value::as_str)
+            .map(str::trim)
+            .filter(|value| !value.is_empty())
+            .ok_or_else(|| "Project map manifest is missing storageKey.".to_string())?;
+        if manifest_storage_key != storage_key {
+            return Err(format!(
+                "Project map manifest ownership mismatch: expected {storage_key}, received {manifest_storage_key}."
+            ));
+        }
+    }
+    Ok(())
+}
+
 fn atomic_write(path: &Path, content: &str) -> Result<(), String> {
     if let Some(parent) = path.parent() {
         fs::create_dir_all(parent).map_err(|err| format!("Failed to create directory: {err}"))?;
@@ -358,7 +384,8 @@ pub(crate) async fn project_map_write_snapshot(
     state: State<'_, AppState>,
 ) -> Result<(), String> {
     let entry = workspace_entry(&state, &workspace_id).await?;
-    let (_key, root) = project_map_root_for_mode(&entry, storage_mode.as_deref())?;
+    let (key, root) = project_map_root_for_mode(&entry, storage_mode.as_deref())?;
+    validate_project_map_snapshot_ownership(&key, &files)?;
     fs::create_dir_all(&root).map_err(|err| format!("Failed to create project map root: {err}"))?;
 
     if create_backup.unwrap_or(false) {
@@ -381,7 +408,8 @@ pub(crate) async fn project_map_write_snapshot(
 mod tests {
     use super::{
         atomic_write, hash_workspace_identity, sanitize_project_name, storage_key,
-        validate_relative_project_map_path,
+        validate_project_map_snapshot_ownership, validate_relative_project_map_path,
+        ProjectMapWriteFile,
     };
     use crate::types::{WorkspaceEntry, WorkspaceKind, WorkspaceSettings};
     use std::thread;
@@ -443,6 +471,31 @@ mod tests {
         assert!(validate_relative_project_map_path("diagrams/CON.md").is_err());
         assert!(validate_relative_project_map_path("diagrams/nul.flow.md").is_err());
         assert!(validate_relative_project_map_path("random.json").is_err());
+    }
+
+    #[test]
+    fn project_map_snapshot_ownership_accepts_matching_manifest_storage_key() {
+        let files = vec![ProjectMapWriteFile {
+            relative_path: "manifest.json".to_string(),
+            content: r#"{"schemaVersion":2,"storageKey":"mossx-39335814"}"#.to_string(),
+        }];
+
+        assert!(validate_project_map_snapshot_ownership("mossx-39335814", &files).is_ok());
+    }
+
+    #[test]
+    fn project_map_snapshot_ownership_rejects_mismatched_manifest_storage_key() {
+        let files = vec![ProjectMapWriteFile {
+            relative_path: "manifest.json".to_string(),
+            content: r#"{"schemaVersion":2,"storageKey":"springboot-demo-8e13fe53"}"#.to_string(),
+        }];
+
+        let error = validate_project_map_snapshot_ownership("mossx-39335814", &files)
+            .expect_err("mismatched snapshot ownership should be rejected");
+
+        assert!(error.contains("Project map manifest ownership mismatch"));
+        assert!(error.contains("expected mossx-39335814"));
+        assert!(error.contains("received springboot-demo-8e13fe53"));
     }
 
     #[test]
