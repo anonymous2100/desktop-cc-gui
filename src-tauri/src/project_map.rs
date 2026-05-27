@@ -477,10 +477,10 @@ mod tests {
     fn project_map_snapshot_ownership_accepts_matching_manifest_storage_key() {
         let files = vec![ProjectMapWriteFile {
             relative_path: "manifest.json".to_string(),
-            content: r#"{"schemaVersion":2,"storageKey":"mossx-39335814"}"#.to_string(),
+            content: r#"{"schemaVersion":2,"storageKey":"knowledge-map-39335814"}"#.to_string(),
         }];
 
-        assert!(validate_project_map_snapshot_ownership("mossx-39335814", &files).is_ok());
+        assert!(validate_project_map_snapshot_ownership("knowledge-map-39335814", &files).is_ok());
     }
 
     #[test]
@@ -490,11 +490,11 @@ mod tests {
             content: r#"{"schemaVersion":2,"storageKey":"springboot-demo-8e13fe53"}"#.to_string(),
         }];
 
-        let error = validate_project_map_snapshot_ownership("mossx-39335814", &files)
+        let error = validate_project_map_snapshot_ownership("knowledge-map-39335814", &files)
             .expect_err("mismatched snapshot ownership should be rejected");
 
         assert!(error.contains("Project map manifest ownership mismatch"));
-        assert!(error.contains("expected mossx-39335814"));
+        assert!(error.contains("expected knowledge-map-39335814"));
         assert!(error.contains("received springboot-demo-8e13fe53"));
     }
 
