@@ -112,6 +112,7 @@ export function makeThreadMessagingHook(
     itemsByThread?: Record<string, ConversationItem[]>;
     startThreadForWorkspace?: ReturnType<typeof vi.fn>;
     refreshThread?: ReturnType<typeof vi.fn>;
+    forkThreadForWorkspace?: ReturnType<typeof vi.fn>;
     dispatch?: ReturnType<typeof vi.fn>;
     runWithCreateSessionLoading?: ReturnType<typeof vi.fn>;
     resolveComposerSelection?: () => {
@@ -145,6 +146,7 @@ export function makeThreadMessagingHook(
   const startThreadForWorkspace =
     overrides.startThreadForWorkspace ?? vi.fn(async () => ensuredThreadId);
   const refreshThread = overrides.refreshThread ?? vi.fn(async () => null);
+  const forkThreadForWorkspace = overrides.forkThreadForWorkspace ?? vi.fn(async () => null);
 
   const hook = renderHook(() =>
     useThreadMessaging({
@@ -183,7 +185,7 @@ export function makeThreadMessagingHook(
       ensureThreadForActiveWorkspace: async () => ensuredThreadId,
       ensureThreadForWorkspace: async () => ensuredThreadId,
       refreshThread,
-      forkThreadForWorkspace: async () => null,
+      forkThreadForWorkspace,
       updateThreadParent: vi.fn(),
       startThreadForWorkspace,
       onDebug,

@@ -2226,6 +2226,76 @@ describe("useThreadMessaging", () => {
     });
   });
 
+  it("forks a stale codex thread before falling back to a fresh continuation", async () => {
+    vi.mocked(sendUserMessage)
+      .mockResolvedValueOnce({
+        error: {
+          message: "thread not found: legacy-thread-id",
+        },
+      } as never)
+      .mockResolvedValueOnce({
+        result: { turn: { id: "turn-forked-thread-not-found" } },
+      } as never);
+    const refreshThread = vi.fn(async () => null);
+    const forkThreadForWorkspace = vi.fn(async () => "thread-forked-1");
+    const startThreadForWorkspace = vi.fn(async () => "thread-fresh-should-not-start");
+    const dispatch = vi.fn();
+    const { result, onDebug } = makeThreadMessagingHook("codex", {
+      activeThreadId: "legacy-thread-id",
+      ensuredThreadId: "legacy-thread-id",
+      refreshThread,
+      forkThreadForWorkspace,
+      startThreadForWorkspace,
+      dispatch,
+      itemsByThread: {
+        "legacy-thread-id": [
+          {
+            id: "assistant-durable-earlier",
+            kind: "message",
+            role: "assistant",
+            text: "durable answer",
+          },
+        ],
+      },
+    });
+
+    await act(async () => {
+      await result.current.sendUserMessage("hello codex");
+    });
+
+    await waitFor(() => {
+      expect(refreshThread).toHaveBeenCalledWith("ws-1", "legacy-thread-id");
+      expect(forkThreadForWorkspace).toHaveBeenCalledWith("ws-1", "legacy-thread-id", {
+        activate: true,
+      });
+      expect(startThreadForWorkspace).not.toHaveBeenCalled();
+      expect(sendUserMessage).toHaveBeenCalledTimes(2);
+      expect(sendUserMessage).toHaveBeenNthCalledWith(
+        2,
+        "ws-1",
+        "thread-forked-1",
+        "hello codex",
+        expect.any(Object),
+      );
+      expect(dispatch).toHaveBeenCalledWith({
+        type: "setActiveThreadId",
+        workspaceId: "ws-1",
+        threadId: "thread-forked-1",
+      });
+      expect(onDebug).toHaveBeenCalledWith(
+        expect.objectContaining({
+          label: "turn/start stale fork continuation",
+          payload: expect.objectContaining({
+            forkedThreadId: "thread-forked-1",
+            reasonCode: "stale-thread-binding",
+            staleReason: "thread-not-found",
+            userAction: "start-fresh-thread",
+          }),
+        }),
+      );
+    });
+  });
+
   it("retries codex send once when stale thread throws session not found", async () => {
     vi.mocked(sendUserMessage)
       .mockRejectedValueOnce(new Error("[SESSION_NOT_FOUND] session file not found"))

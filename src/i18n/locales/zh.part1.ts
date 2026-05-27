@@ -2421,6 +2421,7 @@ const zhPart1 = {
       "当前会话引用的 thread 已失效。历史 Codex 会话通常无法直接复活旧 thread；如有上一条提示词，优先恢复并发送到可用会话继续。",
     threadRecoveryAction: "尝试恢复会话",
     threadRecoveryRunning: "正在恢复...",
+    threadRecoveryForkResendAction: "Fork 并发送上一条提示词",
     threadRecoveryResendAction: "恢复并发送上一条提示词",
     threadRecoveryResendRunning: "正在恢复并发送...",
     threadRecoveryResendUnavailable: "当前没有可重发的上一条提示词。",
@@ -2431,6 +2432,10 @@ const zhPart1 = {
     threadRecoveryRestoredDetail: "原会话绑定已通过验证并恢复。",
     threadRecoveryRestoredAndResent:
       "原会话已恢复，并已在原会话中重发上一条提示词。",
+    threadRecoveryForkedFallbackRequired:
+      "原 thread 无法安全复活。请使用“Fork 并发送上一条提示词”，在 Fork 会话中继续这条请求。",
+    threadRecoveryForkedResent:
+      "原 thread 无法安全复活，上一条提示词已在 Fork 会话中继续。",
     threadRecoveryFreshFallbackRequired:
       "原会话无法安全重新绑定。请使用“恢复并发送上一条提示词”，在新会话中继续这条请求。",
     threadRecoveryFreshResent:

@@ -443,6 +443,7 @@ export function useAppShellLayoutNodesSection(ctx: any) {
           ?? workspaces.find((entry: any) => entry.id === targetWorkspaceId)
           ?? null,
         refreshThread,
+        forkThreadForWorkspace,
         startThreadForWorkspace,
         connectWorkspace,
         sendUserMessageToThread,

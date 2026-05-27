@@ -2477,6 +2477,7 @@ const enPart1 = {
       "This conversation points at a stale thread handle. Historical Codex sessions often cannot revive the old thread directly; if a previous prompt is available, recover and resend it into an available conversation.",
     threadRecoveryAction: "Try recovery",
     threadRecoveryRunning: "Recovering...",
+    threadRecoveryForkResendAction: "Fork and resend previous prompt",
     threadRecoveryResendAction: "Recover and resend previous prompt",
     threadRecoveryResendRunning: "Recovering and resending...",
     threadRecoveryResendUnavailable:
@@ -2490,6 +2491,10 @@ const enPart1 = {
       "The original conversation binding was verified and restored.",
     threadRecoveryRestoredAndResent:
       "The original conversation was restored and the previous prompt was resent there.",
+    threadRecoveryForkedFallbackRequired:
+      "The original thread cannot be safely revived. Use fork and resend to continue this request in a forked conversation.",
+    threadRecoveryForkedResent:
+      "The original thread cannot be safely revived. The previous prompt continued in a forked conversation.",
     threadRecoveryFreshFallbackRequired:
       "The original conversation could not be rebound. Use recovery with resend to continue the previous prompt in a new conversation.",
     threadRecoveryFreshResent:
