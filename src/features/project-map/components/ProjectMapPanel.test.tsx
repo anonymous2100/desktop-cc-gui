@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import type { ComponentProps } from "react";
-import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { mockProjectMapData } from "../mockProjectMapData";
@@ -61,11 +61,11 @@ function getGraphNodeBounds(nodeElement: Element): {
   const centerX = Number.parseFloat(element.style.left);
   const centerY = Number.parseFloat(element.style.top);
   const width = element.classList.contains("is-core")
-    ? 192
+    ? 220
     : element.classList.contains("is-hub")
       ? 176
       : 168;
-  const height = element.classList.contains("is-core") ? 110 : 96;
+  const height = element.classList.contains("is-core") ? 132 : 96;
 
   return {
     left: centerX - width / 2,
@@ -364,6 +364,23 @@ describe("ProjectMapPanel", () => {
     await waitFor(() => {
       expect(apiNode.classList.contains("is-group-selected")).toBe(true);
       expect(riskNode.classList.contains("is-group-selected")).toBe(true);
+    });
+  });
+
+  it("keeps node-body pointer capture dragging even when move events land on the node", async () => {
+    renderMockProjectMapPanel();
+    const apiNode = screen.getByRole("button", { name: /接口表面 API Surface/i });
+    const initialApiCenter = getGraphNodeCenter(apiNode);
+
+    fireEvent.pointerDown(apiNode, { pointerId: 11, clientX: 140, clientY: 180 });
+    fireEvent.pointerMove(apiNode, { pointerId: 11, clientX: 210, clientY: 220 });
+
+    const movedApiCenter = getGraphNodeCenter(apiNode);
+    expect(movedApiCenter.x).toBeGreaterThan(initialApiCenter.x);
+    expect(movedApiCenter.y).toBeGreaterThan(initialApiCenter.y);
+
+    await act(async () => {
+      fireEvent.pointerUp(apiNode, { pointerId: 11, clientX: 210, clientY: 220 });
     });
   });
 

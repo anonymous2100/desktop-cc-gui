@@ -408,6 +408,83 @@ describe("project map persistence mapper", () => {
     );
   });
 
+  it("deduplicates persisted nodes that appear in multiple lens node files", () => {
+    const rootNode = mockProjectMapData.nodes.find((node) => node.id === "project-core")!;
+    const moduleHub = mockProjectMapData.nodes.find((node) => node.id === "hub-modules")!;
+    const connectedNode = mockProjectMapData.nodes.find((node) => node.id === "module-frontend")!;
+    const duplicateLensNode = {
+      ...connectedNode,
+      lensId: "overview",
+      parentId: undefined,
+      children: [],
+      summary: "Duplicate frontend surface should merge into the connected node.",
+      detail: {
+        ...connectedNode.detail,
+        keyFacts: ["Duplicate lens copy carries extra detail."],
+        relatedArtifacts: [
+          {
+            type: "file" as const,
+            label: "duplicate",
+            path: "src/features/project-map/duplicate.ts",
+          },
+        ],
+      },
+      sources: [
+        {
+          type: "file" as const,
+          label: "duplicate",
+          path: "src/features/project-map/duplicate.ts",
+        },
+      ],
+      lastGeneratedAt: "2026-05-27T00:00:00.000Z",
+      generatedBy: {
+        engine: "claude",
+        model: "duplicate",
+        runId: "duplicate-run",
+      },
+    };
+
+    const dataset = buildDatasetFromProjectMapRead(
+      {
+        storageKey: "mossx-abcd",
+        storageDir: "/repo/.ccgui/project-map/mossx-abcd",
+        exists: true,
+        manifest: mockProjectMapData.manifest,
+        profile: mockProjectMapData.profile,
+        lenses: { items: mockProjectMapData.lenses },
+        lensNodes: {
+          modules: { items: [rootNode, moduleHub, connectedNode] },
+          frontend: { items: [duplicateLensNode] },
+        },
+        candidates: {},
+        evidence: {},
+        runs: {},
+      },
+      { projectName: "mossx", workspacePath: "/repo", workspaceId: "ws-1" },
+    );
+
+    const frontendNodes = dataset?.nodes.filter((node) => node.id === "module-frontend") ?? [];
+    const mergedNode = frontendNodes[0];
+
+    expect(frontendNodes).toHaveLength(1);
+    expect(mergedNode).toMatchObject({
+      parentId: "hub-modules",
+      lastGeneratedAt: "2026-05-27T00:00:00.000Z",
+      generatedBy: {
+        runId: "duplicate-run",
+      },
+    });
+    expect(mergedNode?.detail.keyFacts).toContain("Duplicate lens copy carries extra detail.");
+    expect(mergedNode?.sources).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ path: "src/features/project-map/duplicate.ts" }),
+      ]),
+    );
+    expect(dataset?.nodes.find((node) => node.id === "hub-modules")?.children).toContain(
+      "module-frontend",
+    );
+  });
+
   it("restores queued runs even before generated lenses exist", () => {
     const dataset = buildDatasetFromProjectMapRead(
       {

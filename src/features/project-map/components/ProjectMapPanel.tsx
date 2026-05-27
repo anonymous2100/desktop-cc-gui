@@ -805,35 +805,73 @@ export function ProjectMapPanel({
     event.currentTarget.setPointerCapture?.(event.pointerId);
   };
 
+  const updateNodeDragPreview = (
+    event: PointerEvent<HTMLDivElement>,
+  ): boolean => {
+    const nodeDrag = nodeDragRef.current;
+    if (!nodeDrag || nodeDrag.pointerId !== event.pointerId) {
+      return false;
+    }
+
+    const deltaX = (event.clientX - nodeDrag.startClientX) / viewport.zoom;
+    const deltaY = (event.clientY - nodeDrag.startClientY) / viewport.zoom;
+    nodeDrag.didMove = nodeDrag.didMove || Math.hypot(deltaX, deltaY) > 3;
+    const previewEntries = nodeDrag.nodeIds.flatMap((nodeId) => {
+      const originPosition = nodeDrag.originPositions.get(nodeId);
+      if (!originPosition) {
+        return [];
+      }
+      return [
+        [
+          nodeId,
+          {
+            ...originPosition,
+            x: Number((originPosition.x + deltaX).toFixed(2)),
+            y: Number((originPosition.y + deltaY).toFixed(2)),
+            pinned: true,
+          },
+        ] as const,
+      ];
+    });
+    nodeDrag.previewPositions = new Map(previewEntries);
+    setDragPreviewPositions(
+      Object.fromEntries(previewEntries),
+    );
+    return true;
+  };
+
+  const finishNodeDrag = (event: PointerEvent<HTMLDivElement>): boolean => {
+    const nodeDrag = nodeDragRef.current;
+    if (!nodeDrag || nodeDrag.pointerId !== event.pointerId) {
+      return false;
+    }
+
+    nodeDragRef.current = null;
+    const draggedPositions = nodeDrag.nodeIds.flatMap((nodeId) => {
+      const previewPosition = nodeDrag.previewPositions.get(nodeId);
+      const originPosition = nodeDrag.originPositions.get(nodeId);
+      return previewPosition ?? originPosition ?? [];
+    });
+    setSelectedGraphNodeIds(new Set(nodeDrag.nodeIds));
+    suppressNextNodeClickRef.current = nodeDrag.didMove;
+    if (draggedPositions.length > 0) {
+      void persistGraphPositions({
+        positions: draggedPositions,
+        pinnedNodeIds: new Set(nodeDrag.nodeIds),
+        updatedAt: new Date().toISOString(),
+      }).finally(() => {
+        setDragPreviewPositions({});
+      });
+    } else {
+      setDragPreviewPositions({});
+    }
+    return true;
+  };
+
   const handleCanvasPointerMove = (
     event: PointerEvent<HTMLDivElement>,
   ) => {
-    const nodeDrag = nodeDragRef.current;
-    if (nodeDrag?.pointerId === event.pointerId) {
-      const deltaX = (event.clientX - nodeDrag.startClientX) / viewport.zoom;
-      const deltaY = (event.clientY - nodeDrag.startClientY) / viewport.zoom;
-      nodeDrag.didMove = nodeDrag.didMove || Math.hypot(deltaX, deltaY) > 3;
-      const previewEntries = nodeDrag.nodeIds.flatMap((nodeId) => {
-        const originPosition = nodeDrag.originPositions.get(nodeId);
-        if (!originPosition) {
-          return [];
-        }
-        return [
-          [
-            nodeId,
-            {
-              ...originPosition,
-              x: Number((originPosition.x + deltaX).toFixed(2)),
-              y: Number((originPosition.y + deltaY).toFixed(2)),
-              pinned: true,
-            },
-          ] as const,
-        ];
-      });
-      nodeDrag.previewPositions = new Map(previewEntries);
-      setDragPreviewPositions(
-        Object.fromEntries(previewEntries),
-      );
+    if (updateNodeDragPreview(event)) {
       return;
     }
 
@@ -851,27 +889,7 @@ export function ProjectMapPanel({
   };
 
   const handleCanvasPointerEnd = (event: PointerEvent<HTMLDivElement>) => {
-    const nodeDrag = nodeDragRef.current;
-    if (nodeDrag?.pointerId === event.pointerId) {
-      nodeDragRef.current = null;
-      const draggedPositions = nodeDrag.nodeIds.flatMap((nodeId) => {
-        const previewPosition = nodeDrag.previewPositions.get(nodeId);
-        const originPosition = nodeDrag.originPositions.get(nodeId);
-        return previewPosition ?? originPosition ?? [];
-      });
-      setSelectedGraphNodeIds(new Set(nodeDrag.nodeIds));
-      suppressNextNodeClickRef.current = nodeDrag.didMove;
-      if (draggedPositions.length > 0) {
-        void persistGraphPositions({
-          positions: draggedPositions,
-          pinnedNodeIds: new Set(nodeDrag.nodeIds),
-          updatedAt: new Date().toISOString(),
-        }).finally(() => {
-          setDragPreviewPositions({});
-        });
-      } else {
-        setDragPreviewPositions({});
-      }
+    if (finishNodeDrag(event)) {
       return;
     }
 
@@ -960,6 +978,18 @@ export function ProjectMapPanel({
     setIsDetailCollapsed(false);
     setSelectedGraphNodeIds(new Set(nodeIds));
     event.currentTarget.setPointerCapture?.(event.pointerId);
+  };
+
+  const handleNodePointerMove = (event: PointerEvent<HTMLDivElement>) => {
+    if (updateNodeDragPreview(event)) {
+      event.stopPropagation();
+    }
+  };
+
+  const handleNodePointerEnd = (event: PointerEvent<HTMLDivElement>) => {
+    if (finishNodeDrag(event)) {
+      event.stopPropagation();
+    }
   };
 
   const handleNodeClick = (
@@ -1397,6 +1427,9 @@ export function ProjectMapPanel({
                     tabIndex={0}
                     style={{ left: position.x, top: position.y }}
                     onPointerDown={(event) => handleNodePointerDown(event, node)}
+                    onPointerMove={handleNodePointerMove}
+                    onPointerUp={handleNodePointerEnd}
+                    onPointerCancel={handleNodePointerEnd}
                     onClick={(event) => handleNodeClick(event, node)}
                     onKeyDown={(event) => handleNodeKeyDown(event, node)}
                     onDoubleClick={() => handleDrillIn(node)}

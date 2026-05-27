@@ -106,6 +106,64 @@ describe("project map incremental generation", () => {
     );
   });
 
+  it("deduplicates historical repeated node ids while preserving connected topology", () => {
+    const connectedNode = mockProjectMapData.nodes.find((node) => node.id === "module-frontend")!;
+    const duplicateNode = nodePatch(connectedNode, {
+      lensId: "overview",
+      parentId: undefined,
+      children: [],
+      detail: {
+        ...connectedNode.detail,
+        keyFacts: ["Duplicate copy has additional source-backed detail."],
+        relatedArtifacts: [
+          {
+            type: "file",
+            label: "duplicate",
+            path: "src/features/project-map/duplicate.ts",
+          },
+        ],
+      },
+      sources: [
+        {
+          type: "file",
+          label: "duplicate",
+          path: "src/features/project-map/duplicate.ts",
+        },
+      ],
+    });
+    const dataset: ProjectMapDataset = {
+      ...mockProjectMapData,
+      nodes: [...mockProjectMapData.nodes, duplicateNode],
+    };
+    const scope: ProjectMapRunMetadata["requestScope"] = { kind: "global", lensIds: [] };
+
+    const merged = mergeProjectMapGenerationResult({
+      dataset,
+      profile: dataset.profile,
+      lenses: dataset.lenses,
+      nodes: [],
+      scope,
+      run: run(scope),
+    });
+
+    const frontendNodes = merged.nodes.filter((node) => node.id === "module-frontend");
+    const mergedNode = frontendNodes[0];
+
+    expect(frontendNodes).toHaveLength(1);
+    expect(mergedNode).toMatchObject({
+      parentId: "hub-modules",
+      generatedBy: {
+        runId: "run-1",
+      },
+    });
+    expect(mergedNode?.detail.keyFacts).toContain(
+      "Duplicate copy has additional source-backed detail.",
+    );
+    expect(merged.nodes.find((node) => node.id === "hub-modules")?.children).toContain(
+      "module-frontend",
+    );
+  });
+
   it("scopes node completion to the selected node and source-backed children", () => {
     const target = mockProjectMapData.nodes.find((node) => node.id === "hub-api")!;
     const unrelatedBefore = mockProjectMapData.nodes.find((node) => node.id === "hub-risk")!;

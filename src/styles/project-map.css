@@ -1222,10 +1222,37 @@
 }
 
 .project-map-node.is-core {
-  width: 192px;
-  min-height: 110px;
-  border-color: color-mix(in srgb, var(--project-map-accent) 58%, transparent);
-  background: color-mix(in srgb, var(--project-map-accent) 10%, var(--project-map-surface));
+  width: 220px;
+  min-height: 132px;
+  border: 2px solid color-mix(in srgb, #2563eb 76%, #7dd3fc 24%);
+  border-left-width: 7px;
+  padding: 13px 36px 13px 14px;
+  background:
+    linear-gradient(135deg, color-mix(in srgb, #2563eb 18%, transparent), transparent 44%),
+    linear-gradient(180deg, color-mix(in srgb, #7dd3fc 10%, transparent), transparent 72%),
+    color-mix(in srgb, var(--project-map-surface) 88%, #2563eb 12%);
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, #7dd3fc 38%, transparent),
+    0 0 0 6px color-mix(in srgb, #2563eb 14%, transparent),
+    0 22px 42px color-mix(in srgb, var(--project-map-shadow) 72%, #2563eb 28%);
+}
+
+.project-map-node.is-core .project-map-node-kind {
+  background: linear-gradient(90deg, #2563eb, #0891b2);
+  color: #f8fbff;
+  box-shadow: 0 0 0 1px color-mix(in srgb, #bfdbfe 34%, transparent);
+}
+
+.project-map-node.is-core strong {
+  font-size: 13px;
+  letter-spacing: 0;
+}
+
+.project-map-node.is-core:hover {
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, #7dd3fc 48%, transparent),
+    0 0 0 7px color-mix(in srgb, #2563eb 18%, transparent),
+    0 24px 44px color-mix(in srgb, var(--project-map-shadow) 68%, #2563eb 32%);
 }
 
 .project-map-node.is-hub {
@@ -1237,6 +1264,14 @@
 .project-map-node.is-selected {
   border-color: var(--project-map-accent);
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--project-map-accent) 24%, transparent), 0 16px 30px var(--project-map-shadow);
+}
+
+.project-map-node.is-core.is-selected {
+  border-color: color-mix(in srgb, #2563eb 82%, #7dd3fc 18%);
+  box-shadow:
+    0 0 0 2px color-mix(in srgb, #bfdbfe 44%, transparent),
+    0 0 0 8px color-mix(in srgb, #2563eb 18%, transparent),
+    0 24px 46px color-mix(in srgb, var(--project-map-shadow) 66%, #2563eb 34%);
 }
 
 .project-map-node.is-group-selected:not(.is-selected) {

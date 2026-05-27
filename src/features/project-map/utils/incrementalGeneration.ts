@@ -361,6 +361,84 @@ function mergeNode(existing: ProjectMapNode, generated: ProjectMapNode): Project
   };
 }
 
+function getProjectMapNodeTimestamp(node: ProjectMapNode): number {
+  const timestamp = Date.parse(node.lastGeneratedAt);
+  return Number.isFinite(timestamp) ? timestamp : 0;
+}
+
+function getDuplicateNodePriority(node: ProjectMapNode): number {
+  return (
+    (node.id === PROJECT_CORE_NODE_ID ? 32 : 0) +
+    (node.parentId ? 12 : 0) +
+    Math.min(node.children.length, 8) * 2 +
+    Math.min(node.sources.length, 6) +
+    CONFIDENCE_RANK[node.confidence]
+  );
+}
+
+function compareDuplicateNodePriority(left: ProjectMapNode, right: ProjectMapNode): number {
+  return (
+    getDuplicateNodePriority(right) - getDuplicateNodePriority(left) ||
+    getProjectMapNodeTimestamp(right) - getProjectMapNodeTimestamp(left) ||
+    left.lensId.localeCompare(right.lensId) ||
+    left.title.localeCompare(right.title)
+  );
+}
+
+function mergeDuplicateNode(canonical: ProjectMapNode, duplicate: ProjectMapNode): ProjectMapNode {
+  const duplicateIsNewer = getProjectMapNodeTimestamp(duplicate) > getProjectMapNodeTimestamp(canonical);
+  const duplicateHasSources = duplicate.sources.length > 0;
+  return {
+    ...canonical,
+    detail: {
+      coreDescription: canonical.detail.coreDescription || duplicate.detail.coreDescription,
+      keyFacts: mergeTextArray(canonical.detail.keyFacts, duplicate.detail.keyFacts),
+      keyLogic: mergeTextArray(canonical.detail.keyLogic, duplicate.detail.keyLogic),
+      riskSignals: mergeTextArray(canonical.detail.riskSignals, duplicate.detail.riskSignals),
+      diagramArtifacts: mergeDiagramArtifacts(
+        canonical.detail.diagramArtifacts,
+        duplicate.detail.diagramArtifacts,
+      ),
+      relatedArtifacts: mergeArtifacts(
+        canonical.detail.relatedArtifacts,
+        duplicate.detail.relatedArtifacts,
+      ),
+    },
+    parentId: canonical.parentId ?? duplicate.parentId,
+    children: dedupeBy([...canonical.children, ...duplicate.children], (childId) => childId),
+    sources: mergeSources(canonical.sources, duplicate.sources),
+    confidence: mergeConfidence(canonical.confidence, duplicate.confidence, duplicateHasSources),
+    stale: canonical.stale || duplicate.stale,
+    candidate: canonical.candidate || duplicate.candidate,
+    lastGeneratedAt: duplicateIsNewer ? duplicate.lastGeneratedAt : canonical.lastGeneratedAt,
+    generatedBy: duplicateIsNewer ? duplicate.generatedBy : canonical.generatedBy,
+  };
+}
+
+function mergeDuplicateNodesById(nodes: ProjectMapNode[]): ProjectMapNode[] {
+  const groupedNodes = new Map<string, ProjectMapNode[]>();
+  const orderedIds: string[] = [];
+
+  for (const node of nodes) {
+    const group = groupedNodes.get(node.id);
+    if (group) {
+      group.push(node);
+      continue;
+    }
+    groupedNodes.set(node.id, [node]);
+    orderedIds.push(node.id);
+  }
+
+  return orderedIds.map((nodeId) => {
+    const group = groupedNodes.get(nodeId) ?? [];
+    const [canonicalNode, ...duplicateNodes] = [...group].sort(compareDuplicateNodePriority);
+    if (!canonicalNode) {
+      throw new Error(`Missing project-map node group for ${nodeId}`);
+    }
+    return duplicateNodes.reduce(mergeDuplicateNode, canonicalNode);
+  });
+}
+
 function getProjectMapMergeRoot(nodes: ProjectMapNode[]): ProjectMapNode | null {
   return (
     nodes.find((node) => node.id === PROJECT_CORE_NODE_ID) ??
@@ -374,10 +452,11 @@ export function normalizeProjectMapNodeTopology(
   nodes: ProjectMapNode[],
   options: { attachOrphansToRoot?: boolean } = {},
 ): ProjectMapNode[] {
-  const nodeIds = new Set(nodes.map((node) => node.id));
-  const rootNode = getProjectMapMergeRoot(nodes);
+  const uniqueNodes = mergeDuplicateNodesById(nodes);
+  const nodeIds = new Set(uniqueNodes.map((node) => node.id));
+  const rootNode = getProjectMapMergeRoot(uniqueNodes);
   const rootNodeId = rootNode?.id ?? null;
-  const normalizedParents = nodes.map((node) => {
+  const normalizedParents = uniqueNodes.map((node) => {
     const parentId =
       node.parentId && node.parentId !== node.id && nodeIds.has(node.parentId)
         ? node.parentId
