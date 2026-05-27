@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-17.md`
-- **Total Sessions**: 607
+- **Total Sessions**: 608
 - **Last Active**: 2026-05-27
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-17.md` | ~54 | Active |
+| `journal-17.md` | ~108 | Active |
 | `journal-16.md` | ~1985 | Archived |
 | `journal-15.md` | ~1996 | Archived |
 | `journal-14.md` | ~1969 | Archived |
@@ -45,6 +45,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 608 | 2026-05-27 | 修复 Project Map 跨工程生成串线 | `05f07b8c` | `feature/v0.5.3` |
 | 607 | 2026-05-27 | Project Map 节点拖拽与重复节点修复 | `ced4bf9e` | `feature/v0.5.3` |
 | 606 | 2026-05-27 | 增强引擎任务输出查看 | `f94ec7d5` | `feature/v0.5.3` |
 | 605 | 2026-05-27 | Project Map 中文主体生成提示 | `da9cd8dd` | `feature/v0.5.3` |
