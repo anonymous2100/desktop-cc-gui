@@ -358,3 +358,43 @@
 ### Next Steps
 
 - None - task complete
+
+
+## Session 614: 修复未开文件树时 composer 文件引用
+
+**Date**: 2026-05-28
+**Task**: 修复未开文件树时 composer 文件引用
+**Branch**: `feature/v0.5.4`
+
+### Summary
+
+修复 composer @ 文件引用依赖右侧文件树打开的问题，并补充 OpenSpec 契约与 focused regression test。
+
+### Main Changes
+
+- Review 发现并修正 transient disconnect 边界：initial load flag 使用 activeWorkspace.id，不使用 activeWorkspace.connected，保留 useWorkspaceFiles 内部 connected guard 与短暂断连不清空快照的既有契约。
+- `src/app-shell.tsx` 将 workspace file index 初始加载从 file tree panel visibility 中解耦，polling 仍保持 file tree 可见时才启用。
+- `src/features/workspaces/hooks/useWorkspaceFiles.test.tsx` 新增 regression：`initialLoadEnabled=true` 且 `pollingEnabled=false` 时仍加载一次首个 workspace snapshot，并且 30s 后不触发 polling。
+- 新增 OpenSpec change `fix-composer-file-reference-without-file-tree-open`，proposal 已回写 Implementation Closure 与验证结果。
+- 验证通过：`npx vitest run src/features/workspaces/hooks/useWorkspaceFiles.test.tsx src/features/composer/hooks/useComposerAutocompleteState.test.tsx`。
+- 验证通过：`npm run typecheck`。
+- 验证通过：`openspec validate fix-composer-file-reference-without-file-tree-open --strict --no-interactive`。
+
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `50e20eb2` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
