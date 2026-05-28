@@ -437,3 +437,43 @@
 ### Next Steps
 
 - None - task complete
+
+
+## Session 616: 归档用户输入跳过结算提案
+
+**Date**: 2026-05-28
+**Task**: 归档用户输入跳过结算提案
+**Branch**: `feature/v0.5.4`
+
+### Summary
+
+(Add summary)
+
+### Main Changes
+
+| 项目 | 记录 |
+|---|---|
+| OpenSpec | 归档 `fix-user-input-dismiss-settlement` 到 `openspec/changes/archive/2026-05-28-fix-user-input-dismiss-settlement/`，同步 `codex-chat-canvas-user-input-elicitation` 与 `conversation-fact-contract` 主 specs。 |
+| Frontend | 将 RequestUserInput 的 X/收起保持为本地 collapse，将“跳过并继续”接到 empty-answer settlement，成功后移除 pending request，stale/disconnected 保持容错清理。 |
+| Tests | 通过 `openspec validate fix-user-input-dismiss-settlement --strict --no-interactive`、focused Vitest、`npm run typecheck`、`npm run lint`、`openspec validate --all --strict --no-interactive`。 |
+| Commit | `12804db3 fix(input): 修复用户输入跳过结算`。 |
+| Note | 工作区仍保留未提交的 runtime/settings/thread-tooling 相关改动，未纳入本次提交。 |
+
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `12804db3` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
