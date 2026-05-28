@@ -477,3 +477,48 @@
 ### Next Steps
 
 - None - task complete
+
+
+## Session 617: 精修请求输入收起与跳过交互
+
+**Date**: 2026-05-28
+**Task**: 精修请求输入收起与跳过交互
+**Branch**: `feature/v0.5.4`
+
+### Summary
+
+拆分请求输入卡片的收起与跳过语义，补齐 archived OpenSpec 提案，并纳入 RuntimePool/launch tooling 相关全量变更。
+
+### Main Changes
+
+本次提交：50283b5d fix(user-input): 精修请求输入收起与跳过交互
+
+主要改动：
+- 请求输入卡片交互语义拆分：AskUserQuestion close/cancel 使用 dialog-specific label；RequestUserInput 的收起与跳过继续语义在提案中补齐。
+- 回写 OpenSpec archived change：补充 compact actionable surface、timeout auto-settlement failure retryable、AskUserQuestion cancel label 等 review fixes。
+- 合并当前工作区全量变更：Settings / RuntimePool section、thread messaging session tooling、i18n、renderAppShell 相关调整。
+
+验证记录：
+- npm exec vitest run src/features/app/components/RequestUserInputMessage.test.tsx src/features/app/components/AskUserQuestionDialog.test.tsx src/features/messages/components/chatCanvasSmoke.test.tsx src/features/threads/hooks/useThreadUserInput.test.tsx
+- npm run lint
+- npm run typecheck
+- git diff --check
+
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `50283b5d` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
