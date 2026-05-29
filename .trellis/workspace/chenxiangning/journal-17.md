@@ -1557,3 +1557,36 @@ Validation:
 ### Next Steps
 
 - None - task complete
+
+
+## Session 642: 收窄 watchdog 持久化日志范围
+
+**Date**: 2026-05-30
+**Task**: 收窄 watchdog 持久化日志范围
+**Branch**: `feature/v0.5.4`
+
+### Summary
+
+Review 后修正 Codex no-progress watchdog 生命周期观测的全局日志范围：scheduled 仅保留在内存 debug stream，error-log 只持久化 fired/skipped，避免正常 progress reschedule 高频刷 ~/.ccgui/error-log；补充过滤测试并更新 Phase2a 设计说明。
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `de9efefc` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
