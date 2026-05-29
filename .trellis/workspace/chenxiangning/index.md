@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-17.md`
-- **Total Sessions**: 631
+- **Total Sessions**: 632
 - **Last Active**: 2026-05-30
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-17.md` | ~1178 | Active |
+| `journal-17.md` | ~1224 | Active |
 | `journal-16.md` | ~1985 | Archived |
 | `journal-15.md` | ~1996 | Archived |
 | `journal-14.md` | ~1969 | Archived |
@@ -45,6 +45,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 632 | 2026-05-30 | v0.5.4 收口提交 | `e75b243d`, `3fb684e2` | `feature/v0.5.4` |
 | 631 | 2026-05-30 | 消息尾部操作图标接线 | `5a50bda2` | `feature/v0.5.4` |
 | 630 | 2026-05-30 | 优化 Codex 会话恢复卡片 | `0b677057` | `feature/v0.5.4` |
 | 629 | 2026-05-29 | 校准 Phase2b 启动标记 | `b2dbddda` | `feature/v0.5.4` |
