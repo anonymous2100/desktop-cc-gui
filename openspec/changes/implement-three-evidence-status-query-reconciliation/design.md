@@ -64,6 +64,16 @@ Labels:
 
 Payloads contain ids, status enum, scope booleans, timestamps, stale progress age, bounded reason, and decision action. They exclude prompt/output/stderr/file diff content.
 
+The global client error log must persist the early breadcrumb labels as well as abnormal outcomes:
+
+- `thread/session:turn-diagnostic:codex-no-progress-suspected`
+- `thread/session:turn-diagnostic:three-evidence-reconciliation-query-requested`
+- `thread/session:turn-diagnostic:three-evidence-reconciliation-query-rejected`
+- `thread/session:turn-diagnostic:three-evidence-reconciliation-query-failed`
+- abnormal `thread/session:turn-diagnostic:three-evidence-reconciliation-query-resolved` outcomes such as scoped terminal status or `cleanup-residue`
+
+If a stuck UI reproduces but the log contains neither `codex-no-progress-suspected` nor `three-evidence-reconciliation-query-requested`, the watchdog/reconciliation trigger path did not run. If it contains `query-requested` but no resolved/rejected/failed outcome, the status query was issued but did not complete or did not report back through the diagnostics channel.
+
 ## PHASE2B_HANDOFF_MARKER
 
 Start Phase 2b only after a real post-Phase2a reproduction writes all of these signals for the same scoped turn in `~/.ccgui/error-log/YYYY-MM-DD.jsonl`:

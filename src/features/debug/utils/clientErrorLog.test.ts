@@ -49,6 +49,22 @@ describe("clientErrorLog", () => {
       shouldPersistClientErrorLogEntry(
         debugEntry({
           label:
+            "thread/session:turn-diagnostic:codex-no-progress-suspected",
+        }),
+      ),
+    ).toBe(true);
+    expect(
+      shouldPersistClientErrorLogEntry(
+        debugEntry({
+          label:
+            "thread/session:turn-diagnostic:three-evidence-reconciliation-query-requested",
+        }),
+      ),
+    ).toBe(true);
+    expect(
+      shouldPersistClientErrorLogEntry(
+        debugEntry({
+          label:
             "thread/session:turn-diagnostic:three-evidence-reconciliation-query-resolved",
           payload: {
             status: "runtime-ended",

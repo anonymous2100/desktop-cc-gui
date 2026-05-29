@@ -48,6 +48,8 @@ export function shouldPersistClientErrorLogEntry(entry: DebugEntry): boolean {
   return (
     label.includes("terminal-settlement-rejected") ||
     label.includes("terminal-settlement-busy-residue") ||
+    label.includes("codex-no-progress-suspected") ||
+    label.includes("three-evidence-reconciliation-query-requested") ||
     isThreeEvidenceReconciliationResolvedAnomaly(label, entry.payload) ||
     label.includes("three-evidence-reconciliation-query-rejected") ||
     label.includes("three-evidence-reconciliation-query-failed")
