@@ -1312,3 +1312,36 @@ Validation:
 ### Next Steps
 
 - None - task complete
+
+
+## Session 635: 持久化三证对账早期信号
+
+**Date**: 2026-05-30
+**Task**: 持久化三证对账早期信号
+**Branch**: `feature/v0.5.4`
+
+### Summary
+
+修复全局 error-log 持久化筛选缺口：把 Codex no-progress watchdog 命中和三证对账 query-requested 早期面包屑写入 ~/.ccgui/error-log，补充回归测试，并在 Phase2a 设计里标明后续判断路径。
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `ceafd660` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
