@@ -851,7 +851,7 @@ describe("SettingsView Display", () => {
     expect(doctorBodyText).toContain("Wrapper Kind: cmd-wrapper");
     expect(doctorBodyText).toContain("Wrapper Fallback Retry: attempted");
     expect(doctorBodyText).toContain("HTTP_PROXY=http://127.0.0.1:7890");
-    expect(doctorBodyText).toContain("HTTPS_PROXY=Not set");
+    expect(doctorBodyText).not.toContain("HTTPS_PROXY=Not set");
   });
 
   it("switches to the Claude Code tab and runs Claude doctor", async () => {

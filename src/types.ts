@@ -1038,6 +1038,30 @@ export type DiagnosticsBundleExportResult = {
   generatedAt: string;
 };
 
+export type CodexDoctorEnvironmentDiagnosis = {
+  category: string;
+  message?: string | null;
+  configuredPath?: string | null;
+  configuredPathMissing?: boolean;
+  guiPathBinary?: string | null;
+  fallbackBinary?: string | null;
+  resolvedBinaryPath?: string | null;
+  missedByGuiPath?: boolean;
+};
+
+export type CodexDoctorProxyDiagnosis = {
+  category: string;
+  primarySource?: string | null;
+  configuredKeys?: string[];
+  processEnv?: Record<string, string | null>;
+  valuesRedacted?: boolean;
+};
+
+export type CodexDoctorNetworkDiagnosis = {
+  category: string;
+  proxy?: CodexDoctorProxyDiagnosis | null;
+};
+
 export type CodexDoctorResult = {
   ok: boolean;
   codexBin: string | null;
@@ -1054,6 +1078,9 @@ export type CodexDoctorResult = {
   resolvedBinaryPath?: string | null;
   wrapperKind?: string | null;
   fallbackRetried?: boolean;
+  environmentDiagnosis?: CodexDoctorEnvironmentDiagnosis | null;
+  proxyDiagnosis?: CodexDoctorProxyDiagnosis | null;
+  networkDiagnosis?: CodexDoctorNetworkDiagnosis | null;
   debug?: {
     platform: string;
     arch: string;
@@ -1061,6 +1088,7 @@ export type CodexDoctorResult = {
     wrapperKind?: string | null;
     pathEnvUsed?: string | null;
     proxyEnvSnapshot?: Record<string, string | null>;
+    proxyDiagnosis?: CodexDoctorProxyDiagnosis | null;
     envVars?: Record<string, string | null>;
     extraSearchPaths?: Array<{
       path: string;

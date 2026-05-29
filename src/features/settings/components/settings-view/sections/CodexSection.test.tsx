@@ -84,6 +84,13 @@ function t(key: string) {
     "settings.codexWorkspaceArgsParent": "parent workspace arguments",
     "settings.codexWorkspaceSave": "Save workspace launch",
     "settings.codexWorkspaceSaveFailed": "Workspace launch save failed",
+    "settings.versionLabel": "Version:",
+    "settings.appServerLabel": "App-server:",
+    "settings.nodeLabel": "Node:",
+    "settings.statusOk": "ok",
+    "settings.doctorEnvironmentDiagnosis": "Environment Diagnosis",
+    "settings.doctorNetworkDiagnosis": "Network Diagnosis",
+    "settings.doctorProxyEnvironment": "Proxy Environment",
     "common.cancel": "Cancel",
   };
   return labels[key] ?? key;
@@ -145,6 +152,77 @@ function createPlan(): CliInstallPlan {
 }
 
 describe("CodexSection CLI installer", () => {
+  it("hides successful unknown network and empty proxy diagnostics", () => {
+    renderCodexSection(vi.fn(), {
+      doctorState: {
+        status: "done",
+        result: {
+          ok: true,
+          codexBin: null,
+          version: "1.0.0",
+          appServerOk: true,
+          details: null,
+          path: null,
+          nodeOk: true,
+          nodeVersion: "v22.0.0",
+          nodeDetails: null,
+          proxyEnvSnapshot: {
+            HTTP_PROXY: null,
+            HTTPS_PROXY: null,
+          },
+          environmentDiagnosis: {
+            category: "resolved",
+            message: "Executable is visible to the runtime resolver.",
+          },
+          networkDiagnosis: {
+            category: "unknown",
+          },
+        } as any,
+      },
+    });
+
+    expect(screen.queryByText(/Environment Diagnosis/)).toBeNull();
+    expect(screen.queryByText(/Network Diagnosis/)).toBeNull();
+    expect(screen.queryByText(/Proxy Environment/)).toBeNull();
+  });
+
+  it("shows actionable environment, network, and configured proxy diagnostics", () => {
+    renderCodexSection(vi.fn(), {
+      doctorState: {
+        status: "done",
+        result: {
+          ok: false,
+          codexBin: null,
+          version: null,
+          appServerOk: false,
+          details: "Timed out while checking endpoint",
+          path: null,
+          nodeOk: true,
+          nodeVersion: "v22.0.0",
+          nodeDetails: null,
+          proxyEnvSnapshot: {
+            HTTP_PROXY: "http://proxy.example:8080",
+            HTTPS_PROXY: null,
+          },
+          environmentDiagnosis: {
+            category: "environmentDrift",
+            message: "Executable was found by platform fallback.",
+          },
+          networkDiagnosis: {
+            category: "timeout",
+          },
+        } as any,
+      },
+    });
+
+    expect(screen.getByText(/Environment Diagnosis/)).not.toBeNull();
+    expect(screen.getByText(/environmentDrift/)).not.toBeNull();
+    expect(screen.getByText(/Network Diagnosis/)).not.toBeNull();
+    expect(screen.getByText(/timeout/)).not.toBeNull();
+    expect(screen.getByText(/HTTP_PROXY=http:\/\/proxy.example:8080/)).not.toBeNull();
+    expect(screen.queryByText(/HTTPS_PROXY/)).toBeNull();
+  });
+
   it("previews global launch configuration without saving", async () => {
     vi.mocked(previewCodexLaunchProfile).mockResolvedValueOnce({
       ok: true,

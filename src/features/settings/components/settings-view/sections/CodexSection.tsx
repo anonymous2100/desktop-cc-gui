@@ -124,6 +124,16 @@ function DoctorResultCard({
   const debugEnvVars = state.result.debug?.envVars ?? {};
   const debugExtraSearchPaths = state.result.debug?.extraSearchPaths ?? [];
   const debugProxySnapshot = state.result.debug?.proxyEnvSnapshot ?? null;
+  const configuredProxyEntries = Object.entries(
+    state.result.proxyEnvSnapshot ?? {},
+  ).filter(([, value]) => typeof value === "string" && value.trim().length > 0);
+  const environmentDiagnosis = state.result.environmentDiagnosis;
+  const shouldShowEnvironmentDiagnosis =
+    Boolean(environmentDiagnosis?.category) &&
+    environmentDiagnosis?.category !== "resolved";
+  const networkDiagnosis = state.result.networkDiagnosis;
+  const shouldShowNetworkDiagnosis =
+    Boolean(networkDiagnosis?.category) && networkDiagnosis?.category !== "unknown";
 
   return (
     <div className={`settings-doctor ${state.result.ok ? "ok" : "error"}`}>
@@ -167,11 +177,25 @@ function DoctorResultCard({
             {t("settings.doctorAttempted")}
           </div>
         ) : null}
-        {state.result.proxyEnvSnapshot &&
-        Object.keys(state.result.proxyEnvSnapshot).length > 0 ? (
+        {shouldShowEnvironmentDiagnosis ? (
+          <div>
+            <strong>{t("settings.doctorEnvironmentDiagnosis")}:</strong>{" "}
+            {environmentDiagnosis?.category}
+            {environmentDiagnosis?.message
+              ? ` · ${environmentDiagnosis.message}`
+              : ""}
+          </div>
+        ) : null}
+        {shouldShowNetworkDiagnosis ? (
+          <div>
+            <strong>{t("settings.doctorNetworkDiagnosis")}:</strong>{" "}
+            {networkDiagnosis?.category}
+          </div>
+        ) : null}
+        {configuredProxyEntries.length > 0 ? (
           <div>
             <strong>{t("settings.doctorProxyEnvironment")}:</strong>{" "}
-            {Object.entries(state.result.proxyEnvSnapshot)
+            {configuredProxyEntries
               .map(([key, value]) => `${key}=${value ?? t("settings.notSet")}`)
               .join(" · ")}
           </div>

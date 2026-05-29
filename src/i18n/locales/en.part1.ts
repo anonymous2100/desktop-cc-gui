@@ -1981,6 +1981,8 @@ const enPart1 = {
     doctorResolvedBinary: "Resolved Binary",
     doctorWrapperKind: "Wrapper Kind",
     doctorWrapperFallbackRetry: "Wrapper Fallback Retry",
+    doctorEnvironmentDiagnosis: "Environment Diagnosis",
+    doctorNetworkDiagnosis: "Network Diagnosis",
     doctorProxyEnvironment: "Proxy Environment",
     doctorDebugInfo: "Debug Info",
     doctorClickToExpand: "Click to expand",

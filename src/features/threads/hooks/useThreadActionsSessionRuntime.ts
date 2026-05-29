@@ -785,6 +785,18 @@ export function useThreadActionsSessionRuntime({
           normalizedMessageId,
         );
         if (targetUserTurnIndex < 0) {
+          onDebug?.({
+            id: `${Date.now()}-client-thread-codex-fork-from-message-target-missing`,
+            timestamp: Date.now(),
+            source: "client",
+            label: "codex/thread/fork from message target missing",
+            payload: {
+              workspaceId,
+              threadId: canonicalThreadId,
+              messageId: normalizedMessageId,
+              reason: "localTargetMissing",
+            },
+          });
           return null;
         }
         const targetUserMessageText = normalizeComparableRewindText(
@@ -920,12 +932,24 @@ export function useThreadActionsSessionRuntime({
         } catch {
           // Best effort rollback is handled in the main rewind path below.
         }
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        const isStaleForkTarget = errorMessage.includes("[FORK_TARGET_NOT_FOUND]");
         onDebug?.({
           id: `${Date.now()}-client-thread-codex-fork-from-message-error`,
           timestamp: Date.now(),
-          source: "error",
-          label: "codex/thread/fork from message error",
-          payload: error instanceof Error ? error.message : String(error),
+          source: isStaleForkTarget ? "client" : "error",
+          label: isStaleForkTarget
+            ? "codex/thread/fork from message target missing"
+            : "codex/thread/fork from message error",
+          payload: isStaleForkTarget
+            ? {
+                workspaceId,
+                threadId: canonicalThreadId,
+                messageId: normalizedMessageId,
+                reason: "runtimeTargetMissing",
+                message: errorMessage,
+              }
+            : errorMessage,
         });
         return null;
       } finally {

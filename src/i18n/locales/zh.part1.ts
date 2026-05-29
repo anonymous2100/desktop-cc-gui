@@ -383,6 +383,8 @@ const zhPart1 = {
     doctorResolvedBinary: "解析后的二进制",
     doctorWrapperKind: "Wrapper 类型",
     doctorWrapperFallbackRetry: "Wrapper 回退重试",
+    doctorEnvironmentDiagnosis: "环境诊断",
+    doctorNetworkDiagnosis: "网络诊断",
     doctorProxyEnvironment: "代理环境",
     doctorDebugInfo: "调试信息",
     doctorClickToExpand: "点击展开",
