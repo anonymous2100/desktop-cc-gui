@@ -1714,3 +1714,40 @@ Review 后修正 Codex no-progress watchdog 生命周期观测的全局日志范
 ### Next Steps
 
 - None - task complete
+
+
+## Session 646: 同步项目地图整理体验规范
+
+**Date**: 2026-05-31
+**Task**: 同步项目地图整理体验规范
+**Branch**: `feature/v0.5.4`
+
+### Summary
+
+同步 Project Map organizer、hierarchy hardening 与 OpenSpec archive/main spec 记录。
+
+### Main Changes
+
+- 提交：1a4d56cc docs(openspec): 同步项目地图整理体验规范
+- 改动：新增 harden-project-map-organizer-review-ux change artifacts；归档 2026-05-30 add-project-map-ai-node-organizer 与 stabilize-project-map-hierarchy；同步 project-map-incremental-generation 与 project-xray-panel 主 spec。
+- 影响：OpenSpec behavior truth 与刚提交的 Project Map organizer 实现对齐，记录 AI organize、parent-move candidate、batch accept、unsafe skip、root hierarchy preservation 等约束。
+- 验证：openspec validate --all --strict --no-interactive；302 passed, 0 failed。
+
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `1a4d56cc` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
