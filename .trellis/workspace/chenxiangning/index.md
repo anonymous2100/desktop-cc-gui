@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-17.md`
-- **Total Sessions**: 648
+- **Total Sessions**: 649
 - **Last Active**: 2026-05-31
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-17.md` | ~1824 | Active |
+| `journal-17.md` | ~1866 | Active |
 | `journal-16.md` | ~1985 | Archived |
 | `journal-15.md` | ~1996 | Archived |
 | `journal-14.md` | ~1969 | Archived |
@@ -45,6 +45,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 649 | 2026-05-31 | 修复自动会话可见性元数据链路 | `33839580` | `feature/v0.5.4` |
 | 648 | 2026-05-31 | 收敛助手回复复制入口 | `f7ca349f` | `feature/v0.5.4` |
 | 647 | 2026-05-31 | 补齐三证查询超时收口 | `2017a5ab` | `feature/v0.5.4` |
 | 646 | 2026-05-31 | 同步项目地图整理体验规范 | `1a4d56cc` | `feature/v0.5.4` |
