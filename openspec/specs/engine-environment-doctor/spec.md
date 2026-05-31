@@ -29,17 +29,20 @@ TBD - created by archiving change harden-client-runtime-environment-recovery. Up
 
 系统 MUST return structured diagnosis when an executable exists in one environment but is invisible to the GUI runtime.
 
-#### Scenario: login shell finds codex but gui path does not
+#### Scenario: engine switch refreshes stale Codex availability before failing
 
-- **WHEN** platform fallback finds a Codex executable that GUI process PATH did not expose
-- **THEN** doctor MUST classify the result as environment drift or equivalent category
-- **AND** UI MUST explain the resolved path and the reason the GUI path missed it
+- **WHEN** user switches the active engine to Codex
+- **AND** cached engine status says Codex is unavailable or missing
+- **THEN** UI MUST perform a fresh engine detection before reporting switch failure
+- **AND** if refreshed detection shows Codex installed, the switch MUST proceed without requiring user restart
 
-#### Scenario: configured invalid path is reported before fallback ambiguity
+#### Scenario: Codex switch failure includes doctor evidence
 
-- **WHEN** user configured an explicit engine path and that path is invalid
-- **THEN** doctor MUST report the configured path failure
-- **AND** fallback discovery MUST NOT silently hide the invalid explicit configuration
+- **WHEN** user switches the active engine to Codex
+- **AND** fresh detection still says Codex is unavailable
+- **THEN** UI MUST run Codex doctor or equivalent diagnostic path
+- **AND** debug/error evidence MUST include structured fields such as `doctorOk`, `environmentDiagnosis`, `resolvedBinaryPath`, and `pathEnvUsed`
+- **AND** UI MUST NOT emit only the generic `Engine codex is not installed` message when doctor evidence is available
 
 ### Requirement: Network Doctor MUST Classify Local Probe And Proxy Evidence
 
@@ -62,3 +65,4 @@ TBD - created by archiving change harden-client-runtime-environment-recovery. Up
 
 - **WHEN** the local probe succeeds and no actionable network category exists
 - **THEN** UI MUST NOT show `unknown` network diagnosis
+

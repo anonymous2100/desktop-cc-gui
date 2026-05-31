@@ -29,20 +29,9 @@ TBD - created by archiving change harden-client-runtime-environment-recovery. Up
 
 model list, account rate limit, history load, thread list, and similar helper reads MUST NOT independently trigger unbounded runtime recovery.
 
-#### Scenario: helper read during stopping returns transient state
+#### Scenario: daemon helper reads use the shared acquire guard
 
-- **WHEN** a helper read targets a workspace runtime currently in `stopping` or cleanup state
-- **THEN** system MUST return a transient typed degraded result or last-good snapshot where available
-- **AND** system MUST NOT spawn a second automatic runtime acquire for the same workspace and engine
+- **WHEN** daemon-mode `model/list` or `account/rateLimits/read` needs a live Codex session for a workspace
+- **THEN** the system MUST enter the shared guarded Codex session ensure path before sending the live helper request
+- **AND** acquire contention or quarantine MUST be surfaced from the shared runtime recovery guard instead of a separate helper-read recovery path
 
-#### Scenario: quarantine pauses automatic recovery
-
-- **WHEN** repeated runtime acquire failures exhaust the configured recovery budget
-- **THEN** system MUST enter a quarantined or cooldown state for that workspace and engine
-- **AND** subsequent automatic helper reads MUST surface quarantine diagnostics instead of retrying immediately
-
-#### Scenario: explicit retry can open bounded recovery
-
-- **WHEN** the user explicitly retries, reconnects, or starts new runtime-required work after quarantine
-- **THEN** system MUST allow a fresh guarded recovery attempt
-- **AND** the fresh attempt MUST remain bounded by the same retry and generation contract

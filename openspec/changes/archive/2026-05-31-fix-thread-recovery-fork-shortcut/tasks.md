@@ -10,10 +10,10 @@
 
 - [x] 2.1 Update focused reconnect card tests so stale thread recovery asserts the shared Fork callback path.
 - [x] 2.2 Assert stale thread Fork no longer calls `ensureRuntimeReady` or recover-and-resend.
-- [ ] 2.3 Run focused Vitest: `npm run test -- src/features/messages/components/Messages.runtime-reconnect.test.tsx`.
-- [ ] 2.4 Run TypeScript validation or record why it was deferred.
+- [x] 2.3 Run focused Vitest: `npm run test -- src/features/messages/components/Messages.runtime-reconnect.test.tsx`.
+- [x] 2.4 Run TypeScript validation or record why it was deferred.
 
 ## 3. OpenSpec
 
 - [x] 3.1 Create OpenSpec proposal/tasks/spec delta for `fix-thread-recovery-fork-shortcut`.
-- [ ] 3.2 Run `openspec validate fix-thread-recovery-fork-shortcut --strict --no-interactive`.
+- [x] 3.2 Run `openspec validate fix-thread-recovery-fork-shortcut --strict --no-interactive`.

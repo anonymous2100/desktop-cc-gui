@@ -105,53 +105,6 @@ The system SHALL derive a Project Profile for the active workspace and organize 
 - **AND** it SHALL list representative skipped and unsafe reasons so the user can understand why nodes were not organized
 - **AND** the Unassigned Discoveries detail panel SHALL explain that AI organize creates review candidates and does not directly mutate the map
 
-#### Scenario: Overview preserves structural hierarchy
-
-- **WHEN** the Project Knowledge Map overview graph is rendered without a focused node
-- **THEN** root-level visible children SHALL primarily represent structural project domains, modules, subsystems, or durable capabilities
-- **AND** task, bugfix, risk, workflow, test, artifact, and evidence discoveries SHALL NOT be presented as ordinary root-level structural hubs
-- **AND** those non-structural discoveries SHALL remain reachable by drilling into their parent structural node or the generic unassigned discoveries container
-
-#### Scenario: Root node is not used as a task bucket
-
-- **WHEN** persisted or generated Project Map data contains non-structural nodes with missing, invalid, or root parent relationships
-- **THEN** the Project Map projection SHALL avoid treating those nodes as direct project root children
-- **AND** the projection SHALL preserve the nodes for review instead of deleting them
-- **AND** the fallback grouping SHALL use a generic project-agnostic triage concept rather than repository-specific workflow names
-
-#### Scenario: Project profile drives top-level lenses
-- **WHEN** the Project Knowledge Map has project evidence or generated mock data
-- **THEN** the dataset SHALL include a Project Profile describing language, project shape, framework candidates, interface kinds, and build systems
-- **AND** the top-level graph SHALL render lenses from the dataset rather than a hard-coded UI layer list
-- **AND** the UI SHALL NOT expose a fixed left-side layer rail as the primary navigation model
-
-#### Scenario: Lens navigation
-- **WHEN** the Project Knowledge Map panel is open
-- **THEN** the user SHALL be able to drill into detected or candidate lenses such as Overview, Business Capabilities, Modules, API Surface, Data Model, Runtime & Build, Dependencies, Tests & Quality, Risk, or Evidence when they apply to the current project
-- **AND** lenses marked `notApplicable` SHALL NOT be shown as active graph choices
-
-#### Scenario: Smart initial lens
-- **WHEN** the Project Knowledge Map panel opens
-- **THEN** the system SHALL select Overview for an empty or newly generated map
-- **AND** the system MAY prioritize Risk, Evidence, or recently changed lenses when stale nodes, pending candidates, or recent high-activity changes exist
-
-#### Scenario: Cross-language API classification
-- **WHEN** the system identifies project interfaces
-- **THEN** API Surface SHALL support HTTP, RPC, CLI commands, library exports, native headers, and event topics
-- **AND** the UI SHALL NOT assume that all APIs are Spring controllers, REST endpoints, or frontend routes
-
-#### Scenario: Mixed node granularity
-- **WHEN** the system generates graph nodes
-- **THEN** top-level nodes SHALL primarily represent modules or subsystems
-- **AND** child nodes MAY represent capabilities, flows, risks, timeline events, or concepts
-
-#### Scenario: Node drill-down
-- **WHEN** the user selects a node
-- **THEN** the inspector SHALL show its summary, lens, confidence, stale state, sources, last generated time, and generation run
-- **AND** the user SHALL be able to inspect linked files, specs, commits, tests, or conversation evidence when available
-- **AND** nodes with children SHALL provide a visible drill-down icon
-- **AND** focused child views SHALL provide an upward navigation affordance when a parent exists
-
 ### Requirement: Structured node detail
 
 The system SHALL provide concise structured details for each selected map node.
@@ -278,14 +231,13 @@ The system SHALL enforce concise, evidence-backed AI output for all generated ma
 
 The system SHALL support adding verifiable project knowledge from project Q&A into the map through AI-generated candidates.
 
-#### Scenario: Candidate capture from Q&A
-- **WHEN** a conversation produces project knowledge with identifiable evidence
-- **THEN** the system MAY create a candidate map patch
-- **AND** the candidate SHALL require user confirmation before writing to disk
+#### Scenario: Candidate review surfaces
 
-#### Scenario: Candidate follows evidence gate
-- **WHEN** the user confirms a conversation-derived candidate
-- **THEN** the candidate SHALL pass the same evidence and persistence rules as global or node-level generation
+- **WHEN** candidates exist
+- **THEN** the top bar SHALL show a candidate count badge
+- **AND** the selected node inspector SHALL show candidates related to that node
+- **AND** the top bar SHALL provide an Accept all action that attempts to accept every current candidate that passes validation
+- **AND** after batch confirmation the UI SHALL show how many candidates were accepted and how many were skipped
 
 ### Requirement: Project memory auto ingestion settings
 
@@ -948,3 +900,4 @@ Project Map Auto Ingestion SHALL evaluate scheduling from the active workspace l
 - **WHEN** the run fails or is cancelled
 - **THEN** the consumed message hashes SHALL NOT be added to `memoryCursor.processedMessages`
 - **AND** the messages SHALL remain eligible for retry after the interval gate allows another scan
+

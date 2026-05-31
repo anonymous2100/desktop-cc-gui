@@ -128,35 +128,35 @@ Codex stale thread manual recovery MUST distinguish verified thread rebind from 
 
 ### Requirement: Recover And Resend MUST Make Fresh Fallback Visible
 
-When a user explicitly chooses to recover and resend from a stale Codex thread recovery card, the system MUST make the continuation target clear and MUST not require the user to discover the Fork menu manually.
+When a user explicitly chooses a stale Codex thread recovery card continuation action, the system MUST make the continuation target clear and MUST not require the user to discover a separate Fork entry point manually.
 
-#### Scenario: recovery card offers fork resend shortcut
+#### Scenario: recovery card offers fork shortcut
 
 - **WHEN** the message canvas detects a Codex stale thread recovery error
-- **AND** a previous prompt is available for replay
-- **THEN** the recovery card MUST expose a direct Fork/resend action in the canvas
-- **AND** the user MUST NOT need to open the bottom toolbar Fork menu to continue
+- **THEN** the recovery card MUST expose a direct Fork action in the canvas
+- **AND** the user MUST NOT need to discover a separate bottom toolbar Fork menu to create a usable forked conversation
 
 #### Scenario: recovery card explains stale thread meaning and next step
 
 - **WHEN** the message canvas renders a Codex stale thread recovery card
 - **THEN** the card MUST explain that the current Codex thread binding is no longer safe to continue
 - **AND** it MUST state that the existing canvas content remains visible while the failed request needs a usable continuation thread
-- **AND** it MUST present a recommended next step that tells the user to Fork and resend the previous prompt
+- **AND** it MUST present a recommended next step that tells the user to Fork the current conversation
 - **AND** raw provider/runtime details such as `thread not found` MUST be visually secondary to the user-facing explanation
 
-#### Scenario: fork resend action is a clear primary action
+#### Scenario: fork shortcut is a clear primary action
 
-- **WHEN** the recovery card can replay a previous prompt
-- **THEN** the primary action MUST combine a Fork-oriented icon with concise text such as `Fork and resend`
-- **AND** the action label MUST NOT rely on long technical copy as the only indication of what will happen
-- **AND** the action MUST continue to call the existing recover-and-resend path rather than introducing a parallel recovery flow
+- **WHEN** the stale thread recovery card can offer a continuation action
+- **THEN** the primary action MUST combine a Fork-oriented icon with concise text such as `Fork`
+- **AND** the action label MUST NOT promise automatic resend semantics
+- **AND** the action MUST call the existing shared Fork capability rather than introducing a parallel fork implementation
+- **AND** the action MUST NOT call the recover-and-resend path
 
-#### Scenario: forked resend reports fork continuation
+#### Scenario: fork shortcut does not require runtime reacquire
 
-- **WHEN** recover-and-resend produces a forked continuation thread
-- **THEN** the recovery card MUST report that the prompt continued in a Fork conversation
-- **AND** it MUST NOT present the original runtime thread as revived
+- **WHEN** the user clicks the stale thread recovery card Fork action
+- **THEN** the UI MUST invoke the shared Fork callback without first requiring runtime reacquire for the stale thread
+- **AND** runtime reacquire MUST remain scoped to recover-only or non-stale reconnect/resend actions
 
 ### Requirement: Recover Only MUST Preserve Conservative Rebind Semantics
 
@@ -297,3 +297,4 @@ The active workspace sidebar MUST use full active project catalog hydration as i
 - **AND** a manual, reload, rename, or other direct `listThreadsForWorkspaceTracked(workspace)` refresh runs without an explicit startup hydration kind
 - **THEN** the refresh MUST use `full-catalog`
 - **AND** it MUST NOT overwrite the active sidebar with startup `first-page` rows or any other subset projection
+
