@@ -1,3 +1,4 @@
+import { parseModelStructuredJsonObject } from "../../../services/modelStructuredOutput";
 import { engineSendMessageSync } from "../../../services/tauri";
 import type { EngineType } from "../../../types";
 import type {
@@ -239,41 +240,41 @@ export function buildProjectMapNodeOrganizerPrompt(input: {
   ].join("\n");
 }
 
-function extractJsonObject(text: string): string | null {
-  const start = text.indexOf("{");
-  const end = text.lastIndexOf("}");
-  return start >= 0 && end > start ? text.slice(start, end + 1) : null;
+function isOrganizerPayloadShape(value: unknown): value is OrganizerPayload {
+  return isRecord(value) && Array.isArray(value.moves);
 }
 
 function parseOrganizerPayload(text: string): OrganizerPayload {
-  const objectText = extractJsonObject(text);
-  if (!objectText) {
-    throw new Error("AI organizer output did not contain a JSON object.");
+  try {
+    const parsed = parseModelStructuredJsonObject({
+      text,
+      validator: isOrganizerPayloadShape,
+      payloadDescription: "organizer JSON payload",
+    });
+    return {
+      moves: parsed.moves
+        .filter(isRecord)
+        .map((move) => ({
+          nodeId: asTrimmedString(move.nodeId),
+          suggestedParentId: asTrimmedString(move.suggestedParentId),
+          confidence: normalizeConfidence(move.confidence),
+          reason: asTrimmedString(move.reason),
+        }))
+        .filter((move) => move.nodeId && move.suggestedParentId),
+      skips: Array.isArray(parsed.skips)
+        ? parsed.skips
+            .filter(isRecord)
+            .map((skip) => ({
+              nodeId: asTrimmedString(skip.nodeId),
+              reason: asTrimmedString(skip.reason),
+            }))
+            .filter((skip) => skip.nodeId)
+        : [],
+    };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    throw new Error(message.replace(/^AI output/, "AI organizer output"));
   }
-  const parsed = JSON.parse(objectText) as unknown;
-  if (!isRecord(parsed) || !Array.isArray(parsed.moves)) {
-    throw new Error("AI organizer output did not contain a moves array.");
-  }
-  return {
-    moves: parsed.moves
-      .filter(isRecord)
-      .map((move) => ({
-        nodeId: asTrimmedString(move.nodeId),
-        suggestedParentId: asTrimmedString(move.suggestedParentId),
-        confidence: normalizeConfidence(move.confidence),
-        reason: asTrimmedString(move.reason),
-      }))
-      .filter((move) => move.nodeId && move.suggestedParentId),
-    skips: Array.isArray(parsed.skips)
-      ? parsed.skips
-          .filter(isRecord)
-          .map((skip) => ({
-            nodeId: asTrimmedString(skip.nodeId),
-            reason: asTrimmedString(skip.reason),
-          }))
-          .filter((skip) => skip.nodeId)
-      : [],
-  };
 }
 
 function dedupeOrganizerMoves(moves: OrganizerMovePayload[]): OrganizerMovePayload[] {
@@ -439,19 +440,35 @@ function createOrganizerCandidate(input: {
   };
 }
 
-export async function organizeProjectMapUnassignedDiscoveries(
-  input: ProjectMapNodeOrganizerInput,
-): Promise<ProjectMapNodeOrganizerResult> {
-  const unassignedChildren = getProjectMapUnassignedDiscoveryChildren(input.dataset);
-  if (unassignedChildren.length === 0) {
-    throw new Error("No unassigned Project Map discoveries are available to organize.");
-  }
-  const prompt = buildProjectMapNodeOrganizerPrompt({
-    dataset: input.dataset,
-    preferredLanguage: input.preferredLanguage,
-  });
+function buildOrganizerJsonRepairPrompt(input: {
+  originalPrompt: string;
+  invalidOutput: string;
+  validationError: string;
+}): string {
+  return [
+    "You are repairing a Project Map organizer response.",
+    `The previous response failed validation: ${input.validationError}`,
+    "Return pure JSON only. No markdown fence. No explanation. Do not ask questions. Do not call tools.",
+    "The JSON must match this exact shape:",
+    '{"moves":[{"nodeId":"...","suggestedParentId":"...","confidence":"high|medium|low|unknown","reason":"..."}],"skips":[{"nodeId":"...","reason":"..."}]}',
+    "Every unassigned node from the original prompt must appear exactly once in either moves or skips.",
+    "INVALID_PREVIOUS_RESPONSE_START",
+    input.invalidOutput.trim(),
+    "INVALID_PREVIOUS_RESPONSE_END",
+    "ORIGINAL_ORGANIZER_PROMPT_START",
+    input.originalPrompt,
+    "ORIGINAL_ORGANIZER_PROMPT_END",
+  ].join("\n");
+}
+
+async function sendOrganizerPrompt(input: {
+  workspaceId: string;
+  prompt: string;
+  engine: EngineType | string;
+  model: string;
+}): Promise<string> {
   const response = await engineSendMessageSync(input.workspaceId, {
-    text: prompt,
+    text: input.prompt,
     engine: input.engine as EngineType,
     model: input.model,
     accessMode: "read-only",
@@ -464,7 +481,52 @@ export async function organizeProjectMapUnassignedDiscoveries(
       createdBy: "system",
     },
   });
-  const payload = parseOrganizerPayload(response.text);
+  return response.text;
+}
+
+async function requestOrganizerPayload(input: {
+  workspaceId: string;
+  prompt: string;
+  engine: EngineType | string;
+  model: string;
+}): Promise<OrganizerPayload> {
+  const output = await sendOrganizerPrompt(input);
+  try {
+    return parseOrganizerPayload(output);
+  } catch (validationError) {
+    const validationMessage = validationError instanceof Error ? validationError.message : String(validationError);
+    const repairPrompt = buildOrganizerJsonRepairPrompt({
+      originalPrompt: input.prompt,
+      invalidOutput: output,
+      validationError: validationMessage,
+    });
+    const repairedOutput = await sendOrganizerPrompt({ ...input, prompt: repairPrompt });
+    try {
+      return parseOrganizerPayload(repairedOutput);
+    } catch (repairError) {
+      const repairMessage = repairError instanceof Error ? repairError.message : String(repairError);
+      throw new Error(`${repairMessage} First validation error: ${validationMessage}`);
+    }
+  }
+}
+
+export async function organizeProjectMapUnassignedDiscoveries(
+  input: ProjectMapNodeOrganizerInput,
+): Promise<ProjectMapNodeOrganizerResult> {
+  const unassignedChildren = getProjectMapUnassignedDiscoveryChildren(input.dataset);
+  if (unassignedChildren.length === 0) {
+    throw new Error("No unassigned Project Map discoveries are available to organize.");
+  }
+  const prompt = buildProjectMapNodeOrganizerPrompt({
+    dataset: input.dataset,
+    preferredLanguage: input.preferredLanguage,
+  });
+  const payload = await requestOrganizerPayload({
+    workspaceId: input.workspaceId,
+    prompt,
+    engine: input.engine,
+    model: input.model,
+  });
   const createdAt = new Date().toISOString();
   const dedupedMoves = dedupeOrganizerMoves(payload.moves);
   const dedupedSkips = dedupeOrganizerSkips(payload.skips);

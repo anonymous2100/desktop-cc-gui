@@ -15,10 +15,12 @@
 - 复制粘贴相似逻辑，不做 reuse 评估。
 - 修改大样式文件不跑 large-file 检查。
 - 在核心流程里随意引入 `any`。
+- 禁止直接 `JSON.parse()` raw model output，例如 `response.text`、AI helper result、assistant final text；必须先走 shared structured-output normalization。
 
 ## Required Patterns
 
 - boundary 数据先 normalize 再使用。
+- 模型结构化输出必须先 normalize、再由 domain validator 缩窄类型，repair 失败必须 fail closed 且不得写入 partial trusted data。
 - side effect 必须 cleanup。
 - `useEffect` 中清理/归一化 `Set`、`Map`、array state 时，内容未变化必须返回原 state 引用；禁止每轮返回等价的新 collection，避免 render loop。
 - 错误信息要可追踪、可读、可反馈。

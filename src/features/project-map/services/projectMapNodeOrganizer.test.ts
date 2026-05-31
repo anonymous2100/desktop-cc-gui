@@ -601,6 +601,41 @@ describe("project map node organizer", () => {
     ).rejects.toThrow("AI organizer output did not contain a JSON object.");
   });
 
+  it("repairs malformed organizer JSON with one JSON-only retry", async () => {
+    vi.mocked(engineSendMessageSync)
+      .mockResolvedValueOnce({
+        engine: "claude",
+        text: '{"moves":[{"nodeId":"risk-taxonomy-drift","suggestedParentId":"hub-risk","confidence":"medium","reason":"Belongs under risk."}],"skips":[',
+      })
+      .mockResolvedValueOnce({
+        engine: "claude",
+        text: JSON.stringify({
+          moves: [
+            {
+              nodeId: "risk-taxonomy-drift",
+              suggestedParentId: "hub-risk",
+              confidence: "medium",
+              reason: "Belongs under risk.",
+            },
+          ],
+          skips: [],
+        }),
+      });
+
+    const result = await organizeProjectMapUnassignedDiscoveries({
+      workspaceId: "ws-1",
+      dataset: datasetWithUnassignedNode(),
+      engine: "claude",
+      model: "claude-sonnet",
+      preferredLanguage: "zh",
+    });
+
+    expect(engineSendMessageSync).toHaveBeenCalledTimes(2);
+    expect(vi.mocked(engineSendMessageSync).mock.calls[1]?.[1].text).toContain("INVALID_PREVIOUS_RESPONSE_START");
+    expect(result.candidates).toHaveLength(1);
+    expect(result.candidates[0]?.move?.suggestedParentId).toBe("hub-risk");
+  });
+
   it("records unsafe parent moves without creating candidates", async () => {
     vi.mocked(engineSendMessageSync).mockResolvedValue({
       engine: "claude",
