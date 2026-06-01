@@ -725,3 +725,49 @@ Commit: e22c9b1b fix(browser-agent): 收窄浏览器自动打开触发
 ### Next Steps
 
 - None - task complete
+
+
+## Session 668: Phase2b 前台残留清理收口
+
+**Date**: 2026-06-01
+**Task**: Phase2b 前台残留清理收口
+**Branch**: `feature/v0.5.5`
+
+### Summary
+
+(Add summary)
+
+### Main Changes
+
+| Area | Summary |
+|------|---------|
+| OpenSpec | Created `fix-foreground-turn-settlement-phase2b` with proposal, design, tasks, and delta specs for `codex-stalled-recovery-contract` and `engine-runtime-contract`. |
+| Runtime lifecycle | Added guarded foreground residue cleanup for accepted scoped `cleanup-residue` decisions from three-evidence reconciliation. |
+| Watchdog/interruption | Routed interrupted Codex watchdog skip through the same cleanup helper so matching busy residue clears deterministically. |
+| Diagnostics | Persisted bounded `three-evidence-reconciliation-cleanup-applied` evidence while preserving sensitive payload redaction. |
+| Tests | Updated `useThreadEventHandlers` regression coverage for query-skipped cleanup, terminal status cleanup, running no-cleanup, and successor-turn scope mismatch no-cleanup. |
+
+Validation performed before commit:
+- `openspec validate fix-foreground-turn-settlement-phase2b --strict --no-interactive`
+- `npx vitest run src/features/threads/hooks/useThreadEventHandlers.test.ts`
+- `npm run typecheck`
+- `npm run lint`
+
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `6e69a6e5` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
