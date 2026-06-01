@@ -533,3 +533,53 @@ Review result:
 ### Next Steps
 
 - None - task complete
+
+
+## Session 664: 修复 CI 品牌与测试噪音门禁
+
+**Date**: 2026-06-01
+**Task**: 修复 CI 品牌与测试噪音门禁
+**Branch**: `feature/v0.5.4`
+
+### Summary
+
+修复 check:branding 中 browser pending URL 旧品牌 key；隔离 WorkspaceHome 测试中的 BrowserDock runtime side effect；将两个回归点沉淀到 frontend specs。
+
+### Main Changes
+
+## 变更内容
+
+- 将 browser-agent/composer 共享的 pending URL sessionStorage key 从 `mossx.browserAgent.pendingUrl` 改为 `ccgui.browserAgent.pendingUrl`，消除 branding gate legacy token。
+- 在 `WorkspaceHome.test.tsx` 中 mock `BrowserDock`，避免 workspace summary 测试真实挂载 browser runtime effect 后产生 React `act(...)` warning。
+- 更新 `.trellis/spec/frontend/state-management.md`，新增 branded transient browser session keys contract。
+- 更新 `.trellis/spec/frontend/quality-guidelines.md`，新增 runtime-heavy child component test isolation contract。
+
+## 影响范围
+
+- CI branding gate
+- heavy-test-noise / React act warning gate
+- frontend state key 命名规范
+- parent component unit test 隔离规范
+
+## 验证
+
+- 本轮未主动运行验证命令；修复依据来自 CI failure log 与 targeted source inspection。
+
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `08f17169` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
