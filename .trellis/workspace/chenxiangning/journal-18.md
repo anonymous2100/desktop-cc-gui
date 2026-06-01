@@ -410,3 +410,49 @@
 ### Next Steps
 
 - None - task complete
+
+
+## Session 661: Browser Dock Phase 2 收口
+
+**Date**: 2026-06-01
+**Task**: Browser Dock Phase 2 收口
+**Branch**: `feature/v0.5.4`
+
+### Summary
+
+(Add summary)
+
+### Main Changes
+
+| Area | Summary |
+|------|---------|
+| Browser Dock | 收口 Browser Dock Phase 2 为 evidence-grade page understanding MVP，保留右侧 companion split 和 active tab source of truth。|
+| Snapshot v2 | 增加 primaryContent、readableBlocks、noiseDiagnostics、visualEvidence、pageType、codeCandidates、budget 和 privacy metadata。|
+| Composer/引用卡 | 将关联入口移动到 Browser Dock header；Composer 保留已关联 preview、refresh、remove 和可滚动详情；发送后引用卡支持结构化详情和复制安全摘要。|
+| AI payload | 统一通过 BrowserContextAttachment / formatBrowserContextPrompt 注入，避免 UI 预览和模型输入分裂。|
+| Review fixes | 修复 TaskRun degraded evidence state 被丢弃的问题；保留 degraded/expired freshness，不再压扁成 stale；补齐 shared send attachment 类型。|
+| OpenSpec | proposal/tasks/implementation-notes/validation 已写入 Phase 2 closure，并把 OCR/vision、复杂 SPA、授权 action preview 等移入下一阶段输入。|
+
+Review result:
+- OpenSpec status remains complete and strict validate passed during closure.
+- No remaining blocker found in static diff review.
+- No extra frontend/backend test command was run in the final closure turn.
+
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `f49c9ad2` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
