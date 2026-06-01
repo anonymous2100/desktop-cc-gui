@@ -48,6 +48,28 @@ type BrowserContextPromptAttachment = Pick<
   };
 };
 
+type ParsedBrowserContextPromptAttachment = Pick<
+  BrowserContextAttachment,
+  | "title"
+  | "url"
+  | "capturedAt"
+  | "stale"
+  | "summary"
+> &
+  Partial<
+    Pick<
+      BrowserContextAttachment,
+      | "pageType"
+      | "primaryContent"
+      | "visibleTextExcerpt"
+      | "readableBlocks"
+      | "visualEvidence"
+      | "noiseDiagnostics"
+      | "codeCandidates"
+      | "elementCounts"
+    >
+  >;
+
 export type BrowserContextAttachmentOptions = {
   now?: number;
   staleAfterMs?: number;
@@ -224,22 +246,7 @@ export function formatBrowserContextPrompt(
 
 export function parseBrowserContextPrompt(
   text: string,
-): Pick<
-  BrowserContextAttachment,
-  | "title"
-  | "url"
-  | "capturedAt"
-  | "stale"
-  | "summary"
-  | "pageType"
-  | "primaryContent"
-  | "visibleTextExcerpt"
-  | "readableBlocks"
-  | "visualEvidence"
-  | "noiseDiagnostics"
-  | "codeCandidates"
-  | "elementCounts"
-> | null {
+): ParsedBrowserContextPromptAttachment | null {
   const match =
     text.match(/<browser_context_v2>\n([\s\S]*?)\n<\/browser_context_v2>/) ??
     text.match(/<browser_context>\n([\s\S]*?)\n<\/browser_context>/);
@@ -299,10 +306,10 @@ export function parseBrowserContextPrompt(
     ? []
     : visualEvidenceText
       .split("\n")
-      .map((line, index) => {
+      .flatMap((line, index): BrowserVisualEvidence[] => {
         const matchLine = line.match(/^- visual \d+ \(([^,]+), sensitive=(true|false)\): ([\s\S]*)$/);
         if (!matchLine) {
-          return null;
+          return [];
         }
         const payload = matchLine[3] ?? "";
         const markers = ["; alt=", "; origin=", "; nearby="] as const;
@@ -321,7 +328,7 @@ export function parseBrowserContextPrompt(
           const valueEnd = next?.index ?? payload.length;
           return payload.slice(valueStart, valueEnd).trim();
         };
-        return {
+        return [{
           evidenceId: `parsed-visual-${index + 1}`,
           kind: matchLine[1] as BrowserVisualEvidence["kind"],
           label: payload.slice(0, labelEnd).trim(),
@@ -330,27 +337,25 @@ export function parseBrowserContextPrompt(
           nearbyText: readMarkerValue("; nearby=") || null,
           visible: true,
           sensitive: matchLine[2] === "true",
-        };
-      })
-      .filter((entry): entry is BrowserVisualEvidence => Boolean(entry));
+        }];
+      });
   const codeCandidates = candidatesText === "none"
     ? []
     : candidatesText
       .split("\n")
-      .map((line, index) => {
+      .flatMap((line, index): BrowserCodeCandidate[] => {
         const matchLine = line.match(/^- (.+?) \(([^,]+), ([^)]+)\)(?:: ([\s\S]*))?$/);
         if (!matchLine) {
-          return null;
+          return [];
         }
-        return {
+        return [{
           candidateId: `parsed-candidate-${index + 1}`,
           filePath: matchLine[1] ?? "",
           reason: matchLine[2] as BrowserCodeCandidate["reason"],
           confidence: matchLine[3] as BrowserCodeCandidate["confidence"],
           matchedText: matchLine[4] ?? null,
-        };
-      })
-      .filter((entry): entry is BrowserCodeCandidate => Boolean(entry));
+        }];
+      });
   const noiseDiagnostics = noiseDiagnosticsText === "none"
     ? []
     : noiseDiagnosticsText

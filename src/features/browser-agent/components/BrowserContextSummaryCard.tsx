@@ -2,26 +2,35 @@ import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { BrowserContextAttachment, BrowserDiagnostic } from "../types";
 
+type BrowserContextSummaryDiagnostic = Pick<
+  BrowserDiagnostic,
+  "diagnosticId" | "severity" | "message"
+>;
+
+type BrowserContextSummaryBudget = Partial<BrowserContextAttachment["budget"]>;
+
+type BrowserContextSummaryPrivacy = {
+  redactionApplied?: boolean;
+  redactedKinds: string[];
+  omittedKinds: string[];
+};
+
 type BrowserContextSummaryCardAttachment = Pick<
   BrowserContextAttachment,
   "title" | "url" | "capturedAt" | "stale" | "summary"
-> &
-  Partial<
-    Pick<
-      BrowserContextAttachment,
-      | "visibleTextExcerpt"
-      | "elementCounts"
-      | "diagnostics"
-      | "privacy"
-      | "budget"
-      | "codeCandidates"
-      | "pageType"
-      | "primaryContent"
-      | "readableBlocks"
-      | "noiseDiagnostics"
-      | "visualEvidence"
-    >
-  >;
+> & {
+  visibleTextExcerpt?: BrowserContextAttachment["visibleTextExcerpt"];
+  elementCounts?: BrowserContextAttachment["elementCounts"];
+  diagnostics?: BrowserContextSummaryDiagnostic[];
+  privacy?: BrowserContextSummaryPrivacy;
+  budget?: BrowserContextSummaryBudget;
+  codeCandidates?: BrowserContextAttachment["codeCandidates"];
+  pageType?: BrowserContextAttachment["pageType"];
+  primaryContent?: BrowserContextAttachment["primaryContent"];
+  readableBlocks?: BrowserContextAttachment["readableBlocks"];
+  noiseDiagnostics?: BrowserContextAttachment["noiseDiagnostics"];
+  visualEvidence?: BrowserContextAttachment["visualEvidence"];
+};
 
 export type BrowserContextSummaryCardProps = {
   attachment: BrowserContextSummaryCardAttachment;
@@ -51,7 +60,9 @@ function compactDetailText(value: string, limit = 700): string {
   return normalized.length > limit ? `${normalized.slice(0, limit)}...` : normalized;
 }
 
-function hasDiagnostics(diagnostics: BrowserDiagnostic[] | undefined): diagnostics is BrowserDiagnostic[] {
+function hasDiagnostics(
+  diagnostics: BrowserContextSummaryDiagnostic[] | undefined,
+): diagnostics is BrowserContextSummaryDiagnostic[] {
   return Array.isArray(diagnostics) && diagnostics.length > 0;
 }
 
@@ -272,7 +283,7 @@ export function BrowserContextSummaryCard({
                 truncated: attachment.budget.truncated
                   ? t("common.yes", "yes")
                   : t("common.no", "no"),
-                omitted: attachment.budget.omittedElementCount,
+                omitted: attachment.budget.omittedElementCount ?? 0,
               })}
             </div>
           ) : null}
