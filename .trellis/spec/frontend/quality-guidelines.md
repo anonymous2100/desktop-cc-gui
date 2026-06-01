@@ -200,3 +200,69 @@ if (isClaudeControlPlaneMessage(message)) {
   continue;
 }
 ```
+
+## Scenario: Unit tests isolate runtime-heavy child components
+
+### 1. Scope / Trigger
+
+- Trigger：组件测试渲染 workspace home、app shell、summary/dashboard surface，且渲染树包含 `BrowserDock`、Tauri bridge、polling/listener、webview/session bootstrap 等 runtime-heavy child。
+- 目标：防止非目标测试真实挂载 runtime-heavy child 后产生 React `act(...)` warning、stderr noise 或异步 cleanup 漂移。
+
+### 2. Signatures
+
+- Test file：`src/features/**/components/*.test.tsx`
+- Runtime-heavy child mock：
+
+```typescript
+vi.mock("../../browser-agent/components/BrowserDock", () => ({
+  BrowserDock: () => null,
+}));
+```
+
+### 3. Contracts
+
+- If the test does not assert the runtime-heavy child behavior, it MUST mock that child at module boundary.
+- Summary/home tests SHOULD assert their own rendered contract only, not incidental webview/session bootstrap effects.
+- Tests MUST NOT leave React `act(...)` warnings or stderr payloads for `heavy-test-noise` to collect.
+- Runtime-heavy child behavior MUST be covered in its own focused test file, where async effects are explicitly awaited or mocked.
+- Do not solve unrelated `act(...)` warnings by globally silencing `console.error`; that hides regressions.
+
+### 4. Validation & Error Matrix
+
+| 场景 | 必须行为 | 禁止行为 |
+|---|---|---|
+| WorkspaceHome summary test | mock `BrowserDock` if browser behavior is not under test | real mount triggers BrowserDock async state updates |
+| BrowserDock behavior test | test BrowserDock directly with awaited effects/mocked services | rely on WorkspaceHome tests for BrowserDock coverage |
+| heavy-test-noise gate | no `act` / stderr violations | passing assertions but noisy CI failure |
+| unrelated child warning | isolate or await the actual child effect | blanket `console.error = vi.fn()` |
+
+### 5. Good / Base / Bad Cases
+
+- Good：`WorkspaceHome.test.tsx` mocks `BrowserDock` to keep workspace summary tests deterministic.
+- Base：a parent component test mocks Tauri-dependent children that are outside the assertion scope.
+- Bad：letting a dashboard test mount `BrowserDock`, polling hooks, and webview bootstrap just because they appear in the production tree.
+
+### 6. Tests Required
+
+- Parent tests：assert parent-owned UI and callbacks after runtime-heavy children are mocked.
+- Child tests：cover the runtime-heavy component separately, including async effect settle, cleanup, and failure paths.
+- Gate：when touching test-governance or noisy runtime components, run the relevant targeted test and `heavy-test-noise` gate used by CI.
+
+### 7. Wrong vs Correct
+
+#### Wrong
+
+```typescript
+render(<WorkspaceHome workspace={workspace} currentBranch={branch} />);
+// BrowserDock mounts and emits act(...) warnings unrelated to WorkspaceHome.
+```
+
+#### Correct
+
+```typescript
+vi.mock("../../browser-agent/components/BrowserDock", () => ({
+  BrowserDock: () => null,
+}));
+
+render(<WorkspaceHome workspace={workspace} currentBranch={branch} />);
+```

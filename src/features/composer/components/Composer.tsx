@@ -375,7 +375,7 @@ const COMPOSER_EXPAND_HEIGHT = 80;
 const COMPOSER_INPUT_INTERACTION_IDLE_MS = 320;
 const BROWSER_OPEN_DOCK_EVENT = "browser-agent:open-dock";
 const BROWSER_OPEN_URL_EVENT = "browser-agent:open-url";
-const PENDING_BROWSER_URL_KEY = "mossx.browserAgent.pendingUrl";
+const PENDING_BROWSER_URL_KEY = "ccgui.browserAgent.pendingUrl";
 
 function resolveSelectedNamedItems<T extends { name: string }>(
   selectedNames: string[],
