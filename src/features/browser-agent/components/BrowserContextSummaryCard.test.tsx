@@ -80,7 +80,11 @@ describe("BrowserContextSummaryCard", () => {
     fireEvent.click(screen.getByText("messages.browserContextShowDetails"));
 
     expect(screen.getByText(/Primary content|messages\.browserContextPrimaryContent/)).toBeTruthy();
-    expect(screen.getByText(/strikethrough/)).toBeTruthy();
+    expect(
+      screen.getByText(
+        "Issue body says deleted files should use strikethrough and new files are missing.",
+      ),
+    ).toBeTruthy();
     expect(screen.getByText(/图一属于删除文件/)).toBeTruthy();
     expect(screen.getByText(/issue screenshot/)).toBeTruthy();
     expect(screen.getByText(/diff display screenshot/)).toBeTruthy();
