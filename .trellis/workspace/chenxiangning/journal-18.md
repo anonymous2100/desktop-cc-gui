@@ -672,3 +672,56 @@ Commit: e22c9b1b fix(browser-agent): 收窄浏览器自动打开触发
 ### Next Steps
 
 - None - task complete
+
+
+## Session 667: 关联 Browser Dock Phase 3 提案文档
+
+**Date**: 2026-06-01
+**Task**: 关联 Browser Dock Phase 3 提案文档
+**Branch**: `feature/v0.5.5`
+
+### Summary
+
+(Add summary)
+
+### Main Changes
+
+## Summary
+
+- Completed Browser Dock Phase 3 documentation linkage across OpenSpec proposal, design, task breakdown, spec delta, implementation plan, and Trellis execution task.
+- Created planning task `06-01-browser-dock-phase3-observation-core` as the implementation container for the first trusted observation slice.
+- Preserved scope boundary: no implementation started, no code behavior changed, and browser actions/visual evidence execution remain out of scope.
+
+## Validation
+
+- `openspec validate advance-browser-dock-trusted-observation-and-code-bridge --strict --no-interactive` passed.
+
+## Commits
+
+- `80f3ada6 docs(browser-dock): 关联 Phase 3 提案文档`
+- `3ec81734 docs(browser-dock): 补充 Phase 3 OpenSpec 元数据`
+
+## Notes
+
+- Existing unrelated working tree changes were left untouched.
+- Wait for owner instruction before starting implementation.
+
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `80f3ada6` | (see git log) |
+| `3ec81734` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
