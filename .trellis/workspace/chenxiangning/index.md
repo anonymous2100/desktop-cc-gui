@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-18.md`
-- **Total Sessions**: 669
+- **Total Sessions**: 670
 - **Last Active**: 2026-06-02
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-18.md` | ~813 | Active |
+| `journal-18.md` | ~860 | Active |
 | `journal-17.md` | ~1971 | Archived |
 | `journal-16.md` | ~1985 | Archived |
 | `journal-15.md` | ~1996 | Archived |
@@ -46,6 +46,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 670 | 2026-06-02 | 文件树删除残留清理收口 | `884f3251` | `feature/v0.5.5` |
 | 669 | 2026-06-02 | 增强文件树文件管理能力 | `8cbb022b` | `feature/v0.5.5` |
 | 668 | 2026-06-01 | Phase2b 前台残留清理收口 | `6e69a6e5` | `feature/v0.5.5` |
 | 667 | 2026-06-01 | 关联 Browser Dock Phase 3 提案文档 | `80f3ada6`, `3ec81734` | `feature/v0.5.5` |

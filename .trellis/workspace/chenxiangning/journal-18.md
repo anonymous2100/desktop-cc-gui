@@ -811,3 +811,50 @@ Validation performed before commit:
 ### Next Steps
 
 - None - task complete
+
+
+## Session 670: 文件树删除残留清理收口
+
+**Date**: 2026-06-02
+**Task**: 文件树删除残留清理收口
+**Branch**: `feature/v0.5.5`
+
+### Summary
+
+修复文件夹删除后文件树仍显示旧节点的问题，并将外部文件树导入从本轮范围移除以避免拖拽链路回归。
+
+### Main Changes
+
+## 本次收口
+- 修复 FileTreePanel 删除成功后只刷新父级、未清理本地 tree/lazy/selection 状态导致的残留节点问题。
+- 增加删除文件夹子树后立即从可见树移除的回归测试。
+- Review 发现外部 import 后端/API/i18n 残留与已撤回的文件树外部拖拽入口冲突，已从代码范围撤掉。
+- OpenSpec design/tasks 同步为外部文件树 import 本轮延期，避免规范与实现不一致。
+
+## 验证
+- git diff --check: pass
+- npm run typecheck: pass
+- npx vitest run src/features/files/components/FileTreePanel.run.test.tsx: 36 tests pass
+- npx openspec validate enhance-file-tree-management-actions --strict --no-interactive: pass
+
+## 注意
+- 未提交无关脏文件：src-tauri/src/browser_agent/mod.rs、src-tauri/src/browser_agent/platform.rs。
+
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `884f3251` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
