@@ -990,3 +990,53 @@ Validation performed before commit:
 ### Next Steps
 
 - None - task complete
+
+
+## Session 674: 记录主 WebView 拖拽转发回归修复
+
+**Date**: 2026-06-02
+**Task**: 记录主 WebView 拖拽转发回归修复
+**Branch**: `feature/v0.5.5`
+
+### Summary
+
+修复错误加固导致的外部拖拽回归：恢复 main WebView 转发，将重复 drop 去重放到前端 service，并补充 OpenSpec/Trellis 事故契约。
+
+### Main Changes
+
+## 完成内容
+
+- 撤销 Rust bridge 中跳过 `webview.label() == "main"` 的错误加固。
+- 在 `src/services/dragDrop.ts` 增加短窗口重复 `drop` payload 去重，避免 main native listener 与 forwarded bridge 双路重复插入。
+- 更新 `.trellis/spec/frontend/desktop-drag-drop.md`，明确当前实测契约：所有 WebView drag/drop 必须统一 forward，不能在 Rust 层排除 main。
+- 更新 `openspec/specs/composer-drag-drop-file-reference/spec.md` 与 Browser Agent proposal/design，记录 2026-06-02 错误加固导致回归的事实和防复发规则。
+
+## 验证事实
+
+- 用户在 macOS 上再次实测外部拖拽恢复可用。
+- 本回合未主动运行自动化测试。
+
+## 防复发规则
+
+- 不要假设 `getCurrentWindow().onDragDropEvent` 与 `Builder::on_webview_event` 在当前 runtime 下完全等价。
+- 不要在 Rust bridge 中用 `webview.label() == "main"` 过滤 main WebView drop。
+- 重复 drop 的治理边界在 frontend dragDrop service，而不是 backend event bridge。
+
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `f18b38df` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
