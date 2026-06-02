@@ -1317,3 +1317,45 @@ Validation performed before commit:
 ### Next Steps
 
 - None - task complete
+
+
+## Session 681: 回滚 DMG 创建脚本到 v0.5.4
+
+**Date**: 2026-06-02
+**Task**: 回滚 DMG 创建脚本到 v0.5.4
+**Branch**: `feature/v0.5.5`
+
+### Summary
+
+(Add summary)
+
+### Main Changes
+
+提交 scripts/create-dmg.sh 单文件回滚，将 DMG 创建脚本恢复到 v0.5.4 行为。
+
+主要改动：
+- 移除今天新增的 DMG layout hard gate。
+- 恢复 AppleScript layout 失败仅 warning、不阻断的旧行为。
+- 未修改其他工作区变更。
+
+验证：
+- 未运行打包验证；按用户要求仅提交单文件。
+
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `862fb673` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
