@@ -1232,3 +1232,43 @@ Validation performed before commit:
 ### Next Steps
 
 - None - task complete
+
+
+## Session 679: 记录 Browser Dock 可见性开关提交
+
+**Date**: 2026-06-02
+**Task**: 记录 Browser Dock 可见性开关提交
+**Branch**: `feature/v0.5.5`
+
+### Summary
+
+补齐顶部工具区 Browser Dock icon 的设置页可见性控制，并完成 focused review、typecheck 与 client-ui-visibility focused tests。
+
+### Main Changes
+
+## 本次记录
+
+- 提交：`3f66098a fix(settings): 接入 Browser Dock 可见性开关`
+- 范围：只记录顶部工具区 Browser Dock 可见性开关补齐。
+- 改动：新增 `topTool.browserDock` registry、顶部按钮 visibility gate、中英文设置文案。
+- 验证：`npm run typecheck` 通过；`npx vitest run src/features/client-ui-visibility/utils/clientUiVisibility.test.ts src/features/client-ui-visibility/hooks/useClientUiVisibility.test.tsx` 通过，2 个文件 12 条用例。
+- 隔离：工作区存在其他 Browser Agent 相关未提交改动，本次业务提交与 session record 不纳入这些改动。
+
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `3f66098a` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
