@@ -1131,3 +1131,54 @@ Validation performed before commit:
 ### Next Steps
 
 - None - task complete
+
+
+## Session 677: 优化 Browser Dock Phase 3 提案中文可读性
+
+**Date**: 2026-06-02
+**Task**: 优化 Browser Dock Phase 3 提案中文可读性
+**Branch**: `feature/v0.5.5`
+
+### Summary
+
+(Add summary)
+
+### Main Changes
+
+## Summary
+
+- Updated Browser Dock Phase 3 OpenSpec and Trellis planning documents to use Chinese-first explanations with English technical terms preserved.
+- Clarified `BrowserUserAnnotation` in Chinese: Phase 3 sends structured text evidence, while annotated screenshots, image overlays, vision payloads, and annotation-guided actions remain out of scope/future phase.
+- Preserved OpenSpec contract structure and implementation field names to avoid ambiguity.
+
+## Validation
+
+- `openspec validate advance-browser-dock-trusted-observation-and-code-bridge --strict --no-interactive` passed before commit.
+
+## Commit
+
+- `d9da91f7 docs(browser-dock): 优化 Phase 3 提案中文可读性`
+
+## Notes
+
+- No code implementation was started.
+- Working tree was clean after the documentation commit.
+
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `d9da91f7` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
