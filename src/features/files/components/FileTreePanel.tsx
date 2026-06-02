@@ -20,9 +20,11 @@ import FileIcon from "../../../components/FileIcon";
 import type { PanelTabId } from "../../layout/components/PanelTabs";
 import {
   createWorkspaceDirectory,
-  copyWorkspaceItem,
+  duplicateWorkspaceItem,
   getWorkspaceDirectoryChildren,
+  pasteWorkspaceItem,
   readWorkspaceFile,
+  renameWorkspaceItem,
   trashWorkspaceItem,
   writeWorkspaceFile,
   type WorkspaceDirectoryEntry,
@@ -75,6 +77,25 @@ type VisibleFileTreeRow =
       state: "loading" | "error" | "empty";
       error: string | null;
     };
+
+type FileTreeClipboardItem = {
+  workspaceId: string;
+  path: string;
+  kind: "file" | "folder";
+  name: string;
+};
+
+type FileTreeOperationNotice = {
+  id: string;
+  tone: "success" | "error" | "info";
+  message: string;
+};
+
+type RenamePromptState = {
+  path: string;
+  kind: "file" | "folder";
+  currentName: string;
+};
 
 type FileTreePanelProps = {
   workspaceId: string;
@@ -809,6 +830,12 @@ export function FileTreePanel({
   const [selectedNodePaths, setSelectedNodePaths] = useState<Set<string>>(new Set());
   const [fileTreeContextMenu, setFileTreeContextMenu] =
     useState<RendererContextMenuState | null>(null);
+  const [fileTreeClipboardItem, setFileTreeClipboardItem] =
+    useState<FileTreeClipboardItem | null>(null);
+  const [operationNotice, setOperationNotice] = useState<FileTreeOperationNotice | null>(null);
+  const [renamePrompt, setRenamePrompt] = useState<RenamePromptState | null>(null);
+  const [renameDraftName, setRenameDraftName] = useState("");
+  const renameInputRef = useRef<HTMLInputElement | null>(null);
   const selectionAnchorPathRef = useRef<string | null>(null);
   const activeCrossWindowDragPathsRef = useRef<string[]>([]);
   const lastCrossWindowDragBroadcastRef = useRef(0);
@@ -1587,6 +1614,18 @@ export function FileTreePanel({
     [resolvePath],
   );
 
+  const normalizeOperationError = useCallback((error: unknown) => {
+    return error instanceof Error ? error.message : String(error);
+  }, []);
+
+  const showOperationNotice = useCallback((tone: FileTreeOperationNotice["tone"], message: string) => {
+    setOperationNotice({
+      id: `${Date.now()}-${tone}`,
+      tone,
+      message,
+    });
+  }, []);
+
   const trashItem = useCallback(
     async (relativePath: string, isFolder: boolean) => {
       const name = relativePath.split("/").pop() ?? relativePath;
@@ -1607,6 +1646,7 @@ export function FileTreePanel({
 
       try {
         await trashWorkspaceItem(workspaceId, relativePath);
+        showOperationNotice("success", t("files.trashComplete"));
         setSelectedNodePaths((prev) => {
           if (!prev.has(relativePath)) {
             return prev;
@@ -1628,24 +1668,142 @@ export function FileTreePanel({
           return next;
         });
         onRefreshFiles?.();
-      } catch {
-        // trash operation failed
+      } catch (error) {
+        showOperationNotice("error", t("files.trashFailed", { message: normalizeOperationError(error) }));
       }
     },
-    [onRefreshFiles, t, visibleTreePathOrder, visibleTreePathTypeMap, workspaceId],
+    [
+      normalizeOperationError,
+      onRefreshFiles,
+      showOperationNotice,
+      t,
+      visibleTreePathOrder,
+      visibleTreePathTypeMap,
+      workspaceId,
+    ],
+  );
+
+  const getFileTreeItemName = useCallback((relativePath: string) => {
+    if (!relativePath) {
+      return workspaceRootLabel;
+    }
+    return relativePath.split("/").filter(Boolean).pop() ?? relativePath;
+  }, [workspaceRootLabel]);
+
+  const copyFileTreeItem = useCallback(
+    (relativePath: string, kind: "file" | "folder") => {
+      setFileTreeClipboardItem({
+        workspaceId,
+        path: relativePath,
+        kind,
+        name: getFileTreeItemName(relativePath),
+      });
+      showOperationNotice("info", t("files.copyReady"));
+    },
+    [getFileTreeItemName, showOperationNotice, t, workspaceId],
+  );
+
+  const pasteFileTreeItem = useCallback(
+    async (targetDirectory: string) => {
+      if (!fileTreeClipboardItem) {
+        showOperationNotice("error", t("files.pasteUnavailable"));
+        return;
+      }
+      if (fileTreeClipboardItem.workspaceId !== workspaceId) {
+        showOperationNotice("error", t("files.pasteWorkspaceMismatch"));
+        return;
+      }
+      try {
+        const result = await pasteWorkspaceItem(
+          workspaceId,
+          fileTreeClipboardItem.path,
+          targetDirectory,
+        );
+        setSelectedNodePath(result.path);
+        setSelectedNodeType(result.kind === "folder" ? "folder" : "file");
+        setSelectedNodePaths(new Set([result.path]));
+        showOperationNotice("success", t("files.pasteComplete"));
+        onRefreshFiles?.();
+      } catch (error) {
+        showOperationNotice("error", t("files.pasteFailed", { message: normalizeOperationError(error) }));
+      }
+    },
+    [
+      fileTreeClipboardItem,
+      normalizeOperationError,
+      onRefreshFiles,
+      showOperationNotice,
+      t,
+      workspaceId,
+    ],
   );
 
   const duplicateItem = useCallback(
     async (relativePath: string) => {
       try {
-        await copyWorkspaceItem(workspaceId, relativePath);
+        const result = await duplicateWorkspaceItem(workspaceId, relativePath);
+        setSelectedNodePath(result.path);
+        setSelectedNodeType(result.kind === "folder" ? "folder" : "file");
+        setSelectedNodePaths(new Set([result.path]));
+        showOperationNotice("success", t("files.duplicateComplete"));
         onRefreshFiles?.();
-      } catch {
-        // copy operation failed
+      } catch (error) {
+        showOperationNotice("error", t("files.duplicateFailed", { message: normalizeOperationError(error) }));
       }
     },
-    [workspaceId, onRefreshFiles],
+    [normalizeOperationError, onRefreshFiles, showOperationNotice, t, workspaceId],
   );
+
+  const openRenamePrompt = useCallback(
+    (relativePath: string, kind: "file" | "folder") => {
+      const currentName = getFileTreeItemName(relativePath);
+      setRenamePrompt({
+        path: relativePath,
+        kind,
+        currentName,
+      });
+      setRenameDraftName(currentName);
+      requestAnimationFrame(() => {
+        renameInputRef.current?.focus();
+        renameInputRef.current?.select();
+      });
+    },
+    [getFileTreeItemName],
+  );
+
+  const cancelRename = useCallback(() => {
+    setRenamePrompt(null);
+    setRenameDraftName("");
+  }, []);
+
+  const confirmRename = useCallback(async () => {
+    const prompt = renamePrompt;
+    const name = renameDraftName.trim();
+    if (!prompt || !name) {
+      showOperationNotice("error", t("files.renameInvalidName"));
+      return;
+    }
+    try {
+      const result = await renameWorkspaceItem(workspaceId, prompt.path, name);
+      setSelectedNodePath(result.path);
+      setSelectedNodeType(result.kind === "folder" ? "folder" : "file");
+      setSelectedNodePaths(new Set([result.path]));
+      setRenamePrompt(null);
+      setRenameDraftName("");
+      showOperationNotice("success", t("files.renameComplete"));
+      onRefreshFiles?.();
+    } catch (error) {
+      showOperationNotice("error", t("files.renameFailed", { message: normalizeOperationError(error) }));
+    }
+  }, [
+    normalizeOperationError,
+    onRefreshFiles,
+    renameDraftName,
+    renamePrompt,
+    showOperationNotice,
+    t,
+    workspaceId,
+  ]);
 
   const openNewFilePrompt = useCallback(
     (parentFolder: string) => {
@@ -1668,13 +1826,22 @@ export function FileTreePanel({
     const relativePath = newFileParent ? `${newFileParent}/${name}` : name;
     try {
       await writeWorkspaceFile(workspaceId, relativePath, "");
+      showOperationNotice("success", t("files.createFileComplete"));
       onRefreshFiles?.();
-    } catch {
-      // create file failed
+    } catch (error) {
+      showOperationNotice("error", t("files.createFileFailed", { message: normalizeOperationError(error) }));
     }
     setNewFileParent(null);
     setNewFileName("");
-  }, [newFileName, newFileParent, workspaceId, onRefreshFiles]);
+  }, [
+    newFileName,
+    newFileParent,
+    workspaceId,
+    onRefreshFiles,
+    showOperationNotice,
+    t,
+    normalizeOperationError,
+  ]);
 
   const cancelNewFile = useCallback(() => {
     setNewFileParent(null);
@@ -1702,13 +1869,22 @@ export function FileTreePanel({
     const relativePath = newFolderParent ? `${newFolderParent}/${name}` : name;
     try {
       await createWorkspaceDirectory(workspaceId, relativePath);
+      showOperationNotice("success", t("files.createFolderComplete"));
       onRefreshFiles?.();
-    } catch {
-      // create folder failed
+    } catch (error) {
+      showOperationNotice("error", t("files.createFolderFailed", { message: normalizeOperationError(error) }));
     }
     setNewFolderParent(null);
     setNewFolderName("");
-  }, [newFolderName, newFolderParent, workspaceId, onRefreshFiles]);
+  }, [
+    newFolderName,
+    newFolderParent,
+    workspaceId,
+    onRefreshFiles,
+    showOperationNotice,
+    t,
+    normalizeOperationError,
+  ]);
 
   const cancelNewFolder = useCallback(() => {
     setNewFolderParent(null);
@@ -1785,6 +1961,8 @@ export function FileTreePanel({
       event.stopPropagation();
 
       const parentFolder = resolveParentFolderForNode(relativePath, isFolder ? "folder" : "file");
+      const isRootActionTarget = relativePath.length === 0;
+      const itemKind = isFolder ? "folder" : "file";
 
       const menuItems: RendererContextMenuItem[] = [
         {
@@ -1805,14 +1983,49 @@ export function FileTreePanel({
             openNewFolderPrompt(parentFolder);
           },
         },
+        ...(isRootActionTarget
+          ? []
+          : [
+              {
+                type: "item" as const,
+                id: "copy-item",
+                label: t("files.copyItem"),
+                onSelect: () => {
+                  setFileTreeContextMenu(null);
+                  copyFileTreeItem(relativePath, itemKind);
+                },
+              },
+            ]),
         {
           type: "item",
-          id: "duplicate",
-          label: t("files.duplicateItem"),
+          id: "paste-item",
+          label: t("files.pasteItem"),
           onSelect: async () => {
-            await duplicateItem(relativePath);
+            setFileTreeContextMenu(null);
+            await pasteFileTreeItem(parentFolder);
           },
         },
+        ...(isRootActionTarget
+          ? []
+          : [
+              {
+                type: "item" as const,
+                id: "duplicate",
+                label: t("files.duplicateItem"),
+                onSelect: async () => {
+                  await duplicateItem(relativePath);
+                },
+              },
+              {
+                type: "item" as const,
+                id: "rename",
+                label: t("files.renameItem"),
+                onSelect: () => {
+                  setFileTreeContextMenu(null);
+                  openRenamePrompt(relativePath, itemKind);
+                },
+              },
+            ]),
         {
           type: "item",
           id: "copy-path",
@@ -1849,16 +2062,20 @@ export function FileTreePanel({
               },
             ]
           : []),
-        {
-          type: "item",
-          id: "delete",
-          label: t("files.deleteItem"),
-          tone: "danger",
-          onSelect: async () => {
-            setFileTreeContextMenu(null);
-            await trashItem(relativePath, isFolder);
-          },
-        },
+        ...(isRootActionTarget
+          ? []
+          : [
+              {
+                type: "item" as const,
+                id: "delete",
+                label: t("files.deleteItem"),
+                tone: "danger" as const,
+                onSelect: async () => {
+                  setFileTreeContextMenu(null);
+                  await trashItem(relativePath, isFolder);
+                },
+              },
+            ]),
       ];
 
       const position = clampRendererContextMenuPosition(event.clientX, event.clientY);
@@ -1872,8 +2089,11 @@ export function FileTreePanel({
       resolvePath,
       copyPath,
       trashItem,
+      copyFileTreeItem,
       duplicateItem,
+      pasteFileTreeItem,
       onInsertText,
+      openRenamePrompt,
       openNewFilePrompt,
       openNewFolderPrompt,
       resolveParentFolderForNode,
@@ -2511,6 +2731,50 @@ export function FileTreePanel({
           className="renderer-context-menu file-tree-context-menu"
         />
       ) : null}
+      {operationNotice ? (
+        <div
+          className={`file-tree-operation-notice is-${operationNotice.tone}`}
+          role={operationNotice.tone === "error" ? "alert" : "status"}
+        >
+          {operationNotice.message}
+        </div>
+      ) : null}
+      {renamePrompt !== null && (
+        <div className="new-file-prompt" role="dialog" aria-modal="true">
+          <div className="new-file-prompt-backdrop" onClick={cancelRename} />
+          <div className="new-file-prompt-card">
+            <div className="new-file-prompt-title">{t("files.renameItem")}</div>
+            <div className="new-file-prompt-path">{renamePrompt.currentName}</div>
+            <input
+              id="rename-file-tree-item"
+              ref={renameInputRef}
+              className="new-file-prompt-input"
+              value={renameDraftName}
+              onChange={(event) => setRenameDraftName(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === "Enter") {
+                  event.preventDefault();
+                  void confirmRename();
+                }
+                if (event.key === "Escape") {
+                  event.preventDefault();
+                  cancelRename();
+                }
+              }}
+              placeholder={t("files.renameNamePlaceholder")}
+              aria-label={t("files.renameNamePlaceholder")}
+            />
+            <div className="new-file-prompt-actions">
+              <button type="button" onClick={cancelRename}>
+                {t("files.cancel")}
+              </button>
+              <button type="button" onClick={() => void confirmRename()}>
+                {t("files.renameItem")}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       {newFileParent !== null && (
         <div className="new-file-prompt" role="dialog" aria-modal="true">
           <div className="new-file-prompt-backdrop" onClick={cancelNewFile} />
