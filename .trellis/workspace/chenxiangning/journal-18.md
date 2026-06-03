@@ -1416,3 +1416,62 @@ Validation performed before commit:
 ### Next Steps
 
 - None - task complete
+
+
+## Session 683: Project Map 图谱体系与大文件治理批量收口
+
+**Date**: 2026-06-03
+**Task**: Project Map 图谱体系与大文件治理批量收口
+**Branch**: `feature/v0.5.5`
+
+### Summary
+
+(Add summary)
+
+### Main Changes
+
+## 本次批量收口
+
+| Commit | 主题 | 内容 |
+|--------|------|------|
+| e672301c | feat(agent-task): 接入任务编排中心运行队列 | 新增 agent orchestration providers、task run lifecycle/storage/coordinator、Task Center 行为校准与测试。 |
+| c1ecd630 | feat(project-map): 重塑图谱优先知识地图体验 | 重塑 Project Map graph-first surface，补齐导航、关系、证据、刷新、graph repair、UA 借鉴点文档与主 spec 校准。 |
+| 1e7123c3 | refactor(governance): 清理大文件基线硬债 | 拆分 ProjectMapPanel surface 与 cc_gui_daemon local thread helper，large-file gate fail scope 清零。 |
+| 66929982 | chore(openspec): 归档 Project Map 收口变更 | 归档已完成 OpenSpec changes，保留提案与验证记录。 |
+
+## 验证
+
+- npm run lint: passed
+- npm run typecheck: passed
+- npm run test: passed, 600 test files completed
+- npm run check:large-files:gate: passed, found=0
+- cargo test --manifest-path src-tauri/Cargo.toml --no-run: passed
+- openspec validate --all --strict --no-interactive: passed, 320 passed / 0 failed
+
+## 已知非阻断噪音
+
+- npm 输出 Unknown user config electron_mirror warning。
+- useLayoutNodes.client-ui-visibility.test.tsx 仍存在 React act(...) warning，但测试通过。
+- npm run test 默认排除 heavy integration suites。
+
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `e672301c` | (see git log) |
+| `c1ecd630` | (see git log) |
+| `1e7123c3` | (see git log) |
+| `66929982` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
