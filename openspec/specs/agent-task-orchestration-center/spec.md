@@ -3,9 +3,7 @@
 ## Purpose
 
 Defines the agent task orchestration center behavior contract.
-
 ## Requirements
-
 ### Requirement: Orchestration dispatch accepts Browser Snapshot v2 as input evidence
 Agent Task Orchestration Center SHALL allow Browser Snapshot v2 evidence and page-to-code candidates to be attached to task dispatch inputs.
 
@@ -42,3 +40,14 @@ Agent Task Orchestration Center SHALL allow orchestration tasks to reference Bro
 - **WHEN** a browser-linked orchestration task also has Project Map, workflow, OpenSpec, or manual source evidence
 - **THEN** Browser evidence SHALL be additive
 - **AND** the system SHALL NOT delete or rewrite other provider artifacts because browser evidence changed
+
+### Requirement: Orchestration Center Unit Tests SHALL Isolate Runtime Bridges
+
+Orchestration Center component tests SHALL mock Tauri bridge calls when the test assertions do not cover bridge behavior.
+
+#### Scenario: queue UI tests do not load runtime model bridge
+
+- **WHEN** a unit test renders `OrchestrationCenterView` to assert queue, filter, dispatch, review, or source-ref UI behavior
+- **THEN** the test SHALL mock model discovery bridge calls such as `getEngineModels`, `getModelList`, and `getConfigModel`
+- **AND** the test SHALL NOT import heavy runtime bridge side effects as an incidental dependency
+

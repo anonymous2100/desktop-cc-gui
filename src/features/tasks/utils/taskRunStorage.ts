@@ -259,6 +259,8 @@ function normalizeRun(raw: unknown): TaskRunRecord | null {
   const status = normalizeStatus(input.status);
   const trigger = normalizeTrigger(input.trigger);
   const updatedAt = normalizeFiniteNumber(input.updatedAt);
+  const taskSource = taskInput.source === "orchestration" ? "orchestration" : "kanban";
+  const orchestrationTaskId = normalizeNullableString(taskInput.orchestrationTaskId);
   if (
     !runId ||
     !taskId ||
@@ -274,11 +276,13 @@ function normalizeRun(raw: unknown): TaskRunRecord | null {
     runId,
     task: {
       taskId,
-      source: "kanban",
+      source: taskSource,
       workspaceId,
       title: normalizeNullableString(taskInput.title),
+      orchestrationTaskId: taskSource === "orchestration" ? orchestrationTaskId ?? taskId : null,
     },
     engine,
+    model: normalizeNullableString(input.model),
     status,
     trigger,
     linkedThreadId: normalizeNullableString(input.linkedThreadId),
@@ -371,11 +375,16 @@ export function createTaskRunRecord(input: CreateTaskRunInput): TaskRunRecord {
     runId: makeRunId(input.taskId, now),
     task: {
       taskId: input.taskId,
-      source: "kanban",
+      source: input.taskSource ?? "kanban",
       workspaceId: input.workspaceId,
       title: input.taskTitle ?? null,
+      orchestrationTaskId:
+        (input.taskSource ?? "kanban") === "orchestration"
+          ? input.orchestrationTaskId ?? input.taskId
+          : null,
     },
     engine: input.engine,
+    model: normalizeNullableString(input.model),
     status: "queued",
     trigger: input.trigger,
     linkedThreadId: input.linkedThreadId ?? null,
@@ -451,6 +460,7 @@ export function patchTaskRun(
     runId: run.runId,
     task: run.task,
     engine: run.engine,
+    model: patch.model === undefined ? run.model : patch.model,
     trigger: run.trigger,
     artifacts: patch.artifacts ?? run.artifacts,
     browserEvidence:

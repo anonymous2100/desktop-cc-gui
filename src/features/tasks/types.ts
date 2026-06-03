@@ -69,15 +69,17 @@ export type TaskRunRecoveryAction =
 
 export type TaskRunDefinitionRef = {
   taskId: string;
-  source: "kanban";
+  source: "kanban" | "orchestration";
   workspaceId: string;
   title?: string | null;
+  orchestrationTaskId?: string | null;
 };
 
 export type TaskRunRecord = {
   runId: string;
   task: TaskRunDefinitionRef;
   engine: Extract<EngineType, "claude" | "codex" | "gemini">;
+  model?: string | null;
   status: TaskRunStatus;
   trigger: TaskRunTrigger;
   linkedThreadId?: string | null;
@@ -106,6 +108,7 @@ export type KanbanLatestRunSummary = {
   status: TaskRunStatus;
   trigger: TaskRunTrigger;
   engine: Extract<EngineType, "claude" | "codex" | "gemini">;
+  model?: string | null;
   linkedThreadId?: string | null;
   latestOutputSummary?: string | null;
   blockedReason?: string | null;
@@ -119,7 +122,10 @@ export type CreateTaskRunInput = {
   taskId: string;
   workspaceId: string;
   taskTitle?: string | null;
+  taskSource?: TaskRunDefinitionRef["source"];
+  orchestrationTaskId?: string | null;
   engine: EngineType;
+  model?: string | null;
   trigger: TaskRunTrigger;
   linkedThreadId?: string | null;
   parentRunId?: string | null;
