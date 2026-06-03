@@ -1637,3 +1637,47 @@ Validation performed before commit:
 ### Next Steps
 
 - None - task complete
+
+
+## Session 687: 补充 v0.5.5 发布说明
+
+**Date**: 2026-06-03
+**Task**: 补充 v0.5.5 发布说明
+**Branch**: `feature/v0.5.6`
+
+### Summary
+
+(Add summary)
+
+### Main Changes
+
+| 项目 | 内容 |
+|------|------|
+| 工作类型 | Changelog 文档更新 |
+| 主提交 | `b05258de docs(changelog): 补充 v0.5.5 发布说明` |
+| 更新范围 | `CHANGELOG.md` |
+| 内容摘要 | 新增 2026-06-03 v0.5.5 中英文发布说明，覆盖文件树能力、Browser Agent、Agent Task 编排、Project Map、运行态修复、DMG 发布路径与打包治理边界 |
+| 验证 | 文档-only 改动，提交前确认暂存区仅包含 `CHANGELOG.md`，未运行代码测试 |
+
+## 备注
+
+该提交在 OpenSpec 归档提交之后独立完成，避免发布说明与 OpenSpec 归档记录混在同一个 commit 中。
+
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `b05258de` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
