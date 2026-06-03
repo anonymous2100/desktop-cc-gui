@@ -1565,3 +1565,75 @@ Validation performed before commit:
 ### Next Steps
 
 - None - task complete
+
+
+## Session 686: 归档已验证 OpenSpec 提案并同步主规范
+
+**Date**: 2026-06-03
+**Task**: 归档已验证 OpenSpec 提案并同步主规范
+**Branch**: `feature/v0.5.6`
+
+### Summary
+
+(Add summary)
+
+### Main Changes
+
+| 项目 | 内容 |
+|------|------|
+| 工作类型 | OpenSpec 归档与主规范同步 |
+| 主提交 | `36463247 docs(openspec): 归档已验证提案并同步主规范` |
+| 归档范围 | 将 11 个已完成 OpenSpec changes 移动到 `openspec/changes/archive/2026-06-03-*` |
+| Spec 同步 | 将 59 个 delta requirements 合并进 13 个主 capability specs |
+| 保留 Active | `refactor-project-map-view-information-architecture` 仍保留 active，因为 typecheck 与 focused Vitest 验证任务未完成 |
+| 验证 | `openspec validate --all --strict --no-interactive` 通过，结果为 309 passed / 0 failed |
+| 工作区隔离 | `CHANGELOG.md` 是既有未暂存改动，未纳入本次 OpenSpec 提交 |
+
+## 归档的 Changes
+
+- `prevent-passive-runtime-acquisition`
+- `advance-browser-dock-trusted-observation-and-code-bridge`
+- `improve-project-map-context-and-impact-navigation`
+- `complete-project-map-relation-persistence-and-impact-sources`
+- `add-project-map-guided-tour-and-path-navigation`
+- `extend-project-map-code-spec-task-knowledge-graph`
+- `add-project-map-staleness-refresh-and-graph-repair`
+- `add-project-map-evidence-file-explorer`
+- `improve-project-map-relation-ux`
+- `add-project-map-focused-tests`
+- `add-agent-task-orchestration-center`
+
+## 更新的主 Specs
+
+- `openspec/specs/agent-task-center/spec.md`
+- `openspec/specs/agent-task-orchestration-center/spec.md`
+- `openspec/specs/agent-task-run-history/spec.md`
+- `openspec/specs/browser-agent-page-understanding/spec.md`
+- `openspec/specs/conversation-lifecycle-contract/spec.md`
+- `openspec/specs/dynamic-project-governance-evidence/spec.md`
+- `openspec/specs/git-operations/spec.md`
+- `openspec/specs/openspec-trellis-status-panel-bridge/spec.md`
+- `openspec/specs/project-map-incremental-generation/spec.md`
+- `openspec/specs/project-xray-panel/spec.md`
+- `openspec/specs/spec-hub-adapter-openspec/spec.md`
+- `openspec/specs/spec-hub-workbench-ui/spec.md`
+- `openspec/specs/workspace-session-catalog-projection/spec.md`
+
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `36463247` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete

@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-18.md`
-- **Total Sessions**: 685
+- **Total Sessions**: 686
 - **Last Active**: 2026-06-03
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-18.md` | ~1567 | Active |
+| `journal-18.md` | ~1639 | Active |
 | `journal-17.md` | ~1971 | Archived |
 | `journal-16.md` | ~1985 | Archived |
 | `journal-15.md` | ~1996 | Archived |
@@ -46,6 +46,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 686 | 2026-06-03 | 归档已验证 OpenSpec 提案并同步主规范 | `36463247` | `feature/v0.5.6` |
 | 685 | 2026-06-03 | 修复打包构建阻断与治理边界 | `63b5ef57` | `feature/v0.5.5` |
 | 684 | 2026-06-03 | 校准 Project Map 视图交互与门禁噪音 | `0ed9db03` | `feature/v0.5.5` |
 | 683 | 2026-06-03 | Project Map 图谱体系与大文件治理批量收口 | `e672301c`, `c1ecd630`, `1e7123c3`, `66929982` | `feature/v0.5.5` |
