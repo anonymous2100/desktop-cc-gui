@@ -1926,3 +1926,41 @@ Validation performed before commit:
 ### Next Steps
 
 - None - task complete
+
+
+## Session 693: 运行时提示仅显示错误消息
+
+**Date**: 2026-06-05
+**Task**: 运行时提示仅显示错误消息
+**Branch**: `feature/v0.5.6`
+
+### Summary
+
+将运行时提示 dock 的可见消息收敛为 error 级别，保留内部诊断 buffer。
+
+### Main Changes
+
+- 将 runtime notice 可见过滤函数沉淀到 `src/services/globalRuntimeNotices.ts`。
+- `useGlobalRuntimeNoticeDock` 对外只返回 error 级 notices，dock 状态基于可见 error 派生。
+- `GlobalRuntimeNoticeDock` 组件增加防御过滤，即使直接传入 info/warning 也不会显示正常日志或 streaming 状态。
+- 更新 hook/component 单测，覆盖内部 buffer 保留 info/warning、用户可见 dock 只显示 error。
+- 验证：`npm exec vitest -- run src/features/notifications/hooks/useGlobalRuntimeNoticeDock.test.tsx src/features/notifications/components/GlobalRuntimeNoticeDock.test.tsx`，16 tests passed。
+
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `c585cc14` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
