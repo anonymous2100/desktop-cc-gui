@@ -185,3 +185,47 @@
 ### Next Steps
 
 - None - task complete
+
+
+## Session 698: 收口队列气泡连续性
+
+**Date**: 2026-06-05
+**Task**: 收口队列气泡连续性
+**Branch**: `feature/v0.5.6`
+
+### Summary
+
+归档 Codex queued follow-up user bubble continuity OpenSpec change。
+
+### Main Changes
+
+本轮完成 `fix-codex-queued-user-bubble-gap` OpenSpec 收口：
+
+- 归档 change 到 `openspec/changes/archive/2026-06-04-fix-codex-queued-user-bubble-gap/`。
+- 同步新增主 spec：`openspec/specs/codex-queued-user-bubble-continuity/spec.md`。
+- 归档前确认 `openspec status --change fix-codex-queued-user-bubble-gap --json` 为 complete，proposal/design/specs/tasks 全部 done。
+- `tasks.md` 全部勾选完成。
+- 执行 `openspec archive -y fix-codex-queued-user-bubble-gap`，CLI 自动同步 delta spec。
+- 执行 `openspec validate --all --strict --no-interactive`，结果 309 passed / 0 failed。
+- 生产代码本轮未改动；本次提交仅包含 OpenSpec archive 和主 spec 更新。
+
+关联提交：`52935ef8 chore(openspec): 归档队列气泡连续性提案`。
+
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `52935ef8` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
