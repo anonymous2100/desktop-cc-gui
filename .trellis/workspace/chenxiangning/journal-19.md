@@ -229,3 +229,54 @@
 ### Next Steps
 
 - None - task complete
+
+
+## Session 699: 收口 stale 线程绑定连续性
+
+**Date**: 2026-06-05
+**Task**: 收口 stale 线程绑定连续性
+**Branch**: `feature/v0.5.6`
+
+### Summary
+
+抽取 active thread canonicalization helper，归档 stale thread binding recovery continuity OpenSpec change。
+
+### Main Changes
+
+本轮完成 `fix-stale-thread-binding-recovery-continuity`：
+
+- 基于 Trellis task `04-21-fix-stale-thread-binding-recovery` 创建并归档 OpenSpec change。
+- 在 `src/features/threads/utils/threadStorage.ts` 新增 `collectCanonicalActiveThreadRebindings(...)`，把 active workspace thread map 的 canonicalization decision 抽成纯 helper。
+- 在 `src/features/threads/hooks/useThreads.ts` 中让 active thread canonicalization effect 调用该 helper，保持现有行为但降低 lifecycle seam 漂移风险。
+- 在 `src/features/threads/utils/threadStorage.test.ts` 补 alias-chain active map rebind regression，覆盖 stale Codex id 收敛到 latest canonical id。
+- 同步主 spec：`openspec/specs/codex-stale-thread-binding-recovery/spec.md`。
+- 归档到：`openspec/changes/archive/2026-06-04-fix-stale-thread-binding-recovery-continuity/`。
+
+验证证据：
+
+- `npm exec vitest run src/features/threads/utils/threadStorage.test.ts`：7 passed。
+- `npm exec vitest run src/features/threads/hooks/useThreads.memory-race.integration.test.tsx`：20 passed。
+- `npm run typecheck`：passed。
+- `openspec validate fix-stale-thread-binding-recovery-continuity --strict --no-interactive`：passed。
+- `openspec validate --all --strict --no-interactive`：archive 后 309 passed / 0 failed。
+
+关联提交：`cec8360f fix(threads): 收口 stale 线程绑定连续性`。
+
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `cec8360f` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
