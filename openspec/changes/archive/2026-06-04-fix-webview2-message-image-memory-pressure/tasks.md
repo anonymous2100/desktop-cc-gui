@@ -12,6 +12,7 @@
 
 ## 3. Verification
 
-- [ ] Run focused Vitest tests for touched message components.
-- [ ] Run `npm run typecheck`.
+- [x] Run focused Vitest tests for touched message components.
+- [x] Run `npm run typecheck`.
 - [ ] On Windows, manually verify image-heavy conversation no longer grows WebView2 memory unbounded.
+  - Not executed in this closure pass: no Windows/WebView2 environment is available. The change is archived with this manual platform caveat after focused message tests, typecheck, and strict OpenSpec validation passed.
