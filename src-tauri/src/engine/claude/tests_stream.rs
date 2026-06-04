@@ -323,10 +323,50 @@ fn should_use_stream_json_input_for_multiline_text_without_images() {
 }
 
 #[test]
-fn should_not_use_stream_json_input_for_single_line_text_without_images() {
+fn should_use_stream_json_input_for_single_line_text_without_images() {
     let mut params = SendMessageParams::default();
     params.text = "single line".to_string();
-    assert!(!ClaudeSession::should_use_stream_json_input(&params));
+    assert!(ClaudeSession::should_use_stream_json_input(&params));
+}
+
+#[test]
+fn build_command_uses_stream_json_for_single_line_text() {
+    let session = ClaudeSession::new("test-workspace".to_string(), test_workspace_path(), None);
+    let mut params = SendMessageParams::default();
+    params.text = "single line".to_string();
+
+    let use_stream_json_input = ClaudeSession::should_use_stream_json_input(&params);
+    let command = session.build_command(&params, use_stream_json_input, true);
+    let args: Vec<String> = command
+        .as_std()
+        .get_args()
+        .map(|arg| arg.to_string_lossy().to_string())
+        .collect();
+
+    assert!(args
+        .windows(2)
+        .any(|window| { window[0] == "--input-format" && window[1] == "stream-json" }));
+    assert!(args.iter().all(|arg| arg != "single line"));
+}
+
+#[test]
+fn build_command_keeps_special_character_prompt_out_of_argv() {
+    let session = ClaudeSession::new("test-workspace".to_string(), test_workspace_path(), None);
+    let mut params = SendMessageParams::default();
+    params.text = "run skill /review & echo %PATH% | more > out (test)!".to_string();
+
+    let use_stream_json_input = ClaudeSession::should_use_stream_json_input(&params);
+    let command = session.build_command(&params, use_stream_json_input, true);
+    let args: Vec<String> = command
+        .as_std()
+        .get_args()
+        .map(|arg| arg.to_string_lossy().to_string())
+        .collect();
+
+    assert!(args
+        .windows(2)
+        .any(|window| { window[0] == "--input-format" && window[1] == "stream-json" }));
+    assert!(args.iter().all(|arg| arg != &params.text));
 }
 
 #[test]

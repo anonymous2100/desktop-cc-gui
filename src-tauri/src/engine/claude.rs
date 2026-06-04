@@ -328,7 +328,9 @@ impl ClaudeSession {
         if has_images {
             return true;
         }
-        params.text.contains('\n') || params.text.contains('\r')
+        // Keep user prompt bytes out of argv. Windows .cmd/.bat wrappers run
+        // through cmd.exe, where shell metacharacters can corrupt argv prompts.
+        !params.text.trim().is_empty()
     }
 
     fn is_unknown_include_hook_events_error(error_output: &str) -> bool {
@@ -672,7 +674,8 @@ impl ClaudeSession {
             cmd.arg("--input-format");
             cmd.arg("stream-json");
         } else {
-            // Text-only mode
+            // Compatibility fallback only. Production sends user prompts through
+            // stream-json stdin so shell wrappers never parse prompt text.
             cmd.arg(&params.text);
         }
 
