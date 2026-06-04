@@ -1681,3 +1681,56 @@ Validation performed before commit:
 ### Next Steps
 
 - None - task complete
+
+
+## Session 688: Project Map 查询关联工作台
+
+**Date**: 2026-06-04
+**Task**: Project Map 查询关联工作台
+**Branch**: `feature/v0.5.6`
+
+### Summary
+
+(Add summary)
+
+### Main Changes
+
+本次提交完成 OpenSpec change `deepen-project-map-query-and-association-workbench` 的实现与验证。
+
+主要改动：
+- 新增 Project Map 统一查询、近期活动投影、Advisor Hints、关联解释、快速过滤和本地历史能力，保持 graph-first 视图不被列表替代。
+- 新增 `activityProjection`、`advisorProjections`、`highlightProjection`、`projectionGuards` 等 Project Map runtime projection helpers，并扩展 `navigation` 的 grouped query 与 path explanation。
+- 新增 `ProjectMapWorkbenchPanels` 与 overlay 样式，增强 detail/evidence surfaces 的折叠展示、证据反查、节点聚焦和图上高亮。
+- 修复边界 review 发现的问题：absolute/degraded path 不再参与 workspace-relative 匹配；line/limit/preview limit 做 finite sanitize；证据 chip 去重按完整 path/ref/hash，避免同名异目录文件被折叠。
+
+验证结果：
+- `npx vitest run src/features/project-map/utils/projectionGuards.test.ts src/features/project-map/components/ProjectMapPanel.test.tsx` 通过，2 files / 59 tests。
+- Project Map focused utils tests 通过，5 files / 20 tests。
+- `npm run typecheck` 通过。
+- `npm run lint` 通过。
+- `npm run check:large-files` 通过，found=0。
+- `npm run check:heavy-test-noise` 通过，607 test files，breachCount=0。
+- `npx openspec validate deepen-project-map-query-and-association-workbench --strict --no-interactive` 通过。
+
+后续建议：
+- 若继续扩展 Project Map UI，优先拆分 `ProjectMapPanel.tsx` 编排逻辑，避免接近 large-file hard gate。
+- OpenSpec change 已实现并 strict valid，后续可进入 verify/sync/archive 决策。
+
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `6fffd914` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
