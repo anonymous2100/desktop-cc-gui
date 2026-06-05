@@ -645,3 +645,49 @@
 ### Next Steps
 
 - None - task complete
+
+
+## Session 708: 收口 Codex 历史加载任务
+
+**Date**: 2026-06-05
+**Task**: 收口 Codex 历史加载任务
+**Branch**: `feature/v0.5.6`
+
+### Summary
+
+将 show-codex-history-loading-state Trellis task 从 planning 收口为 completed，补齐既有实现 commit、OpenSpec archive、主 spec、测试关联文件与验证记录。
+
+### Main Changes
+
+本次继续清理 Trellis/OpenSpec 残留债，只处理 show-codex-history-loading-state 的任务 metadata。
+
+已完成：
+- 确认 PRD Acceptance Criteria 已全部勾选。
+- 将 .trellis/tasks/04-24-show-codex-history-loading-state/task.json 的 status 更新为 completed。
+- 补齐 scope=messages、completedAt=2026-06-05、current_phase=6。
+- 关联既有实现 commit b0e18b4fa1f87fb7079db1d93ce61971d0e5463a。
+- 关联 OpenSpec continuity archive、主 spec、Messages history loading 与 useThreads sidebar-cache 测试文件。
+- notes 记录此前完成的 Codex history loading presentation-state 覆盖、regression tests、typecheck 和 full OpenSpec validation。
+
+边界：
+- 未修改生产代码。
+- 未触碰另一个 AI 正在处理的 harden-windows-ask-user-question-resume 相关 dirty 文件。
+
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `3154bf99b4b0db5aad4d2792bf1a4872f4a23df6` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
