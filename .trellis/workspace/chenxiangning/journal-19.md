@@ -600,3 +600,48 @@
 ### Next Steps
 
 - None - task complete
+
+
+## Session 707: 收口 inline code 渲染任务
+
+**Date**: 2026-06-05
+**Task**: 收口 inline code 渲染任务
+**Branch**: `feature/v0.5.6`
+
+### Summary
+
+将 fix-live-inline-code-markdown-rendering Trellis task 从 planning 收口为 completed，补齐既有实现 commit、OpenSpec archive、主 spec、代码/测试关联文件与验证记录。
+
+### Main Changes
+
+本次继续清理 Trellis/OpenSpec 残留债，只处理 fix-live-inline-code-markdown-rendering 的任务 metadata。
+
+已完成：
+- 将 .trellis/tasks/04-22-fix-live-inline-code-markdown-rendering/task.json 的 status 更新为 completed。
+- 补齐 dev_type=frontend、scope=messages、completedAt=2026-06-05、current_phase=6。
+- 关联既有实现 commit a0f379c8。
+- 关联原始 OpenSpec archive、continuity archive、主 spec、Markdown/toolCallBlocks 实现与测试文件。
+- notes 记录此前完成的实时 unclosed inline code 保护、regression tests、typecheck、change validation 和 full OpenSpec validation。
+
+边界：
+- 未修改生产代码。
+- 未触碰另一个 AI 正在处理的 harden-windows-ask-user-question-resume 相关 dirty 文件。
+
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `6f695a8868d59ba6bc51e7a9acab2b2fa2c992a6` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
