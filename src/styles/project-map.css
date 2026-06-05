@@ -271,6 +271,13 @@
   gap: 8px;
 }
 
+.project-map-relationship-scan-title {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 8px;
+}
+
 .project-map-relationship-scan-panel h4,
 .project-map-relationship-scan-panel p {
   margin: 0;
@@ -295,7 +302,7 @@
   display: flex;
   min-width: 0;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: 4px;
   align-items: center;
 }
 
@@ -306,7 +313,7 @@
   gap: 3px;
   border: 1px solid color-mix(in srgb, var(--project-map-border) 76%, transparent);
   border-radius: 999px;
-  padding: 4px 7px;
+  padding: 3px 6px;
   background: color-mix(in srgb, var(--project-map-surface-strong) 62%, transparent);
   color: var(--project-map-text-muted);
   font-size: 10px;
@@ -378,6 +385,31 @@
 .project-map-panel.is-chrome-collapsed .project-map-stage {
   grid-template-rows: auto minmax(0, 1fr);
   padding: 6px 10px 10px;
+}
+
+.project-map-stage.is-file-relations-focused {
+  display: flex;
+  flex-direction: column;
+}
+
+.project-map-stage.is-file-relations-focused .project-map-lens-shell {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+  margin-bottom: 0;
+}
+
+.project-map-stage.is-file-relations-focused .project-map-relationship-scan-panel {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+  max-height: none;
+}
+
+.project-map-stage.is-file-relations-focused .project-map-graph-canvas {
+  display: none;
 }
 
 .project-map-task-card code {

@@ -969,7 +969,7 @@ export function ProjectMapRelationshipSection({
                 <section className="project-map-relationship-scan-panel">
                   <header>
                     <Network aria-hidden />
-                    <div>
+                    <div className="project-map-relationship-scan-title">
                       <h4>{t("projectMap.relationship.dashboardTitle")}</h4>
                       <p>
                         {relationshipScanState.status === "success"
@@ -978,6 +978,26 @@ export function ProjectMapRelationshipSection({
                             })
                           : t("projectMap.relationship.dashboardEmpty")}
                       </p>
+                      {relationshipScanState.status === "success" ? (
+                        <div className="project-map-relationship-scan-metrics">
+                          <span>
+                            <strong>{relationshipScanState.summary.fileCount}</strong>
+                            {t("projectMap.relationship.metricFiles")}
+                          </span>
+                          <span>
+                            <strong>{relationshipScanState.summary.relationCount}</strong>
+                            {t("projectMap.relationship.metricRelations")}
+                          </span>
+                          <span>
+                            <strong>{relationshipScanState.summary.ignoredCount}</strong>
+                            {t("projectMap.relationship.metricIgnored")}
+                          </span>
+                          <span>
+                            <strong>{relationshipScanState.summary.repairIssueCount}</strong>
+                            {t("projectMap.relationship.metricRepair")}
+                          </span>
+                        </div>
+                      ) : null}
                     </div>
                     <button
                       type="button"
@@ -991,26 +1011,6 @@ export function ProjectMapRelationshipSection({
                         : t("projectMap.relationship.scan")}
                     </button>
                   </header>
-                  {relationshipScanState.status === "success" ? (
-                    <div className="project-map-relationship-scan-metrics">
-                      <span>
-                        <strong>{relationshipScanState.summary.fileCount}</strong>
-                        {t("projectMap.relationship.metricFiles")}
-                      </span>
-                      <span>
-                        <strong>{relationshipScanState.summary.relationCount}</strong>
-                        {t("projectMap.relationship.metricRelations")}
-                      </span>
-                      <span>
-                        <strong>{relationshipScanState.summary.ignoredCount}</strong>
-                        {t("projectMap.relationship.metricIgnored")}
-                      </span>
-                      <span>
-                        <strong>{relationshipScanState.summary.repairIssueCount}</strong>
-                        {t("projectMap.relationship.metricRepair")}
-                      </span>
-                    </div>
-                  ) : null}
                   {relationshipDashboardData ? (
                     <div className="project-map-relationship-dashboard">
                       <div className={cn(
@@ -1135,6 +1135,29 @@ export function ProjectMapRelationshipSection({
                                   ? t("projectMap.relationship.hideNoise")
                                   : t("projectMap.relationship.showNoise")}
                               </button>
+                            </div>
+                            <div className="project-map-relationship-role-strip">
+                              <button
+                                type="button"
+                                className={cn(
+                                  relationshipDashboardRoleFilter === PROJECT_MAP_RELATION_FILTER_ALL && "is-active",
+                                )}
+                                onClick={() => setRelationshipDashboardRoleFilter(PROJECT_MAP_RELATION_FILTER_ALL)}
+                              >
+                                {t("projectMap.relationship.allRoles")}
+                              </button>
+                              {relationshipDashboardRoleOptions.slice(0, 10).map((role) => (
+                                <button
+                                  key={role}
+                                  type="button"
+                                  className={cn(
+                                    relationshipDashboardRoleFilter === role && "is-active",
+                                  )}
+                                  onClick={() => setRelationshipDashboardRoleFilter(role)}
+                                >
+                                  {role}
+                                </button>
+                              ))}
                             </div>
                           </>
                         ) : null}
@@ -1649,20 +1672,6 @@ export function ProjectMapRelationshipSection({
                       >
                         <div className="project-map-relationship-dashboard-column">
                           <h5>{t("projectMap.relationship.filesTitle")}</h5>
-                          <div className="project-map-relationship-role-strip">
-                            {relationshipDashboardRoleOptions.slice(0, 8).map((role) => (
-                              <button
-                                key={role}
-                                type="button"
-                                className={cn(
-                                  relationshipDashboardRoleFilter === role && "is-active",
-                                )}
-                                onClick={() => setRelationshipDashboardRoleFilter(role)}
-                              >
-                                {role}
-                              </button>
-                            ))}
-                          </div>
                           <div className="project-map-relationship-module-strip">
                             {relationshipDashboardData.modules.slice(0, 6).map((module) => (
                               <span key={module.id}>

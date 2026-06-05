@@ -1934,7 +1934,13 @@ export function ProjectMapPanel({
         )}
       </header>
 
-      <main className="project-map-stage" aria-label={t("projectMap.stageAria")}>
+      <main
+        className={cn(
+          "project-map-stage",
+          visibleSectionState.fileRelations && "is-file-relations-focused",
+        )}
+        aria-label={t("projectMap.stageAria")}
+      >
         {!isProjectMapChromeCollapsed ? (
           <div className={cn("project-map-lens-shell", isLensStripCollapsed && "is-collapsed")}>
             <div className="project-map-stage-toolbar">
@@ -2231,7 +2237,7 @@ export function ProjectMapPanel({
               {t("projectMap.retryLoad")}
             </button>
           </div>
-        ) : visibleNodes.length === 0 ? (
+        ) : visibleSectionState.fileRelations ? null : visibleNodes.length === 0 ? (
           <div className="project-map-empty-state">
             <Crosshair aria-hidden />
             <h3>{t("projectMap.emptyTitle")}</h3>
