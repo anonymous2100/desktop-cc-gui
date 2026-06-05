@@ -468,3 +468,46 @@
 ### Next Steps
 
 - None - task complete
+
+
+## Session 704: 收口 explored 卡片折叠任务
+
+**Date**: 2026-06-05
+**Task**: 收口 explored 卡片折叠任务
+**Branch**: `feature/v0.5.6`
+
+### Summary
+
+收口 fix-explored-card-auto-collapse Trellis metadata：确认 OpenSpec 已归档、实现和回归测试已存在；验证 Messages.explore、messagesLiveWindow、typecheck、OpenSpec strict workspace validation 均通过。
+
+### Main Changes
+
+本次完成 fix-explored-card-auto-collapse 的债务收口：
+- 未改生产代码。
+- 确认 OpenSpec change `fix-explored-card-auto-collapse-after-stage` 已归档，主 spec `conversation-stream-activity-presence` 已包含 Explore auto expansion/current-stage contract。
+- 当前实现通过 `resolveLiveAutoExpandedExploreId(...)` 和 `collapseExpandedExploreItems(...)` 满足“Explore 阶段自动展开，后续非 Explore 阶段自动折叠”。
+- 更新 `.trellis/tasks/04-21-fix-explored-card-auto-collapse/task.json` 状态为 completed，并记录相关文件与验证证据。
+验证：
+- npm exec vitest run src/features/messages/components/Messages.explore.test.tsx src/features/messages/components/messagesLiveWindow.test.ts
+- npm run typecheck
+- openspec validate --all --strict --no-interactive
+注意：未触碰外部正在处理的 harden-windows-ask-user-question-resume 相关 dirty 文件。
+
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `aa64758348cb06ff93064322fd7e418b32cba353` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
