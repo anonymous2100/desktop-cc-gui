@@ -831,3 +831,48 @@
 ### Next Steps
 
 - None - task complete
+
+
+## Session 712: 收口实时吸顶对齐任务
+
+**Date**: 2026-06-05
+**Task**: 收口实时吸顶对齐任务
+**Branch**: `feature/v0.5.6`
+
+### Summary
+
+将 align-live-sticky-with-history-header 的 PRD 验收项与 Trellis task metadata 收口为 completed，关联既有实现 commit、OpenSpec archive、主 spec、消息区实现/测试文件与验证记录。
+
+### Main Changes
+
+本次继续清理 Trellis/OpenSpec 残留债，只处理 align-live-sticky-with-history-header 的 PRD 与任务 metadata。
+
+已完成：
+- 将 .trellis/tasks/04-22-align-live-sticky-with-history-header/prd.md 的 Acceptance Criteria 全部标记为完成。
+- 将 task.json 的 status 更新为 completed。
+- 补齐 dev_type=frontend、scope=messages、completedAt=2026-06-05、current_phase=6。
+- 关联既有实现 commit daab536b8115d8e84f66c0d306d7207fafa7c8f6。
+- 关联 OpenSpec archive、conversation-live-user-bubble-pinning 主 spec、Messages/MessagesTimeline/messagesLiveWindow、live behavior 测试和 sticky 样式文件。
+- notes 记录 realtime wrapper-sticky 替换为 shared condensed sticky header、history-style physical handoff、live-window trimming compatibility、obsolete CSS contract removal、focused coverage、typecheck 和 strict OpenSpec validation。
+
+边界：
+- 未修改生产代码。
+
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `77f29fa49f1f6065ccf86bab8715a251378c28e9` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
