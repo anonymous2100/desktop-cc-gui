@@ -224,7 +224,11 @@ impl RendererHeartbeatStore {
             if missed_by_ms <= 0 {
                 continue;
             }
-            let last_emit = self.last_watchdog_emit_by_scope.get(scope).copied().unwrap_or(0);
+            let last_emit = self
+                .last_watchdog_emit_by_scope
+                .get(scope)
+                .copied()
+                .unwrap_or(0);
             if now_ms.saturating_sub(last_emit) < threshold_ms {
                 continue;
             }
@@ -392,12 +396,10 @@ mod tests {
 
         assert_eq!(status.classification, "heartbeat_missed");
         assert_eq!(status.missed_by_ms, Some(4_000));
-        assert!(
-            status
-                .native_hook_support
-                .iter()
-                .all(|hook| hook.state == RendererSupportState::NotImplemented)
-        );
+        assert!(status
+            .native_hook_support
+            .iter()
+            .all(|hook| hook.state == RendererSupportState::NotImplemented));
     }
 
     #[test]

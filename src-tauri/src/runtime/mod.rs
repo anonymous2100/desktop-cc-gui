@@ -46,8 +46,8 @@ pub(crate) const RUNTIME_RECOVERY_QUARANTINE_MILLIS: u64 = 15_000;
 const RUNTIME_CHURN_WINDOW_MILLIS: u64 = 30_000;
 const THREAD_CREATE_PENDING_SENTINEL: &str = "__thread-create-pending__";
 
-pub(crate) mod commands;
 mod acquire_boundary;
+pub(crate) mod commands;
 mod event_sources;
 mod gates;
 mod identity;

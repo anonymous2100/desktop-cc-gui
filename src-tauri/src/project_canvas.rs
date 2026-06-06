@@ -71,9 +71,9 @@ fn is_windows_reserved_path_segment(value: &str) -> bool {
 fn is_safe_project_canvas_filename(value: &str) -> bool {
     !value.is_empty()
         && !is_windows_reserved_path_segment(&value.to_ascii_lowercase())
-        && value
-            .chars()
-            .all(|character| character.is_ascii_alphanumeric() || matches!(character, '.' | '_' | '-'))
+        && value.chars().all(|character| {
+            character.is_ascii_alphanumeric() || matches!(character, '.' | '_' | '-')
+        })
 }
 
 fn validate_project_canvas_file_path(path: &str) -> Result<PathBuf, String> {
@@ -126,7 +126,8 @@ fn migrate_legacy_workspace_canvases(entry: &WorkspaceEntry, root: &Path) -> Res
     let entries = std::fs::read_dir(&legacy_root)
         .map_err(|error| format!("Failed to read legacy Intent Canvas directory: {error}"))?;
     for entry in entries {
-        let entry = entry.map_err(|error| format!("Failed to read legacy Intent Canvas entry: {error}"))?;
+        let entry =
+            entry.map_err(|error| format!("Failed to read legacy Intent Canvas entry: {error}"))?;
         let file_type = entry
             .file_type()
             .map_err(|error| format!("Failed to inspect legacy Intent Canvas entry: {error}"))?;
@@ -147,7 +148,9 @@ fn migrate_legacy_workspace_canvases(entry: &WorkspaceEntry, root: &Path) -> Res
         if content.len() > MAX_PROJECT_CANVAS_FILE_BYTES as usize {
             continue;
         }
-        with_storage_lock(&target_path, || write_string_atomically(&target_path, &content))?;
+        with_storage_lock(&target_path, || {
+            write_string_atomically(&target_path, &content)
+        })?;
     }
     synthesize_index_from_canvas_documents(&canonical_root)?;
     std::fs::write(&migration_sentinel_path, "1")
@@ -177,7 +180,8 @@ fn synthesize_index_from_canvas_documents(root: &Path) -> Result<(), String> {
     let entries = std::fs::read_dir(root)
         .map_err(|error| format!("Failed to read Project Canvas directory: {error}"))?;
     for entry in entries {
-        let entry = entry.map_err(|error| format!("Failed to read Project Canvas entry: {error}"))?;
+        let entry =
+            entry.map_err(|error| format!("Failed to read Project Canvas entry: {error}"))?;
         let file_name = entry.file_name().to_string_lossy().to_string();
         if validate_project_canvas_file_path(&file_name).is_err() || file_name == "index.json" {
             continue;
@@ -249,7 +253,9 @@ fn synthesize_index_from_canvas_documents(root: &Path) -> Result<(), String> {
     });
     let content = serde_json::to_string_pretty(&payload)
         .map_err(|error| format!("Failed to serialize Project Canvas index: {error}"))?;
-    with_storage_lock(&index_path, || write_string_atomically(&index_path, &content))
+    with_storage_lock(&index_path, || {
+        write_string_atomically(&index_path, &content)
+    })
 }
 
 fn is_project_canvas_document_filename(file_name: &str) -> bool {
@@ -262,7 +268,9 @@ fn is_project_canvas_temp_filename(file_name: &str) -> bool {
     file_name.starts_with(".index.json.") && file_name.ends_with(".tmp")
 }
 
-fn load_indexed_project_canvas_filenames(root: &Path) -> Result<std::collections::HashSet<String>, String> {
+fn load_indexed_project_canvas_filenames(
+    root: &Path,
+) -> Result<std::collections::HashSet<String>, String> {
     let index_path = root.join("index.json");
     if !index_path.exists() {
         return Ok(std::collections::HashSet::new());
@@ -303,7 +311,8 @@ fn compact_project_canvas_root(root: &Path) -> Result<ProjectCanvasCompactRespon
     let entries = std::fs::read_dir(&canonical_root)
         .map_err(|error| format!("Failed to read Project Canvas directory: {error}"))?;
     for entry in entries {
-        let entry = entry.map_err(|error| format!("Failed to read Project Canvas entry: {error}"))?;
+        let entry =
+            entry.map_err(|error| format!("Failed to read Project Canvas entry: {error}"))?;
         let file_type = entry
             .file_type()
             .map_err(|error| format!("Failed to inspect Project Canvas entry: {error}"))?;
@@ -318,8 +327,9 @@ fn compact_project_canvas_root(root: &Path) -> Result<ProjectCanvasCompactRespon
             continue;
         }
         if is_project_canvas_document_filename(&file_name) && !indexed_files.contains(&file_name) {
-            std::fs::remove_file(entry.path())
-                .map_err(|error| format!("Failed to remove orphan Project Canvas document: {error}"))?;
+            std::fs::remove_file(entry.path()).map_err(|error| {
+                format!("Failed to remove orphan Project Canvas document: {error}")
+            })?;
             deleted_documents += 1;
         }
     }
@@ -361,9 +371,9 @@ fn resolve_writable_project_canvas_file(root: &Path, path: &str) -> Result<PathB
         .map_err(|error| format!("Failed to resolve Project Canvas root: {error}"))?;
     let candidate = canonical_root.join(relative_path);
     if let Some(parent) = candidate.parent() {
-        let canonical_parent = parent
-            .canonicalize()
-            .map_err(|error| format!("Failed to resolve Project Canvas parent directory: {error}"))?;
+        let canonical_parent = parent.canonicalize().map_err(|error| {
+            format!("Failed to resolve Project Canvas parent directory: {error}")
+        })?;
         if !canonical_parent.starts_with(&canonical_root) {
             return Err("Invalid Project Canvas file path.".to_string());
         }
@@ -379,14 +389,17 @@ pub(crate) async fn project_canvas_read_file(
     _app: AppHandle,
 ) -> Result<ProjectCanvasFileResponse, String> {
     if remote_backend::is_remote_mode(&*state).await {
-        return Err("Project Canvas global storage is not supported in remote mode yet.".to_string());
+        return Err(
+            "Project Canvas global storage is not supported in remote mode yet.".to_string(),
+        );
     }
 
     let entry = workspace_entry(&state, &workspace_id).await?;
     let root = project_canvas_root(&entry)?;
     migrate_legacy_workspace_canvases(&entry, &root)?;
     let path = resolve_existing_project_canvas_file(&root, &path)?;
-    let file = File::open(&path).map_err(|error| format!("Failed to open Project Canvas file: {error}"))?;
+    let file = File::open(&path)
+        .map_err(|error| format!("Failed to open Project Canvas file: {error}"))?;
     let mut buffer = Vec::new();
     file.take(MAX_PROJECT_CANVAS_FILE_BYTES + 1)
         .read_to_end(&mut buffer)
@@ -409,7 +422,9 @@ pub(crate) async fn project_canvas_write_file(
     _app: AppHandle,
 ) -> Result<(), String> {
     if remote_backend::is_remote_mode(&*state).await {
-        return Err("Project Canvas global storage is not supported in remote mode yet.".to_string());
+        return Err(
+            "Project Canvas global storage is not supported in remote mode yet.".to_string(),
+        );
     }
     if content.len() > MAX_PROJECT_CANVAS_FILE_BYTES as usize {
         return Err("Project Canvas file content exceeds maximum allowed size.".to_string());
@@ -429,13 +444,16 @@ pub(crate) async fn project_canvas_trash_file(
     _app: AppHandle,
 ) -> Result<(), String> {
     if remote_backend::is_remote_mode(&*state).await {
-        return Err("Project Canvas global storage is not supported in remote mode yet.".to_string());
+        return Err(
+            "Project Canvas global storage is not supported in remote mode yet.".to_string(),
+        );
     }
 
     let entry = workspace_entry(&state, &workspace_id).await?;
     let root = project_canvas_root(&entry)?;
     let path = resolve_existing_project_canvas_file(&root, &path)?;
-    trash::delete(&path).map_err(|error| format!("Failed to move Project Canvas file to trash: {error}"))
+    trash::delete(&path)
+        .map_err(|error| format!("Failed to move Project Canvas file to trash: {error}"))
 }
 
 #[tauri::command]
@@ -445,10 +463,14 @@ pub(crate) async fn project_canvas_compact_files(
     _app: AppHandle,
 ) -> Result<ProjectCanvasCompactResponse, String> {
     if remote_backend::is_remote_mode(&*state).await {
-        return Err("Project Canvas global storage is not supported in remote mode yet.".to_string());
+        return Err(
+            "Project Canvas global storage is not supported in remote mode yet.".to_string(),
+        );
     }
 
     let entry = workspace_entry(&state, &workspace_id).await?;
     let root = project_canvas_root(&entry)?;
-    with_storage_lock(&root.join("index.json"), || compact_project_canvas_root(&root))
+    with_storage_lock(&root.join("index.json"), || {
+        compact_project_canvas_root(&root)
+    })
 }

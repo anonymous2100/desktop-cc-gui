@@ -139,7 +139,9 @@ impl AppState {
             codex_login_cancels: Mutex::new(HashMap::new()),
             detached_external_change_runtime: Mutex::new(DetachedExternalChangeRuntime::default()),
             runtime_manager,
-            renderer_heartbeats: Mutex::new(crate::renderer_stability::RendererHeartbeatStore::default()),
+            renderer_heartbeats: Mutex::new(
+                crate::renderer_stability::RendererHeartbeatStore::default(),
+            ),
             engine_manager,
         }
     }

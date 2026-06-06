@@ -65,9 +65,7 @@ pub(crate) const RUNTIME_ACQUIRE_BOUNDARY_MATRIX: &[RuntimeAcquireBoundaryEntry]
     },
 ];
 
-pub(crate) fn classify_runtime_acquire_boundary(
-    path: &str,
-) -> Option<RuntimeAcquireBoundary> {
+pub(crate) fn classify_runtime_acquire_boundary(path: &str) -> Option<RuntimeAcquireBoundary> {
     let normalized = path.trim();
     RUNTIME_ACQUIRE_BOUNDARY_MATRIX
         .iter()
