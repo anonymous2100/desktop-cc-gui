@@ -259,6 +259,9 @@ Project Map scan orchestration
   -> API artifact namespace started
   -> parser source metadata started
   -> redaction utility completed
+  -> fallback-pattern route candidate extraction for several language families
+  -> endpoints/groups artifact output
+  -> empty schemas/chains artifact slots
 ```
 
 ### Design calibration
@@ -268,6 +271,9 @@ Project Map scan orchestration
 - The API view SHOULD tolerate incomplete scanner output by rendering empty, partial, or low-confidence states instead of fabricating endpoint facts.
 - Endpoint inspector SHOULD prefer unavailable/unknown states over generated filler copy when `description` or `usageScenario` lacks evidence.
 - Group-first rendering remains the default for scale. Filters and search MUST preserve hierarchy rather than replacing the graph with a flat result table.
+- Current backend extraction SHOULD be treated as `fallback-pattern` substrate only. It is useful as an early artifact producer, but it MUST NOT be used as evidence that mature parser sourcing or framework adapter coverage is complete.
+- `callChains` currently remaining empty is an intentional truth boundary. The UI and generation layer MUST NOT invent method-chain narratives before evidence-rich chain edges exist.
+- Existing skipped reason aggregation is useful, but scan scope completion still requires explicit dependency/generated/binary/max-size controls and focused fixtures.
 
 ### Next implementation batch
 
@@ -276,6 +282,7 @@ Project Map scan orchestration
 3. Register first-stage adapter skeletons for every declared language with explicit parser source metadata and unsupported/no-candidate reason.
 4. Implement scan scope controls and skipped reason metadata so API scanning cannot regress into dependency/generated directory traversal.
 5. Add method chain inspector after conservative chain extraction exists; do not show synthetic chain narratives before edge evidence is available.
+6. Convert current fallback-pattern route detection into the lowest-priority adapter fallback behind OpenAPI/protobuf/GraphQL and mature language parser wrappers.
 
 ### Rollback boundary
 

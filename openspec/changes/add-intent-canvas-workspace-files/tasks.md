@@ -56,4 +56,5 @@
 - [x] 8.4 Add idempotent legacy migration from workspace-local `.mossx/canvases` into global project-canvas storage.
 - [x] 8.5 Synthesize global index from legacy canvas documents when old workspace-local index is missing.
 - [x] 8.6 Fail closed with a readable unsupported error in remote mode until Project Canvas global storage ownership is defined.
-- [x] 8.7 Update frontend storage service, i18n copy, and OpenSpec artifacts to the global project-canvas contract.
+- [x] 8.7 Normalize nullable Excalidraw selection maps before scene initial data reaches the editor.
+- [x] 8.8 Update frontend storage service, i18n copy, and OpenSpec artifacts to the global project-canvas contract.

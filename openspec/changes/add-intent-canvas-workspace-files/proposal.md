@@ -90,6 +90,7 @@
 - Composer staged attachment 使用 `IntentCanvasAttachmentCard` 展示轻量 SVG 图形预览、标题、摘要、元素/文件/节点指标，并提供 icon + 文案 remove action。
 - Composer 发送或排队时会把 staged Canvas 经 `formatIntentCanvasThreadContext()` 追加到用户文本，发送成功后清理当前 thread 下的 pending Canvas。
 - Excalidraw scene 保存前会清洗 runtime-only `appState.collaborators`，避免恢复时触发 `collaborators.forEach is not a function`。
+- Excalidraw scene 恢复前会把 nullable `appState.selectedElementIds` / `selectedGroupIds` 归一化为空对象，避免初始化时访问 `selectedElementIds[element.id]` 崩溃。
 - Intent Canvas 视觉使用项目 CSS tokens 与 Excalidraw theme observer，兼容 light / dark / system appearance。
 
 ## Storage Boundary Correction（2026-06-06）

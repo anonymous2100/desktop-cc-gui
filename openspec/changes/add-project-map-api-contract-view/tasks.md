@@ -1,5 +1,16 @@
 ## 1. Data Model and Storage
 
+### Calibration note（2026-06-06）
+
+Current code supports `13 / 48` fully completed tasks. Several discovery tasks have partial substrate but remain unchecked by design:
+
+- `2.3`: relationship scan already records ignored path hints and API artifact `skipped` summary, but API-specific dependency/generated/binary/max-size scope fixtures are not complete.
+- `4.0 / 4.1-4.8`: backend has fallback-pattern extraction for several language families, but no mature parser wrapper, adapter registry, unsupported/no-candidate reason matrix, or focused adapter fixture suite yet.
+- `5.x`: `callChains` is currently emitted as an empty artifact slot; method chain extraction and inspector are not complete.
+- `7.4 / 7.5`: relationship dashboard search/filter exists for file relationship views, but API-specific protocol/language/framework/module/controller/confidence filters and hierarchy reveal are not complete.
+
+Do not mark these partial substrate items as complete until their validation clauses are satisfied.
+
 - [ ] 1.1 [P0][Depends: proposal/specs] Define shared API contract TypeScript/Rust data types for `ApiEndpoint`, `ApiGroup`, `ApiParameter`, `ApiRequestBody`, `ApiResponse`, `ApiEvidence`, `ApiSchemaRef`, `ApiCallChain`, and `ApiContractGraph`; input: OpenSpec specs; output: compile-safe domain model; validation: typecheck and fixture serialization.
 - [x] 1.2 [P0][Depends: 1.1] Add API contract artifact namespace at `project-map-relations/<storage-key>/api-contracts/` with manifest, ownership storage key, run metadata, endpoint index, group index, schema index, and chain index; input: active workspace scan result; output: persisted API artifacts; validation: read/write round trip fixture.
 - [ ] 1.3 [P0][Depends: 1.2] Enforce workspace ownership checks for API contract artifact read/write; input: mismatched manifest fixture; output: rejected or quarantined artifact; validation: focused ownership mismatch test.

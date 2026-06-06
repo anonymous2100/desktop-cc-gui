@@ -346,4 +346,5 @@ Contracts:
 
 - `appState.collaborators` MUST NOT be written into persisted Intent Canvas appState.
 - This prevents legacy object-shaped collaborator state from being restored into Excalidraw where runtime expects a Map-like collection.
+- `appState.selectedElementIds` and `appState.selectedGroupIds` MUST be object maps before being passed back to Excalidraw initial data; nullable or malformed values MUST normalize to `{}`.
 - Tests cover Map-shaped collaborator state and legacy object-shaped collaborator state.

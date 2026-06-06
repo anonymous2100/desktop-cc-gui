@@ -55,6 +55,13 @@ The system SHALL store Intent Canvas documents as app-global files under `~/.ccg
 - **THEN** the invalid document is excluded from trusted UI state
 - **AND** the user sees a readable warning.
 
+#### Scenario: Nullable Excalidraw selection maps
+
+- **GIVEN** a saved canvas scene contains `appState.selectedElementIds` or `appState.selectedGroupIds` as `null` or another malformed non-object value
+- **WHEN** the editor opens the canvas
+- **THEN** those fields are normalized to empty object maps before Excalidraw receives initial data
+- **AND** the editor does not crash during initialization.
+
 ### Requirement: Canvas Manager SHALL be a standalone module
 
 The system SHALL provide an Intent Canvas management surface separate from Project Map.
