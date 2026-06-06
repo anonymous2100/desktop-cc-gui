@@ -1608,3 +1608,52 @@ OpenSpec 回写：
 ### Next Steps
 
 - None - task complete
+
+
+## Session 728: 提交 Project Canvas 代码图导入提案
+
+**Date**: 2026-06-06
+**Task**: 提交 Project Canvas 代码图导入提案
+**Branch**: `feature/v0.5.7`
+
+### Summary
+
+提交 add-project-canvas-code-graph-import OpenSpec 提案，为 Project Canvas Phase 2 代码/关系图导入实施做准备。
+
+### Main Changes
+
+本次会话完成 Project Canvas Phase 2 OpenSpec 提案提交。
+
+主要内容:
+- 新建并提交 `add-project-canvas-code-graph-import` 变更。
+- 定义 `Canvas Source Anchor`、`CanvasSemanticGraph`、`CanvasAiAnnotation` 等设计边界。
+- 明确两个入口: `project-map-relations` node/edge import 和 code selected method import。
+- 约束 Canvas 作为 projection workbench，不替代 Project Map 或 `project-map-relations` fact store。
+- 校准当前实现: Relationship Dashboard 先按 file-node centric 导入，code selection 第一版支持 line-level symbol anchor。
+
+验证:
+- `openspec validate add-project-canvas-code-graph-import --strict --no-interactive` 已通过。
+- `openspec status --change add-project-canvas-code-graph-import` 显示 4/4 artifacts complete。
+
+未纳入本次 commit:
+- 工作区内已有 ProjectMapRelationshipSection/i18n/CSS 改动。
+- 未跟踪的 `openspec/changes/add-project-map-relations-scan-loading/`。
+
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `8f2343e1` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
