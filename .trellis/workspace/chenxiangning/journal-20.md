@@ -112,3 +112,43 @@
 ### Next Steps
 
 - None - task complete
+
+
+## Session 738: 拆分大文件硬债并清零门禁
+
+**Date**: 2026-06-07
+**Task**: 拆分大文件硬债并清零门禁
+**Branch**: `feature/v0.5.7`
+
+### Summary
+
+完成 OpenSpec split-large-file-hard-debt 第一阶段实施，拆分 Project Map、layout hook、Rust path safety 和关系样式，刷新大文件 baseline，large-file gate 清零。
+
+### Main Changes
+
+- 创建 OpenSpec change: split-large-file-hard-debt，记录 proposal/design/tasks/spec delta。
+- ProjectMapRelationshipSection 拆出 API/files/read workspace、API model 和 graph projection helper。
+- useLayoutNodes 拆出 code-selection relationship graph、runtime lifecycle、message jump、user input focus helpers。
+- project_map_relations.rs 拆出 path_safety 子模块，保留 command facade 和 response schema。
+- project-map.relationship.css 拆出 inspector 样式分片并保持 project-map.css import 顺序。
+- 刷新 docs/architecture/large-file-baseline.*，fail baseline entries 清空。
+- 验证通过：npm run typecheck；npm run check:large-files:gate；npm run check:large-files:near-threshold；ProjectMapRelationshipSection.api-smoke.test.tsx；useLayoutNodes.client-ui-visibility.test.tsx；cargo test -p cc-gui project_map_relations；openspec validate split-large-file-hard-debt --strict --no-interactive。
+
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `2a0efb00` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
