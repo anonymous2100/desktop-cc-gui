@@ -185,3 +185,36 @@
 ### Next Steps
 
 - None - task complete
+
+
+## Session 740: 提交 Rust 格式化收口
+
+**Date**: 2026-06-07
+**Task**: 提交 Rust 格式化收口
+**Branch**: `feature/v0.5.7`
+
+### Summary
+
+补提交上一轮 cargo fmt 产生的 Rust 机械格式化改动，覆盖 project_canvas、renderer_stability、runtime acquire boundary/mod/state；focused Rust compile 与 diff check 通过。
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `2b4e4333` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
