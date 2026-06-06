@@ -1559,3 +1559,52 @@ OpenSpec 回写：
 ### Next Steps
 
 - None - task complete
+
+
+## Session 727: 更新现有 OpenSpec 变更提案
+
+**Date**: 2026-06-06
+**Task**: 更新现有 OpenSpec 变更提案
+**Branch**: `feature/v0.5.7`
+
+### Summary
+
+(Add summary)
+
+### Main Changes
+
+| 项目 | 内容 |
+|------|------|
+| 提交 | 提交现有 OpenSpec 变更文档更新，不包含未跟踪的新提案目录。 |
+| 覆盖范围 | `add-intent-canvas-workspace-files`、`add-project-map-api-contract-view`、`harden-windows-ask-user-question-resume` 的 proposal/design/tasks/spec delta 更新。 |
+| 边界 | 未提交 `openspec/changes/add-project-canvas-code-graph-import/`，该目录保持为新提案工作区。 |
+| 验证 | 本轮为文档提交，未运行 OpenSpec validate。 |
+
+**Updated Files**:
+- `openspec/changes/add-intent-canvas-workspace-files/design.md`
+- `openspec/changes/add-intent-canvas-workspace-files/proposal.md`
+- `openspec/changes/add-intent-canvas-workspace-files/specs/intent-canvas-workspace-files/spec.md`
+- `openspec/changes/add-intent-canvas-workspace-files/tasks.md`
+- `openspec/changes/add-project-map-api-contract-view/design.md`
+- `openspec/changes/add-project-map-api-contract-view/proposal.md`
+- `openspec/changes/add-project-map-api-contract-view/tasks.md`
+- `openspec/changes/harden-windows-ask-user-question-resume/tasks.md`
+
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `3ac4742b` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
