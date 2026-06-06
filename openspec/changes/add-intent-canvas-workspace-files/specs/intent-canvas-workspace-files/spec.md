@@ -145,7 +145,18 @@ The system SHALL let the user send a saved Intent Canvas as structured context t
 
 - **GIVEN** a saved canvas staged above the Composer
 - **WHEN** the user sends the Composer draft
-- **THEN** the app sends a user message containing a clear intent-context disclaimer, canvas summary, links, digest, and JSON snapshot.
+- **THEN** the app sends a user message containing a clear intent-context disclaimer, canvas summary, links, semantic context packet, and JSON snapshot.
+- **AND** the packet prioritizes semantic nodes, semantic edges, evidence clues, linked files, linked Project Map nodes, and user-authored text over low-value visual coordinates or styling.
+- **AND** the packet includes completeness counts for total, sent, and omitted semantic nodes, semantic edges, evidence clues, visual text blocks, and visual arrows.
+- **AND** any compression or truncation is explicit rather than silent.
+
+#### Scenario: Send large canvas to active thread
+
+- **GIVEN** a saved canvas contains more visual or semantic data than the send budget allows
+- **WHEN** the user sends the Composer draft
+- **THEN** the app compresses low-value drawing details before semantic clues
+- **AND** the structured payload sets `truncated=true`
+- **AND** the omitted counts tell the user and AI which categories were compressed.
 
 #### Scenario: No active thread exists
 

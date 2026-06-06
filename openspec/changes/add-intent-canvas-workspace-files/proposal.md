@@ -227,3 +227,41 @@ Intent Canvas 是用户在 app 内管理的 project-scoped intent artifact，不
 
 - Manager 空态区域高度自适应拉满未作为本次已完成事实记录；如继续优化，应单独确认并实现。
 - 若后续继续优化空态高度，应作为独立 UI hardening 处理，避免把未落地内容写成已完成事实。
+
+## Semantic Context Packet Proposal（2026-06-06）
+
+### 中文导读
+
+本节追加 Intent Canvas 发送给 AI 的上下文语义修复。
+目标不是把完整 Excalidraw 原始 JSON 全量塞进对话，而是让 AI 收到的上下文“线索完整、语义优先、可压缩且不静默截断”。
+
+### Problem
+
+旧 `formatIntentCanvasThreadContext()` 同时发送前 40 条视觉 digest 和一个包含 `elementDigest/relationDigest` 的 JSON payload。
+该模型存在三个问题：
+
+- 对 Project Map 导入的关系图，真正有价值的是 semantic nodes / edges / evidence refs，而不是矩形坐标、颜色和尺寸。
+- 超大 Canvas 会被固定数量裁剪，但用户和 AI 无法明确知道 sent / total / omitted。
+- 文本 digest 与 JSON payload 存在重复 token，压缩方式偏“数量截断”，不是“语义保真”。
+
+### Proposed behavior
+
+- 发送给 AI 的 payload 升级为 `intent_canvas_context` version 2。
+- payload MUST include a `completeness` manifest，声明 semantic nodes、semantic edges、evidence、visual text blocks、visual arrows 的 total / sent / omitted。
+- Project Map 关系图优先发送 `semanticGraph.nodes`、`semanticGraph.edges` 和 evidence clue summary。
+- 手绘图优先发送用户手写 text blocks、arrow binding clues、linked files / nodes / threads。
+- 未命名 visual shapes、坐标、尺寸、颜色和 Excalidraw appState 默认不进入 AI payload，只以 compressed count 形式保留。
+- Composer attachment preview MUST show whether the context is complete or compressed.
+
+### Non-goals
+
+- 不发送完整 raw Excalidraw scene。
+- 不把 Canvas semantic graph 自动写回 Project Map 主图谱。
+- 不引入模型自动总结链路；本阶段只做 deterministic compression。
+
+### Acceptance
+
+- AI message contains `Structured semantic payload` rather than duplicated visual digest blocks.
+- Payload makes truncation explicit with `truncated` and omitted counts.
+- For Project Map relationship imports, semantic node/edge clues are preserved before low-value visual details.
+- Composer staged card displays context completeness counts so users know what will be sent.

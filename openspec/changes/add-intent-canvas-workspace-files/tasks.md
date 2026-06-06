@@ -67,3 +67,11 @@
 - [x] 9.4 Add batch canvas deletion service that trashes selected documents and writes the index once.
 - [x] 9.5 Add focused tests for request idempotency and batch index write behavior.
 - [x] 9.6 Add Project Canvas compaction to physically remove index-unreachable orphan documents and stale atomic index temp files.
+
+## 10. Semantic context packet
+
+- [x] 10.1 Append proposal/spec tasks for semantic Canvas context compression.
+- [x] 10.2 Add `intent_canvas_context` version 2 transmission payload with completeness manifest.
+- [x] 10.3 Update chat formatter to prioritize semantic nodes, edges, evidence clues, links, and user-authored text over visual coordinates/styles.
+- [x] 10.4 Update Composer attachment card to show complete/compressed context counts.
+- [x] 10.5 Update Canvas Editor context preview to show the same transmission payload that will be sent to AI.
