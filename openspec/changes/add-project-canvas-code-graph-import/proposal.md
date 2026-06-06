@@ -258,21 +258,24 @@ openspec validate add-project-canvas-code-graph-import --strict --no-interactive
 - 长路径或相似 relation id 经截断后可能生成重复 Excalidraw element id，导致 rectangle 与 text binding 错乱，出现无数据空框。
 - 旧画布中已持久化的系统生成黑框不会仅靠新 palette 自动消失，需要在 scene sanitize / append 链路中做轻量自愈。
 
-### 实现回写
+## 阶段性回写：source backlinks / stale / unresolved（2026-06-06）
 
-- 关系导入面板新增目标 Canvas index reload 链路，在面板展开/目标选择链路中重新拉取目标列表，并使用 request id guard 避免 stale response 覆盖新状态。
-- Intent Canvas relationship seed id 改为 `readable slug + stable hash`，避免长路径前缀相同导致 id 冲突。
-- Intent Canvas scene sanitize 增加仅作用于系统生成元素的 repair 层：修复旧深色 palette、重建 node-text binding、过滤没有可见 label 的系统空节点。
-- 新导入与 append 到旧 Canvas 的 relationship seed 均使用 theme-safe light palette；普通用户手绘元素不进入自动改色范围。
-- 增加 scene 回归测试，覆盖浅色 palette、长路径唯一 id、旧深色元素修复、空 label 系统框过滤。
+本阶段继续推进 imported relationship graph 的来源追溯能力，补齐 Canvas editor 中对 source anchor 的运行态投影。
+
+### 实现校准
+
+- Canvas editor 右侧 rail 增加 `Source traceability` 区块，展示 imported graph 数量、stale graph 数量和 unresolved anchor 数量。
+- imported relationship node 的 `filePath` 会作为 source backlink，用户可从 Canvas 打开 source file；code-symbol anchor 在有 range 时支持 line/column。
+- imported relationship edge 增加轻量 `evidenceRefs` projection metadata，只保存 evidence id、path、line、excerpt/label，不复制完整 relationship snapshot。
+- edge evidence action 优先打开 file-backed evidence ref；无 file-backed ref 时保留 evidence 状态但不伪造文件链接。
+- Canvas 会读取当前 `project-map-relations` snapshot 的 scan run、file ids、relation ids，用于判断 stale/unresolved；判断结果只用于 UI，不删除用户画布元素。
+- file-level relationship import 已改为传递真实 `scanRunId`；如果无法取得 scan summary，才保留 `relationship-dashboard-current` fallback。
+- refresh/re-project affordance 当前作为返回 Project Knowledge Map 的 CTA 提供，避免在 Canvas 内直接做 destructive overwrite。
 
 ### 行为边界
 
-- 本阶段不迁移 storage schema，不修改 Rust Project Canvas command contract。
-- repair 仅识别 `intent-node-*`、`intent-node-text-*`、`intent-edge-*`、`intent-edge-label-*` 系统生成元素，避免误改用户手绘内容。
-- 旧 Canvas 的系统生成黑框在重新加载、保存或 append 时被修复；不会主动扫描并重写所有历史 Canvas 文件。
+- 不新增 Rust command，不改变 Project Canvas 全局存储根。
+- 不把 Canvas 内容反写 Project Map 或 `project-map-relations`。
+- 不自动删除 unresolved node/edge，也不自动覆盖用户手工编辑过的画布内容。
+- `replace selected imported graph group` 仍保留为独立后续任务，避免本阶段引入误删风险。
 
-### 阶段风险
-
-- 已有旧画布中如果用户手动编辑过系统生成节点文本，repair 会尽量保留可见文本并只修复颜色和绑定。
-- 如果旧画布存在完全无文本的系统矩形，repair 会将其视为导入残留空框并过滤。

@@ -7,6 +7,7 @@ import {
 import type {
   CanvasAiAnnotation,
   CanvasCodeSymbolKind,
+  CanvasEvidenceRef,
   CanvasSemanticGraph,
   CanvasSemanticEdge,
   CanvasSemanticNode,
@@ -337,6 +338,23 @@ function normalizeCanvasSemanticNode(value: unknown): {
   };
 }
 
+function normalizeCanvasEvidenceRef(value: unknown): CanvasEvidenceRef | null {
+  if (!isRecord(value)) {
+    return null;
+  }
+  const id = asString(value.id);
+  if (!id) {
+    return null;
+  }
+  return {
+    id,
+    path: normalizePathValue(value.path),
+    line: normalizeFiniteNumber(value.line, 1),
+    excerpt: asString(value.excerpt),
+    label: asString(value.label),
+  };
+}
+
 function normalizeCanvasSemanticEdge(value: unknown): {
   id: string;
   sourceNodeId: string;
@@ -346,6 +364,10 @@ function normalizeCanvasSemanticEdge(value: unknown): {
   sourceAnchor?: CanvasSourceAnchor | null;
   label?: string | null;
   evidenceIds?: string[];
+  evidenceRefs?: CanvasEvidenceRef[];
+  evidenceSummary?: string[];
+  stale?: boolean;
+  unresolved?: boolean;
 } | null {
   if (!isRecord(value)) {
     return null;
@@ -370,6 +392,15 @@ function normalizeCanvasSemanticEdge(value: unknown): {
     sourceAnchor: isRecord(value.sourceAnchor) ? normalizeCanvasSourceAnchor(value.sourceAnchor) : undefined,
     label: asString(value.label),
     evidenceIds: asStringArray(value.evidenceIds),
+    evidenceRefs: Array.isArray(value.evidenceRefs)
+      ? value.evidenceRefs.flatMap((entry) => {
+          const normalized = normalizeCanvasEvidenceRef(entry);
+          return normalized ? [normalized] : [];
+        })
+      : undefined,
+    evidenceSummary: asStringArray(value.evidenceSummary),
+    stale: asBoolean(value.stale) ?? false,
+    unresolved: asBoolean(value.unresolved) ?? false,
   };
 }
 
@@ -545,6 +576,8 @@ function cloneCanvasSemanticEdge(value: CanvasSemanticEdge): CanvasSemanticEdge 
     ...value,
     sourceAnchor: value.sourceAnchor ? cloneCanvasSourceAnchor(value.sourceAnchor) : value.sourceAnchor,
     evidenceIds: value.evidenceIds ? [...value.evidenceIds] : undefined,
+    evidenceRefs: value.evidenceRefs ? value.evidenceRefs.map((entry) => ({ ...entry })) : undefined,
+    evidenceSummary: value.evidenceSummary ? [...value.evidenceSummary] : undefined,
   };
 }
 

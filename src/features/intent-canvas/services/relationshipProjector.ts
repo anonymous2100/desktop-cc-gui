@@ -106,6 +106,7 @@ export function projectRelationshipFileRelationsToCanvasSemanticGraph(input: {
   centerFile: ProjectMapRelationshipFileLike;
   relations: ProjectMapFileRelation[];
   filesById: ReadonlyMap<string, ProjectMapScannedFile>;
+  scan?: { scanRunId: string; generatedAt: string };
   maxNodes?: number;
   maxEdges?: number;
 }): CanvasSemanticGraph {
@@ -161,7 +162,7 @@ export function projectRelationshipFileRelationsToCanvasSemanticGraph(input: {
   return projectRelationshipNeighborhoodToCanvasSemanticGraph({
     workspaceId: input.workspaceId,
     neighborhood: {
-      scan: {
+      scan: input.scan ?? {
         scanRunId: "relationship-dashboard-current",
         generatedAt: new Date().toISOString(),
       },
@@ -229,6 +230,8 @@ export function projectRelationshipNeighborhoodToCanvasSemanticGraph(input: {
       }),
       label: getProjectMapRelationshipEdgeDisplayLabel(edge),
       evidenceIds: edge.evidenceIds,
+      evidenceRefs: edge.evidenceRefs,
+      evidenceSummary: edge.evidenceSummary,
       stale: edge.relation.stale ?? false,
     }))
     .filter((edge) => {
@@ -359,6 +362,8 @@ export function projectRelationshipEdgeToCanvasSemanticGraph(input: {
         }),
         label: getProjectMapRelationshipEdgeDisplayLabel(edgeSnapshot),
         evidenceIds: edgeSnapshot.evidenceIds,
+        evidenceRefs: edgeSnapshot.evidenceRefs,
+        evidenceSummary: edgeSnapshot.evidenceSummary,
         stale: input.edgeContext.relation.stale ?? false,
       },
     ],

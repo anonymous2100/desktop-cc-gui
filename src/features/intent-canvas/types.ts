@@ -114,6 +114,14 @@ export type CanvasSemanticNode = {
 
 export type CanvasSemanticEdgeDirection = "out" | "in" | "both" | "undirected";
 
+export type CanvasEvidenceRef = {
+  id: string;
+  path?: string | null;
+  line?: number | null;
+  excerpt?: string | null;
+  label?: string | null;
+};
+
 export type CanvasSemanticEdge = {
   id: string;
   sourceNodeId: string;
@@ -123,6 +131,10 @@ export type CanvasSemanticEdge = {
   sourceAnchor?: CanvasSourceAnchor | null;
   label?: string | null;
   evidenceIds?: string[];
+  evidenceRefs?: CanvasEvidenceRef[];
+  evidenceSummary?: string[];
+  stale?: boolean;
+  unresolved?: boolean;
 };
 
 export type CanvasSemanticGraph = {

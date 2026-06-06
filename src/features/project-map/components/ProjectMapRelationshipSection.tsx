@@ -1243,6 +1243,12 @@ export function ProjectMapRelationshipSection({
         centerFile: inspectedRelationshipFile,
         relations: inspectedRelationshipRelations,
         filesById: relationshipDashboardFileIndex,
+        scan: relationshipScanState.status === "success"
+          ? {
+              scanRunId: relationshipScanState.summary.scanRunId,
+              generatedAt: relationshipScanState.summary.generatedAt,
+            }
+          : undefined,
         maxNodes: 40,
         maxEdges: 80,
       });
@@ -1277,6 +1283,7 @@ export function ProjectMapRelationshipSection({
     onOpenIntentCanvasFromRelationship,
     normalizeRelationshipCanvasImportError,
     relationshipDashboardFileIndex,
+    relationshipScanState,
     resolveRelationshipCanvasRequestTarget,
     t,
   ]);

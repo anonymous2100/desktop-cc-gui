@@ -11,8 +11,10 @@ import {
   useState,
 } from "react";
 import { useTranslation } from "react-i18next";
+import AlertTriangle from "lucide-react/dist/esm/icons/alert-triangle";
 import ArrowLeft from "lucide-react/dist/esm/icons/arrow-left";
 import Copy from "lucide-react/dist/esm/icons/copy";
+import FileSearch from "lucide-react/dist/esm/icons/file-search";
 import FileText from "lucide-react/dist/esm/icons/file-text";
 import FolderOpen from "lucide-react/dist/esm/icons/folder-open";
 import GitBranch from "lucide-react/dist/esm/icons/git-branch";
@@ -29,6 +31,11 @@ import { cn } from "../../../lib/utils";
 import type { WorkspaceInfo } from "../../../types";
 import { ThreadDeleteConfirmBubble } from "../../threads/components/ThreadDeleteConfirmBubble";
 import type {
+  CanvasEvidenceRef,
+  CanvasSemanticEdge,
+  CanvasSemanticGraph,
+  CanvasSemanticNode,
+  CanvasSourceAnchor,
   IntentCanvasDocument,
   IntentCanvasIndexEntry,
   IntentCanvasOpenRequest,
@@ -44,7 +51,15 @@ import {
   loadIntentCanvasIndex,
   saveIntentCanvasDocument,
 } from "../services/intentCanvasStorage";
+import {
+  isProjectMapRelationshipScanFresh,
+  loadProjectMapRelationshipImportSourceState,
+  type ProjectMapRelationshipImportSourceState,
+} from "../services/relationshipImportQueries";
 import { buildIntentCanvasAiContext, sanitizeIntentCanvasScene } from "../utils/scene";
+
+type IntentCanvasSourceLocation = { line: number; column: number };
+type IntentCanvasOpenSourceFile = (path: string, location?: IntentCanvasSourceLocation) => void;
 
 export type IntentCanvasManagerProps = {
   activeWorkspace: WorkspaceInfo | null;
@@ -53,6 +68,7 @@ export type IntentCanvasManagerProps = {
   onOpenRequestConsumed?: (requestId: number) => void;
   onAttachToThread?: (document: IntentCanvasDocument) => Promise<void> | void;
   onOpenProjectMap?: () => void;
+  onOpenSourceFile?: IntentCanvasOpenSourceFile;
 };
 
 type IntentCanvasManagerStatus = "idle" | "loading" | "ready" | "error";
@@ -71,13 +87,51 @@ type IntentCanvasEditorProps = {
   onSave: (document: IntentCanvasDocument) => Promise<IntentCanvasDocument>;
   onAttachToThread?: (document: IntentCanvasDocument) => Promise<void> | void;
   onOpenProjectMap?: () => void;
+  onOpenSourceFile?: IntentCanvasOpenSourceFile;
+  managerErrorMessage?: string | null;
 };
 
 const EMPTY_CANVAS_ENTRIES: IntentCanvasIndexEntry[] = [];
+const EMPTY_SOURCE_BACKLINKS: IntentCanvasSourceBacklink[] = [];
+const EMPTY_EVIDENCE_BACKLINKS: IntentCanvasEvidenceBacklink[] = [];
 const LazyExcalidraw = lazy(async () => {
   const module = await import("@excalidraw/excalidraw");
   return { default: module.Excalidraw };
 });
+
+type RelationshipSourceRuntimeState =
+  | { status: "idle"; value: null; error: null }
+  | { status: "loading"; value: null; error: null }
+  | { status: "ready"; value: ProjectMapRelationshipImportSourceState; error: null }
+  | { status: "error"; value: null; error: string };
+
+type IntentCanvasSourceBacklink = {
+  id: string;
+  label: string;
+  detail: string;
+  path: string;
+  location: IntentCanvasSourceLocation | null;
+  unresolved: boolean;
+};
+
+type IntentCanvasEvidenceBacklink = {
+  id: string;
+  label: string;
+  detail: string;
+  path: string | null;
+  location: IntentCanvasSourceLocation | null;
+  evidenceIds: string[];
+  unresolved: boolean;
+};
+
+type IntentCanvasTraceabilityProjection = {
+  importedGraphCount: number;
+  staleGraphCount: number;
+  unresolvedAnchorCount: number;
+  refreshableGraphCount: number;
+  sourceBacklinks: IntentCanvasSourceBacklink[];
+  evidenceBacklinks: IntentCanvasEvidenceBacklink[];
+};
 
 function normalizeError(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
@@ -115,6 +169,195 @@ function buildWorkspaceRef(workspace: WorkspaceInfo): IntentCanvasWorkspaceRef {
   return {
     id: workspace.id,
     name: workspace.name ?? null,
+  };
+}
+
+function isProjectMapRelationshipGraph(graph: CanvasSemanticGraph): boolean {
+  return graph.sourceSnapshot?.kind === "project-map-relations";
+}
+
+function getSourceAnchorPath(anchor: CanvasSourceAnchor | null | undefined): string | null {
+  if (!anchor) {
+    return null;
+  }
+  if (anchor.kind === "code-symbol") {
+    return anchor.filePath;
+  }
+  if (anchor.kind === "relationship-node") {
+    return anchor.filePath ?? null;
+  }
+  return null;
+}
+
+function normalizeSourceColumn(value: number | null | undefined): number {
+  return value && value > 0 ? value : 1;
+}
+
+function getSourceAnchorLocation(anchor: CanvasSourceAnchor | null | undefined): IntentCanvasSourceLocation | null {
+  if (!anchor || anchor.kind !== "code-symbol") {
+    return null;
+  }
+  const range = anchor.definitionRange ?? anchor.selectionRange ?? null;
+  if (!range?.startLine || range.startLine < 1) {
+    return null;
+  }
+  return {
+    line: range.startLine,
+    column: normalizeSourceColumn(range.startColumn),
+  };
+}
+
+function getEvidenceRefLocation(ref: CanvasEvidenceRef | null | undefined): IntentCanvasSourceLocation | null {
+  if (!ref?.line || ref.line < 1) {
+    return null;
+  }
+  return { line: ref.line, column: 1 };
+}
+
+function isRelationshipAnchorRuntimeUnresolved(
+  anchor: CanvasSourceAnchor | null | undefined,
+  sourceState: ProjectMapRelationshipImportSourceState | null,
+): boolean {
+  if (!anchor || !sourceState || anchor.kind === "code-symbol") {
+    return false;
+  }
+  if (!sourceState.exists) {
+    return true;
+  }
+  if (anchor.kind === "relationship-node") {
+    return !sourceState.fileNodeIds.has(anchor.nodeId);
+  }
+  return !sourceState.relationEdgeIds.has(anchor.edgeId);
+}
+
+function isRelationshipAnchorRuntimeResolved(
+  anchor: CanvasSourceAnchor | null | undefined,
+  sourceState: ProjectMapRelationshipImportSourceState | null,
+): boolean {
+  if (!anchor || !sourceState?.exists || anchor.kind === "code-symbol") {
+    return false;
+  }
+  if (anchor.kind === "relationship-node") {
+    return sourceState.fileNodeIds.has(anchor.nodeId);
+  }
+  return sourceState.relationEdgeIds.has(anchor.edgeId);
+}
+
+function isGraphSnapshotStale(
+  graph: CanvasSemanticGraph,
+  sourceState: ProjectMapRelationshipImportSourceState | null,
+): boolean {
+  const importedScanRunId = graph.sourceSnapshot?.scanRunId;
+  if (!importedScanRunId || !sourceState?.scan?.scanRunId) {
+    return false;
+  }
+  return !isProjectMapRelationshipScanFresh({
+    importedScanRunId,
+    latestScanRunId: sourceState.scan.scanRunId,
+  });
+}
+
+function isGraphRefreshable(
+  graph: CanvasSemanticGraph,
+  sourceState: ProjectMapRelationshipImportSourceState | null,
+): boolean {
+  return graph.nodes.some((node) => isRelationshipAnchorRuntimeResolved(node.sourceAnchor, sourceState))
+    || graph.edges.some((edge) => isRelationshipAnchorRuntimeResolved(edge.sourceAnchor, sourceState));
+}
+
+function createSourceBacklink(input: {
+  graph: CanvasSemanticGraph;
+  node: CanvasSemanticNode;
+  sourceState: ProjectMapRelationshipImportSourceState | null;
+}): IntentCanvasSourceBacklink | null {
+  const path = getSourceAnchorPath(input.node.sourceAnchor);
+  if (!path) {
+    return null;
+  }
+  const location = getSourceAnchorLocation(input.node.sourceAnchor);
+  return {
+    id: `${input.graph.graphId}:node:${input.node.id}`,
+    label: input.node.label,
+    detail: location ? `${path}:${location.line}` : path,
+    path,
+    location,
+    unresolved: Boolean(input.node.unresolved)
+      || isRelationshipAnchorRuntimeUnresolved(input.node.sourceAnchor, input.sourceState),
+  };
+}
+
+function createEvidenceBacklink(input: {
+  graph: CanvasSemanticGraph;
+  edge: CanvasSemanticEdge;
+  sourceState: ProjectMapRelationshipImportSourceState | null;
+}): IntentCanvasEvidenceBacklink | null {
+  const evidenceIds = input.edge.evidenceIds ?? [];
+  const evidenceRefs = input.edge.evidenceRefs ?? [];
+  if (!evidenceIds.length && !evidenceRefs.length) {
+    return null;
+  }
+  const primaryRef = evidenceRefs.find((ref) => Boolean(ref.path)) ?? evidenceRefs[0] ?? null;
+  const path = primaryRef?.path?.trim() || null;
+  return {
+    id: `${input.graph.graphId}:edge:${input.edge.id}`,
+    label: input.edge.label ?? input.edge.relationKind,
+    detail: primaryRef?.label ?? evidenceIds[0] ?? input.edge.relationKind,
+    path,
+    location: getEvidenceRefLocation(primaryRef),
+    evidenceIds,
+    unresolved: Boolean(input.edge.unresolved)
+      || isRelationshipAnchorRuntimeUnresolved(input.edge.sourceAnchor, input.sourceState),
+  };
+}
+
+function buildTraceabilityProjection(
+  graphs: CanvasSemanticGraph[],
+  sourceState: ProjectMapRelationshipImportSourceState | null,
+): IntentCanvasTraceabilityProjection {
+  const relationshipGraphs = graphs.filter(isProjectMapRelationshipGraph);
+  if (!relationshipGraphs.length) {
+    return {
+      importedGraphCount: 0,
+      staleGraphCount: 0,
+      unresolvedAnchorCount: 0,
+      refreshableGraphCount: 0,
+      sourceBacklinks: EMPTY_SOURCE_BACKLINKS,
+      evidenceBacklinks: EMPTY_EVIDENCE_BACKLINKS,
+    };
+  }
+
+  const sourceBacklinks = new Map<string, IntentCanvasSourceBacklink>();
+  const evidenceBacklinks = new Map<string, IntentCanvasEvidenceBacklink>();
+  let unresolvedAnchorCount = 0;
+
+  relationshipGraphs.forEach((graph) => {
+    graph.nodes.forEach((node) => {
+      if (Boolean(node.unresolved) || isRelationshipAnchorRuntimeUnresolved(node.sourceAnchor, sourceState)) {
+        unresolvedAnchorCount += 1;
+      }
+      const backlink = createSourceBacklink({ graph, node, sourceState });
+      if (backlink) {
+        sourceBacklinks.set(`${backlink.path}:${backlink.location?.line ?? ""}:${backlink.label}`, backlink);
+      }
+    });
+    graph.edges.forEach((edge) => {
+      if (Boolean(edge.unresolved) || isRelationshipAnchorRuntimeUnresolved(edge.sourceAnchor, sourceState)) {
+        unresolvedAnchorCount += 1;
+      }
+      const backlink = createEvidenceBacklink({ graph, edge, sourceState });
+      if (backlink) {
+        evidenceBacklinks.set(backlink.id, backlink);
+      }
+    });
+  });
+
+  return {
+    importedGraphCount: relationshipGraphs.length,
+    staleGraphCount: relationshipGraphs.filter((graph) => isGraphSnapshotStale(graph, sourceState)).length,
+    unresolvedAnchorCount,
+    refreshableGraphCount: relationshipGraphs.filter((graph) => isGraphRefreshable(graph, sourceState)).length,
+    sourceBacklinks: Array.from(sourceBacklinks.values()),
+    evidenceBacklinks: Array.from(evidenceBacklinks.values()),
   };
 }
 
@@ -174,6 +417,8 @@ function IntentCanvasEditor({
   onSave,
   onAttachToThread,
   onOpenProjectMap,
+  onOpenSourceFile,
+  managerErrorMessage = null,
 }: IntentCanvasEditorProps) {
   const { t, i18n } = useTranslation();
   const excalidrawTheme = useIntentCanvasTheme();
@@ -186,6 +431,8 @@ function IntentCanvasEditor({
   const [saveError, setSaveError] = useState<string | null>(null);
   const [leftRailCollapsed, setLeftRailCollapsed] = useState(false);
   const [rightRailCollapsed, setRightRailCollapsed] = useState(false);
+  const [relationshipSourceState, setRelationshipSourceState] =
+    useState<RelationshipSourceRuntimeState>({ status: "idle", value: null, error: null });
   const [elementCount, setElementCount] = useState(
     document.scene.elements.filter((element) => !element.isDeleted).length,
   );
@@ -223,7 +470,8 @@ function IntentCanvasEditor({
       appState: AppState,
       files: BinaryFiles,
     ) => {
-      sceneRef.current = sanitizeIntentCanvasScene(elements, appState, files);
+      const nextScene = sanitizeIntentCanvasScene(elements, appState, files);
+      sceneRef.current = nextScene;
       setElementCount(elements.filter((element) => !element.isDeleted).length);
       setIsDirty(true);
     },
@@ -294,6 +542,55 @@ function IntentCanvasEditor({
   const hasProjectMapImportSource =
     document.links.projectMapNodeIds.length > 0 ||
     document.semanticGraphs.some((graph) => graph.sourceSnapshot?.kind === "project-map-relations");
+  const relationshipGraphSourceKey = useMemo(
+    () => document.semanticGraphs
+      .filter(isProjectMapRelationshipGraph)
+      .map((graph) => `${graph.graphId}:${graph.sourceSnapshot?.scanRunId ?? "unknown"}`)
+      .join("|"),
+    [document.semanticGraphs],
+  );
+  const runtimeRelationshipSourceState =
+    relationshipSourceState.status === "ready" ? relationshipSourceState.value : null;
+  const traceabilityProjection = useMemo(
+    () => buildTraceabilityProjection(document.semanticGraphs, runtimeRelationshipSourceState),
+    [document.semanticGraphs, runtimeRelationshipSourceState],
+  );
+
+  useEffect(() => {
+    if (!relationshipGraphSourceKey) {
+      setRelationshipSourceState({ status: "idle", value: null, error: null });
+      return undefined;
+    }
+    let cancelled = false;
+    setRelationshipSourceState({ status: "loading", value: null, error: null });
+    loadProjectMapRelationshipImportSourceState({
+      workspaceId: document.workspace.id,
+    })
+      .then((sourceState) => {
+        if (!cancelled) {
+          setRelationshipSourceState({ status: "ready", value: sourceState, error: null });
+        }
+      })
+      .catch((error) => {
+        if (!cancelled) {
+          setRelationshipSourceState({
+            status: "error",
+            value: null,
+            error: normalizeError(error),
+          });
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [document.workspace.id, relationshipGraphSourceKey]);
+
+  const handleOpenBacklink = useCallback((backlink: IntentCanvasSourceBacklink | IntentCanvasEvidenceBacklink) => {
+    if (!onOpenSourceFile || !backlink.path || backlink.unresolved) {
+      return;
+    }
+    onOpenSourceFile(backlink.path, backlink.location ?? undefined);
+  }, [onOpenSourceFile]);
 
   return (
     <section className="intent-canvas-editor" aria-label={t("intentCanvas.editor.ariaLabel")}> 
@@ -499,11 +796,146 @@ function IntentCanvasEditor({
                   </div>
                 </dl>
               </section>
+              {traceabilityProjection.importedGraphCount > 0 ? (
+                <section className="intent-canvas-card intent-canvas-source-trace-card">
+                  <h3>{t("intentCanvas.editor.sourceTraceability")}</h3>
+                  <p>{t("intentCanvas.editor.sourceTraceabilityHint")}</p>
+                  <dl className="intent-canvas-metrics intent-canvas-source-health">
+                    <div>
+                      <dt>{t("intentCanvas.editor.sourceImportedGraphs")}</dt>
+                      <dd>{traceabilityProjection.importedGraphCount}</dd>
+                    </div>
+                    <div className={traceabilityProjection.staleGraphCount > 0 ? "is-warning" : undefined}>
+                      <dt>{t("intentCanvas.editor.sourceStaleGraphs")}</dt>
+                      <dd>{traceabilityProjection.staleGraphCount}</dd>
+                    </div>
+                    <div className={traceabilityProjection.unresolvedAnchorCount > 0 ? "is-warning" : undefined}>
+                      <dt>{t("intentCanvas.editor.sourceUnresolvedAnchors")}</dt>
+                      <dd>{traceabilityProjection.unresolvedAnchorCount}</dd>
+                    </div>
+                  </dl>
+                  {relationshipSourceState.status === "loading" ? (
+                    <p className="intent-canvas-source-notice">
+                      <LoaderCircle aria-hidden className="is-spinning" />
+                      {t("intentCanvas.editor.sourceStatusLoading")}
+                    </p>
+                  ) : null}
+                  {relationshipSourceState.status === "error" ? (
+                    <p className="intent-canvas-source-notice is-warning">
+                      <AlertTriangle aria-hidden />
+                      {t("intentCanvas.editor.sourceStatusError", { message: relationshipSourceState.error })}
+                    </p>
+                  ) : null}
+                  {relationshipSourceState.status === "ready" && !relationshipSourceState.value.exists ? (
+                    <p className="intent-canvas-source-notice is-warning">
+                      <AlertTriangle aria-hidden />
+                      {t("intentCanvas.editor.sourceStatusUnavailable")}
+                    </p>
+                  ) : null}
+                  {relationshipSourceState.status === "ready" && relationshipSourceState.value.scan ? (
+                    <button
+                      type="button"
+                      className="intent-canvas-source-notice intent-canvas-source-link-notice"
+                      onClick={onOpenProjectMap}
+                      disabled={!onOpenProjectMap}
+                      title={t("intentCanvas.editor.sourceRefreshHint")}
+                    >
+                      <GitBranch aria-hidden />
+                      {t("intentCanvas.editor.sourceLatestScan", {
+                        scanRunId: relationshipSourceState.value.scan.scanRunId,
+                      })}
+                    </button>
+                  ) : null}
+                  {traceabilityProjection.staleGraphCount > 0 ? (
+                    <p className="intent-canvas-source-notice is-warning">
+                      <AlertTriangle aria-hidden />
+                      {t("intentCanvas.editor.sourceStaleNotice", {
+                        count: traceabilityProjection.staleGraphCount,
+                      })}
+                    </p>
+                  ) : null}
+                  {traceabilityProjection.unresolvedAnchorCount > 0 ? (
+                    <p className="intent-canvas-source-notice is-warning">
+                      <AlertTriangle aria-hidden />
+                      {t("intentCanvas.editor.sourceUnresolvedNotice", {
+                        count: traceabilityProjection.unresolvedAnchorCount,
+                      })}
+                    </p>
+                  ) : null}
+                  {traceabilityProjection.sourceBacklinks.length > 0 ? (
+                    <div className="intent-canvas-source-list">
+                      <strong>{t("intentCanvas.editor.sourceFiles")}</strong>
+                      {traceabilityProjection.sourceBacklinks.slice(0, 6).map((source) => (
+                        <button
+                          key={source.id}
+                          type="button"
+                          className={cn("intent-canvas-source-action", source.unresolved && "is-unresolved")}
+                          onClick={() => handleOpenBacklink(source)}
+                          disabled={!onOpenSourceFile || source.unresolved}
+                          aria-label={
+                            source.location
+                              ? t("intentCanvas.editor.sourceOpenFileAtLine", {
+                                  path: source.path,
+                                  line: source.location.line,
+                                })
+                              : t("intentCanvas.editor.sourceOpenFile", { path: source.path })
+                          }
+                          title={source.unresolved ? t("intentCanvas.editor.sourceOpenUnavailable") : source.detail}
+                        >
+                          <FileText aria-hidden />
+                          <span>{source.label}</span>
+                          <small>{source.detail}</small>
+                        </button>
+                      ))}
+                    </div>
+                  ) : null}
+                  {traceabilityProjection.evidenceBacklinks.length > 0 ? (
+                    <div className="intent-canvas-source-list">
+                      <strong>{t("intentCanvas.editor.sourceEvidence")}</strong>
+                      {traceabilityProjection.evidenceBacklinks.slice(0, 6).map((evidence) => (
+                        <button
+                          key={evidence.id}
+                          type="button"
+                          className={cn("intent-canvas-source-action", evidence.unresolved && "is-unresolved")}
+                          onClick={() => handleOpenBacklink(evidence)}
+                          disabled={!onOpenSourceFile || !evidence.path || evidence.unresolved}
+                          aria-label={t("intentCanvas.editor.sourceEvidenceOpen", {
+                            label: evidence.label,
+                          })}
+                          title={
+                            evidence.path && !evidence.unresolved
+                              ? evidence.detail
+                              : t("intentCanvas.editor.sourceEvidenceNoFile")
+                          }
+                        >
+                          <FileSearch aria-hidden />
+                          <span>{evidence.label}</span>
+                          <small>{evidence.detail}</small>
+                        </button>
+                      ))}
+                    </div>
+                  ) : null}
+                  {onOpenProjectMap ? (
+                    <button
+                      type="button"
+                      className="intent-canvas-source-refresh"
+                      onClick={onOpenProjectMap}
+                      disabled={traceabilityProjection.refreshableGraphCount === 0}
+                      title={t("intentCanvas.editor.sourceRefreshHint")}
+                    >
+                      <RefreshCw aria-hidden />
+                      {t("intentCanvas.editor.sourceRefresh")}
+                    </button>
+                  ) : null}
+                </section>
+              ) : null}
               <section className="intent-canvas-card">
                 <h3>{t("intentCanvas.editor.contextPreview")}</h3>
                 <pre>{buildDraftDocument({ includeActiveThread: false }).aiContext.lastContextSnapshot}</pre>
               </section>
-              {saveError ? <p className="intent-canvas-error" role="alert">{saveError}</p> : null}
+              {saveError || managerErrorMessage ? (
+                <p className="intent-canvas-error" role="alert">{saveError ?? managerErrorMessage}</p>
+              ) : null}
             </>
           ) : null}
         </aside>
@@ -525,6 +957,7 @@ export function IntentCanvasManager({
   onOpenRequestConsumed,
   onAttachToThread,
   onOpenProjectMap,
+  onOpenSourceFile,
 }: IntentCanvasManagerProps) {
   const { t } = useTranslation();
   const [status, setStatus] = useState<IntentCanvasManagerStatus>("idle");
@@ -880,6 +1313,8 @@ export function IntentCanvasManager({
         onSave={saveDocument}
         onAttachToThread={onAttachToThread}
         onOpenProjectMap={onOpenProjectMap}
+        onOpenSourceFile={onOpenSourceFile}
+        managerErrorMessage={errorMessage}
       />
     );
   }

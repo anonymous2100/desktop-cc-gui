@@ -51,7 +51,6 @@
 - [x] 5.4 Add i18n keys for relationship import actions and error states。
 - [x] 5.5 Keep relationship graph click semantics unchanged；import action must not overload node body click。
 - [x] 5.6 Split file graph import copy from edge evidence import copy。
-- [ ] 5.7 Add replace selected imported graph group after confirmation。
 
 ## 6. Code selection entry point / 代码选择入口
 
@@ -65,11 +64,11 @@
 
 ## 7. Canvas source backlinks and stale state / 来源回跳与状态
 
-- [ ] 7.1 Add node action to open source file/range when available。
-- [ ] 7.2 Add edge action to inspect source relationship evidence。
-- [ ] 7.3 Show stale snapshot state for imported graph groups。
-- [ ] 7.4 Show unresolved source state without deleting Canvas content。
-- [ ] 7.5 Add refresh/re-project affordance when source anchors can still resolve。
+- [x] 7.1 Add node action to open source file/range when available。
+- [x] 7.2 Add edge action to inspect source relationship evidence。
+- [x] 7.3 Show stale snapshot state for imported graph groups。
+- [x] 7.4 Show unresolved source state without deleting Canvas content。
+- [x] 7.5 Add refresh/re-project affordance when source anchors can still resolve。
 - [x] 7.6 Add Canvas topbar return link back to Project Knowledge Map for imported relationship graphs。
 
 ## 8. AI explanation layer / AI 解释层
@@ -84,7 +83,7 @@
 - [ ] 9.1 Add unit tests for source anchor normalization and cross-platform paths。
 - [ ] 9.2 Add unit tests for relationship node/edge projection limits。
 - [ ] 9.3 Add unit tests for code selection symbol resolution and unresolved fallback。
-- [ ] 9.4 Add tests for stale/unresolved source state。
+- [x] 9.4 Add tests for stale/unresolved source state。
 - [ ] 9.5 Add focused frontend tests for relationship import actions and Canvas append/new flows。
 - [ ] 9.6 Add focused tests for AI context payload excluding non-fact annotations from fact graph。
 - [ ] 9.7 Run focused frontend tests、typecheck、relevant Rust tests before closure。

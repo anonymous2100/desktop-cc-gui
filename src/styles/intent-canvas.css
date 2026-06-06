@@ -624,13 +624,13 @@
 
 .intent-canvas-editor-body {
   display: grid;
-  grid-template-columns: 260px minmax(0, 1fr) 280px;
+  grid-template-columns: 260px minmax(0, 1fr) 380px;
   min-height: 0;
   transition: grid-template-columns 160ms ease;
 }
 
 .intent-canvas-editor-body.is-left-collapsed {
-  grid-template-columns: 72px minmax(0, 1fr) 280px;
+  grid-template-columns: 72px minmax(0, 1fr) 380px;
 }
 
 .intent-canvas-editor-body.is-right-collapsed {
@@ -713,6 +713,135 @@
 .intent-canvas-card.is-accent {
   border-color: var(--intent-canvas-accent-soft);
   background: linear-gradient(135deg, color-mix(in srgb, #2563eb, transparent 90%), color-mix(in srgb, #14b8a6, transparent 90%));
+}
+
+.intent-canvas-source-trace-card {
+  gap: 10px;
+}
+
+.intent-canvas-source-health .is-warning dt,
+.intent-canvas-source-health .is-warning dd {
+  color: var(--status-warning);
+}
+
+.intent-canvas-source-notice {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  min-width: 0;
+  margin: 0;
+  padding: 7px 9px;
+  border: 1px solid var(--intent-canvas-border-muted);
+  border-radius: 12px;
+  color: var(--intent-canvas-muted);
+  background: color-mix(in srgb, var(--surface-command), transparent 16%);
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1.35;
+  text-align: left;
+}
+
+.intent-canvas-source-link-notice {
+  cursor: pointer;
+}
+
+.intent-canvas-source-link-notice:hover:not(:disabled) {
+  border-color: var(--intent-canvas-accent-soft);
+  color: var(--text-accent);
+  background: color-mix(in srgb, var(--intent-canvas-accent), transparent 90%);
+}
+
+.intent-canvas-source-notice.is-warning {
+  border-color: color-mix(in srgb, var(--status-warning), transparent 54%);
+  color: var(--status-warning);
+  background: color-mix(in srgb, var(--status-warning), transparent 90%);
+}
+
+.intent-canvas-source-notice svg {
+  flex: 0 0 auto;
+  width: 14px;
+  height: 14px;
+}
+
+.intent-canvas-source-list {
+  display: grid;
+  gap: 7px;
+  min-width: 0;
+}
+
+.intent-canvas-source-list strong {
+  color: var(--intent-canvas-strong);
+  font-size: 12px;
+}
+
+.intent-canvas-source-action,
+.intent-canvas-source-refresh {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 3px 8px;
+  align-items: center;
+  width: 100%;
+  min-height: 36px;
+  padding: 8px 9px;
+  border: 1px solid var(--intent-canvas-border-muted);
+  border-radius: 12px;
+  color: var(--intent-canvas-strong);
+  background: color-mix(in srgb, var(--surface-command), transparent 8%);
+  box-shadow: none;
+  text-align: left;
+  min-width: 0;
+}
+
+.intent-canvas-source-action:hover:not(:disabled),
+.intent-canvas-source-refresh:hover:not(:disabled) {
+  border-color: var(--intent-canvas-accent-soft);
+  color: var(--text-accent);
+  background: color-mix(in srgb, var(--intent-canvas-accent), transparent 90%);
+}
+
+.intent-canvas-source-action:disabled,
+.intent-canvas-source-refresh:disabled {
+  opacity: 0.58;
+  cursor: not-allowed;
+}
+
+.intent-canvas-source-action.is-unresolved {
+  border-color: color-mix(in srgb, var(--status-warning), transparent 58%);
+  background: color-mix(in srgb, var(--status-warning), transparent 92%);
+}
+
+.intent-canvas-source-action svg,
+.intent-canvas-source-refresh svg {
+  grid-row: span 2;
+  width: 15px;
+  height: 15px;
+}
+
+.intent-canvas-source-action span,
+.intent-canvas-source-refresh {
+  min-width: 0;
+  overflow: hidden;
+  font-size: 12px;
+  font-weight: 900;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.intent-canvas-source-action small {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--intent-canvas-muted);
+  font-size: 10px;
+  font-weight: 750;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.intent-canvas-source-refresh {
+  display: inline-grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  margin-top: 2px;
 }
 
 .intent-canvas-card h3 {

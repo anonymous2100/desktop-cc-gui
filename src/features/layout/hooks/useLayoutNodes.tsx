@@ -2820,6 +2820,7 @@ export function useLayoutNodes(options: LayoutNodesOptions): LayoutNodesResult {
       onOpenRequestConsumed={options.onIntentCanvasOpenRequestConsumed}
       onAttachToThread={options.onAttachIntentCanvasToThread}
       onOpenProjectMap={options.onOpenProjectMap}
+      onOpenSourceFile={handleOpenProjectMapEvidenceFile}
     />
   );
 

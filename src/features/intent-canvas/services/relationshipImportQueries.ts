@@ -4,6 +4,7 @@ import type {
   ProjectMapScannedFile,
   ProjectMapStorageLocation,
 } from "../../project-map/types";
+import type { CanvasEvidenceRef } from "../types";
 import { readProjectMapRelationships } from "../../project-map/services/projectMapPersistence";
 import {
   getProjectMapRelationshipCallCandidate,
@@ -36,7 +37,15 @@ export type ProjectMapRelationshipNodeSnapshot = {
 export type ProjectMapRelationshipEdgeSnapshot = {
   relation: ProjectMapFileRelation;
   evidenceIds: string[];
+  evidenceRefs: CanvasEvidenceRef[];
   evidenceSummary: string[];
+};
+
+export type ProjectMapRelationshipImportSourceState = {
+  exists: boolean;
+  scan: ProjectMapRelationshipSnapshotMetadata | null;
+  fileNodeIds: Set<string>;
+  relationEdgeIds: Set<string>;
 };
 
 export type ProjectMapRelationshipNeighborhood = {
@@ -68,6 +77,29 @@ function makeEvidenceId(input: { relationId: string; path: string; line?: number
   const normalizedPath = normalizePathValue(input.path);
   const line = input.line && input.line > 0 ? `:${input.line}` : "";
   return `${input.relationId}:evidence:${input.index}:${normalizedPath}${line}`;
+}
+
+function createEvidenceRef(input: {
+  relationId: string;
+  path: string;
+  line?: number | null;
+  excerpt?: string | null;
+  index: number;
+}): CanvasEvidenceRef {
+  const normalizedPath = normalizePathValue(input.path);
+  const safeLine = input.line && input.line > 0 ? input.line : null;
+  return {
+    id: makeEvidenceId({
+      relationId: input.relationId,
+      path: input.path,
+      line: input.line,
+      index: input.index,
+    }),
+    path: normalizedPath || null,
+    line: safeLine,
+    excerpt: input.excerpt ?? null,
+    label: `${normalizedPath}${safeLine ? `:${safeLine}` : ""}`,
+  };
 }
 
 function asNormalizedEvidenceSummary(relationId: string, entry: {
@@ -109,6 +141,13 @@ export function createProjectMapRelationshipEdgeSnapshot(relation: ProjectMapFil
     line: entry.line,
     index,
   }));
+  const evidenceRefs = evidence.map((entry, index) => createEvidenceRef({
+    relationId: relation.id,
+    path: entry.path,
+    line: entry.line,
+    excerpt: entry.excerpt,
+    index,
+  }));
   const evidenceSummary = evidence.map((entry) =>
     asNormalizedEvidenceSummary(relation.id, {
       path: entry.path,
@@ -116,7 +155,7 @@ export function createProjectMapRelationshipEdgeSnapshot(relation: ProjectMapFil
       excerpt: entry.excerpt,
     }),
   );
-  return { relation, evidenceIds, evidenceSummary };
+  return { relation, evidenceIds, evidenceRefs, evidenceSummary };
 }
 
 export function getProjectMapRelationshipEdgeDisplayLabel(edge: ProjectMapRelationshipEdgeSnapshot): string {
@@ -138,6 +177,32 @@ export async function loadProjectMapRelationshipSnapshot(input: {
 }): Promise<ProjectMapRelationshipSnapshotMetadata> {
   const response = await loadProjectMapRelationshipData(input);
   return buildSnapshotMetadata(response);
+}
+
+export async function loadProjectMapRelationshipImportSourceState(input: {
+  workspaceId: string;
+  storageLocation?: ProjectMapStorageLocation;
+}): Promise<ProjectMapRelationshipImportSourceState> {
+  const response = await loadProjectMapRelationshipData(input);
+  const summary = normalizeProjectMapRelationshipReadSummary(response);
+  if (!summary) {
+    return {
+      exists: false,
+      scan: null,
+      fileNodeIds: new Set<string>(),
+      relationEdgeIds: new Set<string>(),
+    };
+  }
+  const dashboardData = normalizeProjectMapRelationshipDashboardData(response);
+  return {
+    exists: true,
+    scan: {
+      scanRunId: summary.scanRunId,
+      generatedAt: summary.generatedAt,
+    },
+    fileNodeIds: new Set(dashboardData.files.map((file) => file.id)),
+    relationEdgeIds: new Set(dashboardData.relations.map((relation) => relation.id)),
+  };
 }
 
 export async function queryProjectMapRelationshipNeighborhood(input: {
