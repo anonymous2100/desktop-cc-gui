@@ -734,3 +734,48 @@ Codex app-server 对话链路切换为 codex-tui 兼容身份，补 terminal env
 ### Next Steps
 
 - None - task complete
+
+
+## Session 753: 打磨 Project Map 文件关系与接口契约视图
+
+**Date**: 2026-06-08
+**Task**: 打磨 Project Map 文件关系与接口契约视图
+**Branch**: `feature/v0.5.8`
+
+### Summary
+
+完成 Project Map Files/API/Graph MVP polish：低信号文件过滤文案、API 三栏与 Inspector 细化、Java 方法链路解析与分层展示、Graph 左右栏拖拽和节点文件名展示，并回写 OpenSpec。
+
+### Main Changes
+
+本次会话围绕 Project Map file relationship、API contract、Graph inspector 的 MVP 打磨收口。
+
+主要变更：
+- Files 视图：将 noise 文案调整为 low-signal，避免 governance/docs 根路径被无条件当作噪音隐藏。
+- API 视图：压缩 toolbar，把 scan/export 放入 advanced filters；调整三栏默认比例；增加 Inspector detail focus / restore；优化 Responses 展示结构；Method chain 改为 endpoint-scoped layered tree，并支持 source/target file-line anchor。
+- Backend scanner：Java/Spring method chain 从 handler body 做静态 receiver call 解析，避免固定范围扫描把 sibling method 调用误归到 endpoint。
+- Graph 视图：Files / Canvas / Inspector 三栏支持左右 pane resize；修正后加载 CSS 覆盖导致拖拽不生效的问题；节点 basename 改为主信息展示，避免不必要省略。
+- OpenSpec：更新 polish-project-map-files-api-mvp 的 proposal/design/tasks/specs，新增 project-map-relationship-graph-view delta spec。
+
+验证：
+- openspec validate polish-project-map-files-api-mvp --strict 通过。
+- 会话中此前跑过 focused Rust unit test 与 TypeScript noEmit，均通过；本次提交前未重复跑全量 typecheck/test。
+
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `6acd7dd9` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
