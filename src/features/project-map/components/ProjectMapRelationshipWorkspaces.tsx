@@ -11,9 +11,12 @@ import {
   type SetStateAction,
 } from "react";
 import { useTranslation } from "react-i18next";
+import ExternalLink from "lucide-react/dist/esm/icons/external-link";
+import MapPin from "lucide-react/dist/esm/icons/map-pin";
 import RefreshCw from "lucide-react/dist/esm/icons/refresh-cw";
 
 import { cn } from "../../../lib/utils";
+import { readWorkspaceFilePreview } from "../../../services/tauri";
 import {
   buildProjectMapApiEndpointDetail,
   buildProjectMapApiEndpointRow,
@@ -32,6 +35,7 @@ import type {
   ProjectMapApiEndpoint,
   ProjectMapApiGroup,
   ProjectMapFileRelation,
+  ProjectMapRelationshipSymbol,
   ProjectMapScannedFile,
 } from "../types";
 
@@ -67,17 +71,53 @@ type ProjectMapRelationshipRelationGroup = {
   relations: ProjectMapFileRelation[];
 };
 
-type ProjectMapRelationshipReadPathLayer = "entry" | "focus" | "dependency" | "verify";
+type ProjectMapRelationshipReadLane = "incoming" | "outgoing" | "verify";
 
-type ProjectMapRelationshipReadPathStep = {
+type ProjectMapRelationshipReadRelationCard = {
   id: string;
-  layer: ProjectMapRelationshipReadPathLayer;
-  layerLabel: string;
+  lane: ProjectMapRelationshipReadLane;
+  relation: ProjectMapFileRelation;
+  file: ProjectMapScannedFile | null;
   title: string;
-  reason: string;
-  meta: string;
   path: string;
+  evidencePath: string;
+  evidenceLine: number | null;
+  callCandidate: string | null;
+};
+
+type ProjectMapRelationshipReadChainNode = {
+  id: string;
   relationId: string | null;
+  label: string;
+  fileLabel: string;
+  path: string;
+  line: number | null;
+  relationType: ProjectMapFileRelation["type"] | "method";
+  confidence: ProjectMapFileRelation["confidence"] | "focus";
+  children: ProjectMapRelationshipReadChainNode[];
+};
+
+type ProjectMapRelationshipReadMethodCard = {
+  id: string;
+  name: string;
+  kind: string;
+  line: number | null;
+  endLine: number | null;
+  sourceSnippet: string[];
+  sourceFlowNodes: ProjectMapRelationshipReadChainNode[];
+  outgoing: ProjectMapFileRelation[];
+  incoming: ProjectMapFileRelation[];
+  chain: ProjectMapRelationshipReadChainNode;
+};
+
+type ProjectMapRelationshipReadSourceMethod = {
+  id: string;
+  name: string;
+  line: number;
+  endLine: number;
+  signature: string;
+  bodyLines: string[];
+  flowNodes: ProjectMapRelationshipReadChainNode[];
 };
 
 type ProjectMapRelationshipScopeWarning = {
@@ -105,9 +145,12 @@ const API_RIGHT_PANE_MIN_WIDTH = 34;
 const API_RIGHT_PANE_MAX_WIDTH = 68;
 const API_METHOD_CHAIN_MAX_TREE_DEPTH = 5;
 const API_METHOD_CHAIN_MAX_RENDERED_NODES = 32;
-const READ_PATH_MAX_ENTRY_STEPS = 2;
-const READ_PATH_MAX_DEPENDENCY_STEPS = 4;
-const READ_PATH_MAX_VERIFY_STEPS = 3;
+const READ_ANATOMY_MAX_INCOMING = 7;
+const READ_ANATOMY_MAX_OUTGOING = 9;
+const READ_ANATOMY_MAX_VERIFY = 4;
+const READ_METHOD_INDEX_LIMIT = 18;
+const READ_METHOD_CHAIN_BRANCH_LIMIT = 12;
+const READ_METHOD_CHAIN_SECONDARY_LIMIT = 3;
 
 const RELATION_CONFIDENCE_WEIGHT: Record<ProjectMapFileRelation["confidence"], number> = {
   high: 4,
@@ -181,32 +224,350 @@ function formatProjectMapReadPathEvidence(relation: ProjectMapFileRelation): str
   return `${relation.confidence} · ${evidence.path}${evidence.line ? `:${evidence.line}` : ""}`;
 }
 
-function getProjectMapReadPathRelationTitle(input: {
-  relation: ProjectMapFileRelation;
-  sourceFile?: ProjectMapScannedFile;
-  targetFile?: ProjectMapScannedFile;
-}): string {
-  const source = input.sourceFile?.basename ?? input.relation.sourceFileId;
-  const target = input.targetFile?.basename ?? input.relation.targetFileId;
-  return `${source} -> ${target}`;
-}
-
 function getProjectMapReadPathBasename(path: string): string {
   const segments = path.split("/");
   return segments[segments.length - 1] || path;
 }
 
-function pushUniqueProjectMapReadPathStep(
-  steps: ProjectMapRelationshipReadPathStep[],
-  seenStepKeys: Set<string>,
-  step: ProjectMapRelationshipReadPathStep,
-) {
-  const key = `${step.layer}:${step.path}:${step.title}`;
-  if (seenStepKeys.has(key)) {
-    return;
+function isProjectMapReadVerifyRelation(relation: ProjectMapFileRelation): boolean {
+  return relation.type === "tested_by"
+    || relation.type === "specified_by"
+    || relation.type === "documents"
+    || relation.type === "styled_by";
+}
+
+function isProjectMapReadAnatomyRelation(relation: ProjectMapFileRelation): boolean {
+  return relation.type === "calls"
+    || relation.type === "bridges_to"
+    || relation.type === "configures";
+}
+
+function sortProjectMapReadRelations(
+  left: ProjectMapFileRelation,
+  right: ProjectMapFileRelation,
+): number {
+  const confidenceDelta = RELATION_CONFIDENCE_WEIGHT[right.confidence] - RELATION_CONFIDENCE_WEIGHT[left.confidence];
+  if (confidenceDelta !== 0) {
+    return confidenceDelta;
   }
-  seenStepKeys.add(key);
-  steps.push(step);
+  return (left.evidence[0]?.line ?? Number.MAX_SAFE_INTEGER) - (right.evidence[0]?.line ?? Number.MAX_SAFE_INTEGER);
+}
+
+function sortProjectMapReadRelationsByEvidenceLine(
+  left: ProjectMapFileRelation,
+  right: ProjectMapFileRelation,
+): number {
+  return (left.evidence[0]?.line ?? Number.MAX_SAFE_INTEGER) - (right.evidence[0]?.line ?? Number.MAX_SAFE_INTEGER);
+}
+
+function getProjectMapReadRelationCounterpart(
+  relation: ProjectMapFileRelation,
+  inspectedFileId: string,
+  relationshipDashboardFileIndex: ReadonlyMap<string, ProjectMapScannedFile>,
+): ProjectMapScannedFile | null {
+  const counterpartId = relation.sourceFileId === inspectedFileId
+    ? relation.targetFileId
+    : relation.sourceFileId;
+  return relationshipDashboardFileIndex.get(counterpartId) ?? null;
+}
+
+function getProjectMapReadRelationTitle(
+  relation: ProjectMapFileRelation,
+  inspectedFile: ProjectMapScannedFile,
+  counterpartFile: ProjectMapScannedFile | null,
+): string {
+  const sourceLabel = relation.sourceFileId === inspectedFile.id
+    ? inspectedFile.basename
+    : counterpartFile?.basename ?? relation.sourceFileId;
+  const targetLabel = relation.targetFileId === inspectedFile.id
+    ? inspectedFile.basename
+    : counterpartFile?.basename ?? relation.targetFileId;
+  return `${sourceLabel} -> ${targetLabel}`;
+}
+
+function buildProjectMapReadRelationCard(input: {
+  relation: ProjectMapFileRelation;
+  lane: ProjectMapRelationshipReadLane;
+  inspectedFile: ProjectMapScannedFile;
+  relationshipDashboardFileIndex: ReadonlyMap<string, ProjectMapScannedFile>;
+}): ProjectMapRelationshipReadRelationCard {
+  const counterpartFile = getProjectMapReadRelationCounterpart(
+    input.relation,
+    input.inspectedFile.id,
+    input.relationshipDashboardFileIndex,
+  );
+  const evidence = input.relation.evidence[0];
+  const fallbackPath = counterpartFile?.path ?? input.inspectedFile.path;
+  return {
+    id: `${input.lane}:${input.relation.id}`,
+    lane: input.lane,
+    relation: input.relation,
+    file: counterpartFile,
+    title: getProjectMapReadRelationTitle(input.relation, input.inspectedFile, counterpartFile),
+    path: counterpartFile?.path ?? fallbackPath,
+    evidencePath: evidence?.path ?? fallbackPath,
+    evidenceLine: evidence?.line ?? null,
+    callCandidate: getProjectMapRelationshipCallCandidate(input.relation),
+  };
+}
+
+function isProjectMapReadMethodSymbol(kind: string): boolean {
+  const normalizedKind = kind.toLowerCase();
+  return normalizedKind.includes("method")
+    || normalizedKind.includes("function")
+    || normalizedKind.includes("constructor")
+    || normalizedKind === "fn";
+}
+
+function getProjectMapReadTerminalCallName(candidate: string | null): string | null {
+  if (!candidate) {
+    return null;
+  }
+  const trimmed = candidate.replace(/\(.*/, "").trim();
+  const segments = trimmed.split(".");
+  return segments[segments.length - 1] || trimmed;
+}
+
+function getProjectMapReadRelationLineForFile(
+  relation: ProjectMapFileRelation,
+  path: string,
+): number | null {
+  const evidence = relation.evidence.find((entry) => entry.path === path) ?? relation.evidence[0];
+  return evidence?.line ?? null;
+}
+
+function findProjectMapReadMethodIdByLine(
+  methodSymbols: ProjectMapRelationshipSymbol[],
+  line: number | null,
+): string | null {
+  if (!line) {
+    return null;
+  }
+  let selectedMethod: ProjectMapRelationshipSymbol | null = null;
+  for (const symbol of methodSymbols) {
+    if (symbol.line > line) {
+      break;
+    }
+    selectedMethod = symbol;
+  }
+  return selectedMethod?.id ?? null;
+}
+
+function getProjectMapReadMethodDeclarationName(line: string, language: ProjectMapScannedFile["language"]): string | null {
+  const trimmed = line.trim();
+  if (
+    !trimmed
+    || trimmed.startsWith("//")
+    || trimmed.startsWith("*")
+    || trimmed.startsWith("@")
+    || /^(if|for|while|switch|catch|return|throw|new|else|do)\b/.test(trimmed)
+  ) {
+    return null;
+  }
+  if (language === "python") {
+    const match = /^def\s+([A-Za-z_]\w*)\s*\(/.exec(trimmed);
+    return match?.[1] ?? null;
+  }
+  if (language === "typescript" || language === "javascript") {
+    const functionMatch = /^(?:export\s+)?(?:async\s+)?function\s+([A-Za-z_$][\w$]*)\s*\(/.exec(trimmed);
+    if (functionMatch?.[1]) {
+      return functionMatch[1];
+    }
+    const arrowMatch = /^(?:export\s+)?(?:const|let|var)\s+([A-Za-z_$][\w$]*)\s*=.*=>/.exec(trimmed);
+    return arrowMatch?.[1] ?? null;
+  }
+  if (language === "java" || language === "kotlin" || language === "csharp") {
+    if (!trimmed.includes("(") || !trimmed.includes(")")) {
+      return null;
+    }
+    const withoutGenerics = trimmed.replace(/<[^>]+>/g, "");
+    const match = /(?:public|private|protected|static|final|synchronized|abstract|native|override|\s)+[\w\[\].?]+\s+([A-Za-z_$][\w$]*)\s*\(/.exec(withoutGenerics);
+    return match?.[1] ?? null;
+  }
+  const genericMatch = /(?:function\s+|fn\s+|func\s+)([A-Za-z_$][\w$]*)\s*\(/.exec(trimmed);
+  return genericMatch?.[1] ?? null;
+}
+
+function getProjectMapReadBraceDelta(line: string): number {
+  let delta = 0;
+  let inString: string | null = null;
+  for (let index = 0; index < line.length; index += 1) {
+    const character = line[index];
+    const previous = index > 0 ? line[index - 1] : "";
+    if ((character === "\"" || character === "'" || character === "`") && previous !== "\\") {
+      inString = inString === character ? null : inString ?? character;
+      continue;
+    }
+    if (inString) {
+      continue;
+    }
+    if (character === "{") {
+      delta += 1;
+    } else if (character === "}") {
+      delta -= 1;
+    }
+  }
+  return delta;
+}
+
+function buildProjectMapReadSourceFlowNodes(input: {
+  bodyLines: string[];
+  methodLine: number;
+  filePath: string;
+}): ProjectMapRelationshipReadChainNode[] {
+  const blockedNames = new Set([
+    "if",
+    "for",
+    "while",
+    "switch",
+    "catch",
+    "return",
+    "throw",
+    "new",
+    "super",
+    "this",
+  ]);
+  const nodes: ProjectMapRelationshipReadChainNode[] = [];
+  const seenByLineAndName = new Set<string>();
+  for (const [offset, line] of input.bodyLines.entries()) {
+    const sourceLine = input.methodLine + offset;
+    if (sourceLine === input.methodLine) {
+      continue;
+    }
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith("//") || trimmed.startsWith("*")) {
+      continue;
+    }
+    const callPattern = /([A-Za-z_$][\w$]*(?:\.[A-Za-z_$][\w$]*)*)\s*\(/g;
+    for (const match of trimmed.matchAll(callPattern)) {
+      const candidate = match[1];
+      const terminalName = getProjectMapReadTerminalCallName(candidate);
+      if (!candidate || !terminalName || blockedNames.has(terminalName) || blockedNames.has(candidate)) {
+        continue;
+      }
+      const key = `${sourceLine}:${candidate}`;
+      if (seenByLineAndName.has(key)) {
+        continue;
+      }
+      seenByLineAndName.add(key);
+      nodes.push({
+        id: `source-flow:${sourceLine}:${candidate}`,
+        relationId: null,
+        label: candidate,
+        fileLabel: getProjectMapReadPathBasename(input.filePath),
+        path: input.filePath,
+        line: sourceLine,
+        relationType: "method",
+        confidence: "focus",
+        children: [],
+      });
+    }
+  }
+  return nodes.slice(0, READ_METHOD_CHAIN_BRANCH_LIMIT);
+}
+
+function buildProjectMapReadSourceMethods(input: {
+  content: string;
+  file: ProjectMapScannedFile;
+}): ProjectMapRelationshipReadSourceMethod[] {
+  const lines = input.content.split(/\r?\n/);
+  const methods: ProjectMapRelationshipReadSourceMethod[] = [];
+  let currentMethod: {
+    name: string;
+    line: number;
+    startIndex: number;
+    signature: string;
+    braceDepth: number;
+    bodyLines: string[];
+  } | null = null;
+  for (const [lineIndex, line] of lines.entries()) {
+    if (!currentMethod) {
+      const declarationName = getProjectMapReadMethodDeclarationName(line, input.file.language);
+      if (!declarationName) {
+        continue;
+      }
+      currentMethod = {
+        name: declarationName,
+        line: lineIndex + 1,
+        startIndex: lineIndex,
+        signature: line.trim(),
+        braceDepth: Math.max(0, getProjectMapReadBraceDelta(line)),
+        bodyLines: [line],
+      };
+      if (currentMethod.braceDepth === 0 && line.includes(";")) {
+        currentMethod = null;
+      }
+      continue;
+    }
+    currentMethod.bodyLines.push(line);
+    currentMethod.braceDepth += getProjectMapReadBraceDelta(line);
+    if (currentMethod.braceDepth <= 0) {
+      const methodLine = currentMethod.line;
+      const bodyLines = currentMethod.bodyLines;
+      methods.push({
+        id: `source-method:${methodLine}:${currentMethod.name}`,
+        name: currentMethod.name,
+        line: methodLine,
+        endLine: lineIndex + 1,
+        signature: currentMethod.signature,
+        bodyLines,
+        flowNodes: buildProjectMapReadSourceFlowNodes({
+          bodyLines,
+          methodLine,
+          filePath: input.file.path,
+        }),
+      });
+      currentMethod = null;
+    }
+  }
+  return methods.slice(0, READ_METHOD_INDEX_LIMIT);
+}
+
+function buildProjectMapReadRelationChainNode(input: {
+  relation: ProjectMapFileRelation;
+  inspectedFileId: string;
+  relationshipDashboardFileIndex: ReadonlyMap<string, ProjectMapScannedFile>;
+  relationLookup: ProjectMapFileRelation[];
+  depth: number;
+  visitedFileIds: Set<string>;
+}): ProjectMapRelationshipReadChainNode {
+  const targetFile = input.relationshipDashboardFileIndex.get(input.relation.targetFileId);
+  const sourceFile = input.relationshipDashboardFileIndex.get(input.relation.sourceFileId);
+  const displayFile = targetFile ?? sourceFile;
+  const evidence = input.relation.evidence[0];
+  const callCandidate = getProjectMapRelationshipCallCandidate(input.relation);
+  const nextVisitedFileIds = new Set(input.visitedFileIds);
+  nextVisitedFileIds.add(input.relation.targetFileId);
+  const canExpand = input.depth < 2 && !input.visitedFileIds.has(input.relation.targetFileId);
+  const children = canExpand
+    ? input.relationLookup
+        .filter((relation) => (
+          relation.type === "calls"
+          && relation.sourceFileId === input.relation.targetFileId
+          && relation.targetFileId !== input.inspectedFileId
+        ))
+        .sort(sortProjectMapReadRelations)
+        .slice(0, READ_METHOD_CHAIN_SECONDARY_LIMIT)
+        .map((relation) => buildProjectMapReadRelationChainNode({
+          relation,
+          inspectedFileId: input.inspectedFileId,
+          relationshipDashboardFileIndex: input.relationshipDashboardFileIndex,
+          relationLookup: input.relationLookup,
+          depth: input.depth + 1,
+          visitedFileIds: nextVisitedFileIds,
+        }))
+    : [];
+  return {
+    id: `chain:${input.relation.id}:${input.depth}`,
+    relationId: input.relation.id,
+    label: callCandidate ?? displayFile?.basename ?? input.relation.targetFileId,
+    fileLabel: displayFile?.basename ?? input.relation.targetFileId,
+    path: displayFile?.path ?? evidence?.path ?? input.relation.id,
+    line: evidence?.path === displayFile?.path ? evidence?.line ?? null : null,
+    relationType: input.relation.type,
+    confidence: input.relation.confidence,
+    children,
+  };
 }
 
 type ProjectMapRelationshipApiWorkspaceProps = {
@@ -1209,161 +1570,328 @@ export function ProjectMapRelationshipFileWorkspace({
 }
 
 type ProjectMapRelationshipReadWorkspaceProps = {
+  activeWorkspaceId: string | null;
   inspectedRelationshipFile: ProjectMapScannedFile | null;
+  openProjectMapRelationshipPath: (path: string | null | undefined, line?: number | null) => void;
   relationshipDashboardData: ProjectMapRelationshipDashboardData;
   relationshipDashboardFileIndex: ReadonlyMap<string, ProjectMapScannedFile>;
   relationshipDashboardModuleByFileId: ReadonlyMap<string, string>;
   selectedRelationshipRelation: ProjectMapFileRelation | null;
   selectedRelationshipRelationGroups: ProjectMapRelationshipRelationGroup[];
-  selectedRelationshipScopeWarnings: ProjectMapRelationshipScopeWarning[];
   setRelationshipDashboardViewMode: (value: ProjectMapRelationshipDashboardViewMode) => void;
-  setSelectedRelationshipRelationId: (value: string | null) => void;
 };
 
 export function ProjectMapRelationshipReadWorkspace({
+  activeWorkspaceId,
   inspectedRelationshipFile,
+  openProjectMapRelationshipPath,
   relationshipDashboardData,
   relationshipDashboardFileIndex,
   relationshipDashboardModuleByFileId,
   selectedRelationshipRelation,
   selectedRelationshipRelationGroups,
-  selectedRelationshipScopeWarnings,
   setRelationshipDashboardViewMode,
-  setSelectedRelationshipRelationId,
 }: ProjectMapRelationshipReadWorkspaceProps) {
   const { t } = useTranslation();
-  const readPathSteps = useMemo(() => {
+  const [selectedReadMethodId, setSelectedReadMethodId] = useState<string | null>(null);
+  const [readSourceContent, setReadSourceContent] = useState<string | null>(null);
+  const [readSourceError, setReadSourceError] = useState<string | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    setReadSourceContent(null);
+    setReadSourceError(null);
+    if (!activeWorkspaceId || !inspectedRelationshipFile) {
+      return () => {
+        cancelled = true;
+      };
+    }
+    readWorkspaceFilePreview(activeWorkspaceId, inspectedRelationshipFile.path)
+      .then((response) => {
+        if (cancelled) {
+          return;
+        }
+        setReadSourceContent(response.content);
+      })
+      .catch((error: unknown) => {
+        if (cancelled) {
+          return;
+        }
+        setReadSourceError(error instanceof Error ? error.message : String(error));
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [activeWorkspaceId, inspectedRelationshipFile]);
+  const relatedRelations = useMemo(() => {
     if (!inspectedRelationshipFile) {
       return [];
     }
-    const relatedRelations = relationshipDashboardData.relations
+    return relationshipDashboardData.relations
       .filter((relation) => (
         relation.sourceFileId === inspectedRelationshipFile.id
         || relation.targetFileId === inspectedRelationshipFile.id
       ))
-      .sort((left, right) => (
-        RELATION_CONFIDENCE_WEIGHT[right.confidence] - RELATION_CONFIDENCE_WEIGHT[left.confidence]
-      ));
-    const entryRelations = relatedRelations
-      .filter((relation) => relation.targetFileId === inspectedRelationshipFile.id)
-      .slice(0, READ_PATH_MAX_ENTRY_STEPS);
-    const dependencyRelations = relatedRelations
+      .sort(sortProjectMapReadRelations);
+  }, [inspectedRelationshipFile, relationshipDashboardData.relations]);
+  const incomingReadCards = useMemo(() => {
+    if (!inspectedRelationshipFile) {
+      return [];
+    }
+    return relatedRelations
+      .filter((relation) => (
+        relation.targetFileId === inspectedRelationshipFile.id
+        && isProjectMapReadAnatomyRelation(relation)
+      ))
+      .slice(0, READ_ANATOMY_MAX_INCOMING)
+      .map((relation) => buildProjectMapReadRelationCard({
+        relation,
+        lane: "incoming",
+        inspectedFile: inspectedRelationshipFile,
+        relationshipDashboardFileIndex,
+      }));
+  }, [inspectedRelationshipFile, relatedRelations, relationshipDashboardFileIndex]);
+  const outgoingReadCards = useMemo(() => {
+    if (!inspectedRelationshipFile) {
+      return [];
+    }
+    return relatedRelations
       .filter((relation) => (
         relation.sourceFileId === inspectedRelationshipFile.id
-        && !["tested_by", "specified_by", "documents", "styled_by"].includes(relation.type)
+        && isProjectMapReadAnatomyRelation(relation)
       ))
-      .slice(0, READ_PATH_MAX_DEPENDENCY_STEPS);
-    const verifyRelations = relatedRelations
-      .filter((relation) => (
-        relation.type === "tested_by"
-        || relation.type === "specified_by"
-        || relation.type === "documents"
-        || relation.type === "styled_by"
+      .slice(0, READ_ANATOMY_MAX_OUTGOING)
+      .map((relation) => buildProjectMapReadRelationCard({
+        relation,
+        lane: "outgoing",
+        inspectedFile: inspectedRelationshipFile,
+        relationshipDashboardFileIndex,
+      }));
+  }, [inspectedRelationshipFile, relatedRelations, relationshipDashboardFileIndex]);
+  const verifyReadCards = useMemo(() => {
+    if (!inspectedRelationshipFile) {
+      return [];
+    }
+    return relatedRelations
+      .filter(isProjectMapReadVerifyRelation)
+      .slice(0, READ_ANATOMY_MAX_VERIFY)
+      .map((relation) => buildProjectMapReadRelationCard({
+        relation,
+        lane: "verify",
+        inspectedFile: inspectedRelationshipFile,
+        relationshipDashboardFileIndex,
+      }));
+  }, [inspectedRelationshipFile, relatedRelations, relationshipDashboardFileIndex]);
+  const readMethodCards = useMemo((): ProjectMapRelationshipReadMethodCard[] => {
+    if (!inspectedRelationshipFile) {
+      return [];
+    }
+    const sourceMethods = readSourceContent
+      ? buildProjectMapReadSourceMethods({
+          content: readSourceContent,
+          file: inspectedRelationshipFile,
+        })
+      : [];
+    const outgoingCalls = relatedRelations.filter((relation) => (
+      relation.type === "calls"
+      && relation.sourceFileId === inspectedRelationshipFile.id
+    ));
+    const incomingCalls = relatedRelations.filter((relation) => (
+      relation.type === "calls"
+      && relation.targetFileId === inspectedRelationshipFile.id
+    ));
+    const callSiteLines = new Set(
+      outgoingCalls
+        .map((relation) => getProjectMapReadRelationLineForFile(relation, inspectedRelationshipFile.path))
+        .filter((line): line is number => Boolean(line)),
+    );
+    const callTerminalNames = new Set(
+      outgoingCalls
+        .map((relation) => getProjectMapReadTerminalCallName(getProjectMapRelationshipCallCandidate(relation)))
+        .filter((name): name is string => Boolean(name)),
+    );
+    const methodSymbols = relationshipDashboardData.symbols
+      .filter((symbol) => (
+        symbol.fileId === inspectedRelationshipFile.id
+        && isProjectMapReadMethodSymbol(symbol.kind)
+        && !callTerminalNames.has(symbol.name)
+        && !callSiteLines.has(symbol.line)
       ))
-      .slice(0, READ_PATH_MAX_VERIFY_STEPS);
-    const steps: ProjectMapRelationshipReadPathStep[] = [];
-    const seenStepKeys = new Set<string>();
-    for (const relation of entryRelations) {
-      const sourceFile = relationshipDashboardFileIndex.get(relation.sourceFileId);
-      const targetFile = relationshipDashboardFileIndex.get(relation.targetFileId);
-      pushUniqueProjectMapReadPathStep(steps, seenStepKeys, {
-        id: `entry:${relation.id}`,
-        layer: "entry",
-        layerLabel: t("projectMap.relationship.readLayerEntry"),
-        title: getProjectMapReadPathRelationTitle({ relation, sourceFile, targetFile }),
-        reason: t("projectMap.relationship.readReasonEntry"),
-        meta: getProjectMapRelationshipCallCandidate(relation) ?? formatProjectMapReadPathEvidence(relation),
-        path: relation.evidence[0]?.path ?? sourceFile?.path ?? targetFile?.path ?? relation.id,
-        relationId: relation.id,
+      .sort((left, right) => left.line - right.line)
+      .slice(0, READ_METHOD_INDEX_LIMIT);
+    const methodCardsById = new Map<string, ProjectMapRelationshipReadMethodCard>();
+    const methodEntries = sourceMethods.length
+      ? sourceMethods.map((sourceMethod) => ({
+          id: sourceMethod.id,
+          name: sourceMethod.name,
+          kind: "method",
+          line: sourceMethod.line,
+          endLine: sourceMethod.endLine,
+          sourceSnippet: sourceMethod.bodyLines.slice(0, 28),
+          sourceFlowNodes: sourceMethod.flowNodes,
+        }))
+      : methodSymbols.map((symbol) => ({
+          id: symbol.id,
+          name: symbol.name,
+          kind: symbol.kind,
+          line: symbol.line,
+          endLine: null,
+          sourceSnippet: [],
+          sourceFlowNodes: [],
+        }));
+    for (const methodEntry of methodEntries) {
+      methodCardsById.set(methodEntry.id, {
+        id: methodEntry.id,
+        name: methodEntry.name,
+        kind: methodEntry.kind,
+        line: methodEntry.line,
+        endLine: methodEntry.endLine,
+        sourceSnippet: methodEntry.sourceSnippet,
+        sourceFlowNodes: methodEntry.sourceFlowNodes,
+        outgoing: [],
+        incoming: [],
+        chain: {
+          id: `method:${methodEntry.id}`,
+          relationId: null,
+          label: methodEntry.name,
+          fileLabel: inspectedRelationshipFile.basename,
+          path: inspectedRelationshipFile.path,
+          line: methodEntry.line,
+          relationType: "method",
+          confidence: "focus",
+          children: [],
+        },
       });
     }
-    pushUniqueProjectMapReadPathStep(steps, seenStepKeys, {
-      id: `focus:${inspectedRelationshipFile.id}`,
-      layer: "focus",
-      layerLabel: t("projectMap.relationship.readLayerFocus"),
-      title: inspectedRelationshipFile.basename,
-      reason: t("projectMap.relationship.readReasonFocus"),
-      meta: t("projectMap.relationship.readFileMeta", {
-        role: inspectedRelationshipFile.role,
-        language: inspectedRelationshipFile.language,
-        layer: relationshipDashboardModuleByFileId.get(inspectedRelationshipFile.id) ?? inspectedRelationshipFile.layer,
-      }),
-      path: inspectedRelationshipFile.path,
-      relationId: null,
-    });
-    for (const relation of dependencyRelations) {
-      const sourceFile = relationshipDashboardFileIndex.get(relation.sourceFileId);
-      const targetFile = relationshipDashboardFileIndex.get(relation.targetFileId);
-      pushUniqueProjectMapReadPathStep(steps, seenStepKeys, {
-        id: `dependency:${relation.id}`,
-        layer: "dependency",
-        layerLabel: t("projectMap.relationship.readLayerDependency"),
-        title: getProjectMapReadPathRelationTitle({ relation, sourceFile, targetFile }),
-        reason: t("projectMap.relationship.readReasonDependency"),
-        meta: getProjectMapRelationshipCallCandidate(relation) ?? formatProjectMapReadPathEvidence(relation),
-        path: relation.evidence[0]?.path ?? targetFile?.path ?? sourceFile?.path ?? relation.id,
-        relationId: relation.id,
-      });
+    if (!methodCardsById.size) {
+      for (const relation of outgoingCalls.slice(0, READ_METHOD_INDEX_LIMIT)) {
+        const line = getProjectMapReadRelationLineForFile(relation, inspectedRelationshipFile.path);
+        const methodId = `callsite:${line ?? relation.id}`;
+        if (methodCardsById.has(methodId)) {
+          continue;
+        }
+        methodCardsById.set(methodId, {
+          id: methodId,
+          name: line
+            ? t("projectMap.relationship.readMethodFallbackLine", { line })
+            : inspectedRelationshipFile.basename,
+          kind: "callsite",
+          line,
+          endLine: null,
+          sourceSnippet: [],
+          sourceFlowNodes: [],
+          outgoing: [],
+          incoming: [],
+          chain: {
+            id: `method:${methodId}`,
+            relationId: null,
+            label: line
+              ? t("projectMap.relationship.readMethodFallbackLine", { line })
+              : inspectedRelationshipFile.basename,
+            fileLabel: inspectedRelationshipFile.basename,
+            path: inspectedRelationshipFile.path,
+            line,
+            relationType: "method",
+            confidence: "focus",
+            children: [],
+          },
+        });
+      }
     }
-    for (const relation of verifyRelations) {
-      const sourceFile = relationshipDashboardFileIndex.get(relation.sourceFileId);
-      const targetFile = relationshipDashboardFileIndex.get(relation.targetFileId);
-      pushUniqueProjectMapReadPathStep(steps, seenStepKeys, {
-        id: `verify:${relation.id}`,
-        layer: "verify",
-        layerLabel: t("projectMap.relationship.readLayerVerify"),
-        title: getProjectMapReadPathRelationTitle({ relation, sourceFile, targetFile }),
-        reason: t("projectMap.relationship.readReasonVerify"),
-        meta: formatProjectMapReadPathEvidence(relation),
-        path: relation.evidence[0]?.path ?? targetFile?.path ?? sourceFile?.path ?? relation.id,
-        relationId: relation.id,
-      });
+    for (const relation of outgoingCalls) {
+      const line = getProjectMapReadRelationLineForFile(relation, inspectedRelationshipFile.path);
+      const sourceMethod = sourceMethods.find((method) => (
+        line !== null && line >= method.line && line <= method.endLine
+      ));
+      const methodId = sourceMethod?.id ?? findProjectMapReadMethodIdByLine(methodSymbols, line) ?? methodCardsById.keys().next().value;
+      const methodCard = methodId ? methodCardsById.get(methodId) : null;
+      if (!methodCard) {
+        continue;
+      }
+      methodCard.outgoing.push(relation);
     }
-    const contextPack = relationshipDashboardData.contextPack;
-    for (const testTarget of contextPack?.testTargets.slice(0, 2) ?? []) {
-      pushUniqueProjectMapReadPathStep(steps, seenStepKeys, {
-        id: `test:${testTarget}`,
-        layer: "verify",
-        layerLabel: t("projectMap.relationship.readLayerVerify"),
-        title: getProjectMapReadPathBasename(testTarget),
-        reason: t("projectMap.relationship.readReasonTest"),
-        meta: t("projectMap.relationship.readRouteMetaContext"),
-        path: testTarget,
-        relationId: null,
-      });
+    for (const relation of incomingCalls) {
+      const terminalName = getProjectMapReadTerminalCallName(getProjectMapRelationshipCallCandidate(relation));
+      const matchedMethod = methodSymbols.find((symbol) => symbol.name === terminalName);
+      const methodId = matchedMethod?.id ?? methodCardsById.keys().next().value;
+      const methodCard = methodId ? methodCardsById.get(methodId) : null;
+      if (!methodCard) {
+        continue;
+      }
+      methodCard.incoming.push(relation);
     }
-    for (const contractPath of contextPack?.contracts.slice(0, 2) ?? []) {
-      pushUniqueProjectMapReadPathStep(steps, seenStepKeys, {
-        id: `contract:${contractPath}`,
-        layer: "verify",
-        layerLabel: t("projectMap.relationship.readLayerVerify"),
-        title: getProjectMapReadPathBasename(contractPath),
-        reason: t("projectMap.relationship.readReasonContract"),
-        meta: t("projectMap.relationship.readRouteMetaContext"),
-        path: contractPath,
-        relationId: null,
-      });
+    for (const methodCard of methodCardsById.values()) {
+      methodCard.outgoing.sort(sortProjectMapReadRelationsByEvidenceLine);
+      methodCard.incoming.sort(sortProjectMapReadRelations);
+      methodCard.chain.children = methodCard.outgoing
+        .slice(0, READ_METHOD_CHAIN_BRANCH_LIMIT)
+        .map((relation) => buildProjectMapReadRelationChainNode({
+          relation,
+          inspectedFileId: inspectedRelationshipFile.id,
+          relationshipDashboardFileIndex,
+          relationLookup: relationshipDashboardData.relations,
+          depth: 0,
+          visitedFileIds: new Set([inspectedRelationshipFile.id]),
+        }));
     }
-    return steps;
+    return Array.from(methodCardsById.values())
+      .filter((methodCard) => methodCard.outgoing.length || methodCard.incoming.length || methodCard.kind !== "callsite")
+      .slice(0, READ_METHOD_INDEX_LIMIT);
   }, [
     inspectedRelationshipFile,
-    relationshipDashboardData.contextPack,
+    relatedRelations,
+    readSourceContent,
     relationshipDashboardData.relations,
+    relationshipDashboardData.symbols,
     relationshipDashboardFileIndex,
-    relationshipDashboardModuleByFileId,
     t,
   ]);
-  const readPathFileCount = useMemo(
-    () => new Set(readPathSteps.map((step) => step.path)).size,
-    [readPathSteps],
+  useEffect(() => {
+    setSelectedReadMethodId(readMethodCards[0]?.id ?? null);
+  }, [inspectedRelationshipFile?.id, readMethodCards]);
+  const selectedReadMethod = readMethodCards.find((methodCard) => methodCard.id === selectedReadMethodId)
+    ?? readMethodCards[0]
+    ?? null;
+  const readPathFileCount = useMemo(() => {
+    const pathSet = new Set<string>();
+    for (const card of [...incomingReadCards, ...outgoingReadCards, ...verifyReadCards]) {
+      pathSet.add(card.path);
+    }
+    return pathSet.size + (inspectedRelationshipFile ? 1 : 0);
+  }, [incomingReadCards, inspectedRelationshipFile, outgoingReadCards, verifyReadCards]);
+  const renderReadRelationCard = (card: ProjectMapRelationshipReadRelationCard): ReactElement => (
+    <article
+      key={card.id}
+      className={cn(
+        "project-map-relationship-read-relation-card",
+        `is-lane-${card.lane}`,
+        selectedRelationshipRelation?.id === card.relation.id && "is-active",
+      )}
+      title={`${card.title} · ${formatProjectMapReadPathEvidence(card.relation)}`}
+    >
+      <header>
+        <strong>{card.file?.basename ?? getProjectMapReadPathBasename(card.path)}</strong>
+        <span>{card.relation.type}</span>
+      </header>
+      <div>
+        <button
+          type="button"
+          className="project-map-relationship-read-action"
+          onClick={() => openProjectMapRelationshipPath(card.path)}
+        >
+          <ExternalLink aria-hidden="true" />
+          {t("projectMap.relationship.readOpenFile")}
+        </button>
+        <button
+          type="button"
+          className="project-map-relationship-read-action"
+          onClick={() => openProjectMapRelationshipPath(card.evidencePath, card.evidenceLine)}
+        >
+          <MapPin aria-hidden="true" />
+          {t("projectMap.relationship.readOpenEvidence")}
+        </button>
+      </div>
+    </article>
   );
-  const readPathChecklistItems = useMemo(() => [
-    t("projectMap.relationship.readChecklistEntry"),
-    t("projectMap.relationship.readChecklistFocus"),
-    t("projectMap.relationship.readChecklistData"),
-    t("projectMap.relationship.readChecklistImpact"),
-    t("projectMap.relationship.readChecklistVerify"),
-  ], [t]);
 
   return (
     <div className="project-map-relationship-read-workspace">
@@ -1404,102 +1932,210 @@ export function ProjectMapRelationshipReadWorkspace({
                 <dd>{selectedRelationshipRelationGroups.reduce((count, group) => count + group.relations.length, 0)}</dd>
               </div>
               <div>
-                <dt>{t("projectMap.relationship.readMetricMode")}</dt>
-                <dd>{t("projectMap.relationship.readModeChange")}</dd>
+                <dt>{t("projectMap.relationship.readMetricMethods")}</dt>
+                <dd>{readMethodCards.length}</dd>
               </div>
             </dl>
           </article>
         ) : null}
-        <div className="project-map-relationship-read-route">
+        <section className="project-map-relationship-read-anatomy">
           <header>
-            <span>{t("projectMap.relationship.readRouteEyebrow")}</span>
-            <strong>{t("projectMap.relationship.readRouteTitle")}</strong>
-            <p>{t("projectMap.relationship.readRouteHint")}</p>
+            <span>{t("projectMap.relationship.readAnatomyEyebrow")}</span>
+            <strong>{t("projectMap.relationship.readAnatomyTitle")}</strong>
+            <p>{t("projectMap.relationship.readAnatomyHint")}</p>
           </header>
-          {readPathSteps.length ? (
-            <ol>
-              {readPathSteps.map((step, index) => (
-                <li key={step.id} className={`is-layer-${step.layer}`}>
-                  <article
-                    className={cn(
-                      "project-map-relationship-read-step",
-                      step.relationId && "is-actionable",
-                      selectedRelationshipRelation?.id === step.relationId && "is-active",
-                    )}
-                    role={step.relationId ? "button" : undefined}
-                    tabIndex={step.relationId ? 0 : undefined}
-                    onClick={() => {
-                      if (step.relationId) {
-                        setSelectedRelationshipRelationId(step.relationId);
-                      }
-                    }}
-                    onKeyDown={(event) => {
-                      if (!step.relationId) {
-                        return;
-                      }
-                      if (event.key === "Enter" || event.key === " ") {
-                        event.preventDefault();
-                        setSelectedRelationshipRelationId(step.relationId);
-                      }
-                    }}
+          {inspectedRelationshipFile ? (
+            <>
+              <div className="project-map-relationship-read-anatomy-graph">
+                <section className="project-map-relationship-read-lane is-incoming">
+                  <h5>{t("projectMap.relationship.readIncomingTitle")}</h5>
+                  {incomingReadCards.length ? incomingReadCards.map(renderReadRelationCard) : (
+                    <p className="project-map-relationship-empty">{t("projectMap.relationship.readIncomingEmpty")}</p>
+                  )}
+                </section>
+                <article className="project-map-relationship-read-current-file">
+                  <span>{t("projectMap.relationship.readCurrentFile")}</span>
+                  <strong>{inspectedRelationshipFile.basename}</strong>
+                  <p>{inspectedRelationshipFile.path}</p>
+                  <div>
+                    <em>{inspectedRelationshipFile.role}</em>
+                    <em>{inspectedRelationshipFile.language}</em>
+                    <em>{relationshipDashboardModuleByFileId.get(inspectedRelationshipFile.id) ?? inspectedRelationshipFile.layer}</em>
+                  </div>
+                  <button
+                    type="button"
+                    className="project-map-relationship-read-action"
+                    onClick={() => openProjectMapRelationshipPath(inspectedRelationshipFile.path)}
                   >
-                    <span>{String(index + 1).padStart(2, "0")}</span>
-                    <div>
-                      <small>{step.layerLabel}</small>
-                      <strong>{step.title}</strong>
-                      <p>{step.reason}</p>
-                      <em>{step.path}</em>
-                    </div>
-                    <mark>{step.meta}</mark>
-                  </article>
-                </li>
-              ))}
-            </ol>
+                    <ExternalLink aria-hidden="true" />
+                    {t("projectMap.relationship.readOpenCurrentFile")}
+                  </button>
+                </article>
+                <section className="project-map-relationship-read-lane is-outgoing">
+                  <h5>{t("projectMap.relationship.readOutgoingTitle")}</h5>
+                  {outgoingReadCards.length ? outgoingReadCards.map(renderReadRelationCard) : (
+                    <p className="project-map-relationship-empty">{t("projectMap.relationship.readOutgoingEmpty")}</p>
+                  )}
+                </section>
+              </div>
+              {verifyReadCards.length ? (
+                <div className="project-map-relationship-read-verify-row">
+                  <strong>{t("projectMap.relationship.readVerifyTitle")}</strong>
+                  {verifyReadCards.map(renderReadRelationCard)}
+                </div>
+              ) : null}
+            </>
           ) : (
             <p className="project-map-relationship-empty">
               {t("projectMap.relationship.readRouteEmpty")}
             </p>
           )}
-        </div>
-      </section>
-      <aside className="project-map-relationship-read-side">
-        <section className="project-map-relationship-read-checklist">
-          <span>{t("projectMap.relationship.readChecklistEyebrow")}</span>
-          <h5>{t("projectMap.relationship.readChecklistTitle")}</h5>
-          <p>{t("projectMap.relationship.readChecklistHint")}</p>
-          <ol>
-            {readPathChecklistItems.map((item) => (
-              <li key={item}>{item}</li>
-            ))}
-          </ol>
         </section>
-        <section className="project-map-relationship-read-summary-card">
-          <h5>{t("projectMap.relationship.readSignalTitle")}</h5>
-          {relationshipDashboardData.impactSummary ? (
-            <div className="project-map-relationship-read-metrics">
-              <span>{readPathSteps.length}{t("projectMap.relationship.readSignalSteps")}</span>
-              <span>{relationshipDashboardData.impactSummary.directlyAffectedFiles.length}{t("projectMap.relationship.impactDirect")}</span>
-              <span>{relationshipDashboardData.contextPack?.riskFlags.length ?? 0}{t("projectMap.relationship.readSignalRisks")}</span>
+        <section className="project-map-relationship-read-methods">
+          <header>
+            <span>{t("projectMap.relationship.readMethodEyebrow")}</span>
+            <strong>{t("projectMap.relationship.readMethodTitle")}</strong>
+            <p>{t("projectMap.relationship.readMethodHint")}</p>
+          </header>
+          {readMethodCards.length && selectedReadMethod ? (
+            <div className="project-map-relationship-read-method-grid">
+              <nav aria-label={t("projectMap.relationship.readMethodTitle")}>
+                {readMethodCards.map((methodCard) => (
+                  <button
+                    key={methodCard.id}
+                    type="button"
+                    className={cn(
+                      "project-map-relationship-read-method-tab",
+                      selectedReadMethod.id === methodCard.id && "is-active",
+                    )}
+                    onClick={() => setSelectedReadMethodId(methodCard.id)}
+                  >
+                    <strong>{methodCard.name}</strong>
+                    <span>
+                      {methodCard.kind}
+                      {methodCard.line ? ` · L${methodCard.line}` : ""}
+                      {" · "}
+                      {methodCard.outgoing.length}{t("projectMap.relationship.readMethodCallsOut")}
+                    </span>
+                  </button>
+                ))}
+              </nav>
+              <article className="project-map-relationship-read-method-chain">
+                <header>
+                  <div>
+                    <span>{t("projectMap.relationship.readMethodSelected")}</span>
+                    <strong>{selectedReadMethod.name}</strong>
+                    <p>
+                      {selectedReadMethod.incoming.length}{t("projectMap.relationship.readMethodIncoming")}
+                      {" · "}
+                      {selectedReadMethod.outgoing.length}{t("projectMap.relationship.readMethodOutgoing")}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    className="project-map-relationship-read-action"
+                    onClick={() => {
+                      if (inspectedRelationshipFile) {
+                        openProjectMapRelationshipPath(inspectedRelationshipFile.path, selectedReadMethod.line);
+                      }
+                    }}
+                  >
+                    <MapPin aria-hidden="true" />
+                    {t("projectMap.relationship.readOpenMethod")}
+                  </button>
+                </header>
+                <ol className="project-map-relationship-read-method-flow">
+                  <li className="is-start">
+                    <article>
+                      <span>{t("projectMap.relationship.readFlowStart")}</span>
+                      <strong>{selectedReadMethod.name}</strong>
+                      <button
+                        type="button"
+                        className="project-map-relationship-read-action"
+                        onClick={() => {
+                          if (inspectedRelationshipFile) {
+                            openProjectMapRelationshipPath(inspectedRelationshipFile.path, selectedReadMethod.line);
+                          }
+                        }}
+                      >
+                        <MapPin aria-hidden="true" />
+                        {t("projectMap.relationship.readOpenMethod")}
+                      </button>
+                    </article>
+                  </li>
+                  {(selectedReadMethod.sourceFlowNodes.length
+                    ? selectedReadMethod.sourceFlowNodes
+                    : selectedReadMethod.outgoing.slice(0, READ_METHOD_CHAIN_BRANCH_LIMIT).map((relation) => {
+                        const targetFile = relationshipDashboardFileIndex.get(relation.targetFileId);
+                        const evidence = relation.evidence[0];
+                        return {
+                          id: `relation-flow:${relation.id}`,
+                          relationId: relation.id,
+                          label: getProjectMapRelationshipCallCandidate(relation) ?? targetFile?.basename ?? relation.targetFileId,
+                          fileLabel: targetFile?.basename ?? relation.targetFileId,
+                          path: targetFile?.path ?? evidence?.path ?? inspectedRelationshipFile?.path ?? relation.id,
+                          line: evidence?.line ?? null,
+                          relationType: relation.type,
+                          confidence: relation.confidence,
+                          children: [],
+                        } satisfies ProjectMapRelationshipReadChainNode;
+                      })).map((flowNode, index) => {
+                    return (
+                      <li key={`flow:${flowNode.id}`}>
+                        <article>
+                          <span>{String(index + 1).padStart(2, "0")}</span>
+                          <strong>{flowNode.label}</strong>
+                          <div>
+                            <button
+                              type="button"
+                              className="project-map-relationship-read-action"
+                              onClick={() => openProjectMapRelationshipPath(flowNode.path)}
+                            >
+                              <ExternalLink aria-hidden="true" />
+                              {t("projectMap.relationship.readOpenFile")}
+                            </button>
+                            <button
+                              type="button"
+                              className="project-map-relationship-read-action"
+                              onClick={() => openProjectMapRelationshipPath(flowNode.path, flowNode.line)}
+                            >
+                              <MapPin aria-hidden="true" />
+                              {t("projectMap.relationship.readOpenEvidence")}
+                            </button>
+                          </div>
+                        </article>
+                      </li>
+                    );
+                  })}
+                  <li className="is-end">
+                    <article>
+                      <span>{t("projectMap.relationship.readFlowEnd")}</span>
+                      <strong>{t("projectMap.relationship.readFlowReturn")}</strong>
+                    </article>
+                  </li>
+                </ol>
+                {selectedReadMethod.sourceSnippet.length ? (
+                  <pre className="project-map-relationship-read-method-snippet">
+                    <code>
+                      {selectedReadMethod.sourceSnippet
+                        .map((line, index) => `${String((selectedReadMethod.line ?? 1) + index).padStart(4, " ")}  ${line}`)
+                        .join("\n")}
+                    </code>
+                  </pre>
+                ) : readSourceError ? (
+                  <p className="project-map-relationship-empty">
+                    {t("projectMap.relationship.readSourceUnavailable", { message: readSourceError })}
+                  </p>
+                ) : null}
+              </article>
             </div>
           ) : (
             <p className="project-map-relationship-empty">
-              {t("projectMap.relationship.impactEmpty")}
+              {t("projectMap.relationship.readMethodEmpty")}
             </p>
           )}
         </section>
-        {selectedRelationshipScopeWarnings.length ? (
-          <section className="project-map-relationship-read-summary-card">
-            <h5>{t("projectMap.relationship.readScopeTitle")}</h5>
-            <div className="project-map-relationship-read-chip-list is-warning">
-              {selectedRelationshipScopeWarnings.slice(0, 4).map((reason) => (
-                <span key={reason.kind + ":" + (reason.path ?? reason.message)}>
-                  {reason.path ?? reason.message}
-                </span>
-              ))}
-            </div>
-          </section>
-        ) : null}
-      </aside>
+      </section>
     </div>
   );
 }

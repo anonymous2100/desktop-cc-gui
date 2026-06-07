@@ -56,9 +56,11 @@ Graph pane resizing is a view-only CSS variable over the existing Files/Canvas/I
 
 The Graph node basename is the primary identifier. Filename title wrapping is allowed for the node `strong` element, while secondary metadata (`language`, `layer`, relation metrics) can remain single-line and truncated. This preserves scan density without hiding the file identity.
 
-### Decision 9: Reframe Read Path as route projection instead of relation dump
+### Decision 9: Reframe Read Path as file anatomy plus method-chain closure
 
-Read Path should answer “what is the shortest useful path to understand this file?” rather than “what relations exist around this file?”. The view projects existing relations/context-pack data into four layers: entry, current file, key dependencies, and verification. Each route step explains why it matters and exposes enough path/evidence metadata to orient the user, while a side checklist defines the comprehension questions users should be able to answer after reading.
+Read Path should answer “how is the currently opened file wired into the system?” rather than “what should I read in order?”. The view centers the selected file as an anatomy graph: incoming callers/collaborators on the left, the current file in the middle, outgoing collaborator calls on the right, and verification material below. The anatomy graph deliberately excludes `imports` / `exports` because import lists are too noisy for this job; it favors `calls`, command bridges, and config edges that are closer to actual class collaborators. Key graph nodes keep only source/evidence anchors so users can jump from the explanation surface to source code without parsing extra prose.
+
+The second layer is a method-flow explorer. It derives method entries from scanned symbols and groups `calls` relations by call-site line. Selecting a method shows a bounded flowchart: method start, first-level dependency calls in method-body order, and end/return. This is deliberately one-layer first because the immediate method body is the most useful reading unit and avoids presenting heuristic edges as a full compiler-accurate call graph.
 
 ### Decision 10: Tighten Java file `calls` toward proven receiver calls
 
@@ -74,7 +76,7 @@ Repair/read-error artifacts remain part of the relationship snapshot, but render
 - API contracts may still be mistaken for official API docs → mitigate with scan-derived export and inspector caveat copy.
 - Java method-chain resolution is static and heuristic, not compiler-classpath complete → mitigate by only treating resolved target method anchors as high confidence.
 - Java file relationship `calls` may miss untyped or dynamic calls after tightening → mitigate by favoring correctness in the main Graph and keeping future low-confidence call clues out of the primary edge layer.
-- Read Path is still heuristic because it projects from existing relationships/context-pack data → mitigate by making step reasons explicit and avoiding claims of complete coverage.
+- Read Path is still heuristic because it projects from existing relationships/symbols/context-pack data → mitigate by separating file anatomy, method-level calls, unresolved/low-confidence signals, and explicit source anchors.
 - Graph pane resizing can be broken by later CSS overrides → mitigate by centralizing resize variables in all focused/non-focused Graph grid rules.
 - Longer Graph filenames can increase node height → mitigate by only wrapping the title while keeping secondary metadata compact.
 - CSS polish may be limited → mitigate through class hooks, copy hierarchy, and narrow visual changes first; deeper redesign can follow if needed.

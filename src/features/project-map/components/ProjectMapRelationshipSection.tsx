@@ -852,7 +852,10 @@ export function ProjectMapRelationshipSection({
     });
   }, []);
 
-  const resolveRelationshipRelationsForFile = useCallback((file: ProjectMapScannedFile | null) => {
+  const resolveRelationshipRelationsForFile = useCallback((
+    file: ProjectMapScannedFile | null,
+    options?: { ignoreTypeFilter?: boolean },
+) => {
     if (!relationshipDashboardData || !file) {
       return [];
     }
@@ -863,7 +866,8 @@ export function ProjectMapRelationshipSection({
           relation.sourceFileId === selectedFileId
           || relation.targetFileId === selectedFileId;
         const typeMatches =
-          relationshipDashboardTypeFilter === PROJECT_MAP_RELATION_FILTER_ALL
+          options?.ignoreTypeFilter
+          || relationshipDashboardTypeFilter === PROJECT_MAP_RELATION_FILTER_ALL
           || relation.type === relationshipDashboardTypeFilter;
         return isSelectedEdge && typeMatches;
       })
@@ -889,6 +893,11 @@ export function ProjectMapRelationshipSection({
 
   const inspectedRelationshipRelations = useMemo(
     () => resolveRelationshipRelationsForFile(inspectedRelationshipFile),
+    [inspectedRelationshipFile, resolveRelationshipRelationsForFile],
+  );
+
+  const inspectedRelationshipRelationsNoTypeFilter = useMemo(
+    () => resolveRelationshipRelationsForFile(inspectedRelationshipFile, { ignoreTypeFilter: true }),
     [inspectedRelationshipFile, resolveRelationshipRelationsForFile],
   );
 
@@ -1048,7 +1057,7 @@ export function ProjectMapRelationshipSection({
   }, [relationshipGraphInspectorWidth, relationshipGraphRailWidth]);
 
   const selectedRelationshipRelation = useMemo(() => {
-    if (!inspectedRelationshipRelations.length) {
+    if (!inspectedRelationshipRelations.length && !inspectedRelationshipRelationsNoTypeFilter.length) {
       return null;
     }
     if (selectedRelationshipRelationId) {
@@ -1058,11 +1067,19 @@ export function ProjectMapRelationshipSection({
       if (selectedRelation) {
         return selectedRelation;
       }
+      const selectedRelationWithoutTypeFilter = inspectedRelationshipRelationsNoTypeFilter.find(
+        (relation) => relation.id === selectedRelationshipRelationId,
+      );
+      if (selectedRelationWithoutTypeFilter) {
+        return selectedRelationWithoutTypeFilter;
+      }
     }
     return inspectedRelationshipRelations.find((relation) => relation.type === "calls")
       ?? inspectedRelationshipRelations[0]
+      ?? inspectedRelationshipRelationsNoTypeFilter.find((relation) => relation.type === "calls")
+      ?? inspectedRelationshipRelationsNoTypeFilter[0]
       ?? null;
-  }, [inspectedRelationshipRelations, selectedRelationshipRelationId]);
+  }, [inspectedRelationshipRelations, inspectedRelationshipRelationsNoTypeFilter, selectedRelationshipRelationId]);
 
   const normalizeRelationshipCanvasImportError = useCallback((error: unknown) => {
     if (error instanceof Error) {
@@ -2852,15 +2869,15 @@ export function ProjectMapRelationshipSection({
                       ) : null}
                       {relationshipDashboardViewMode === "read" ? (
                         <ProjectMapRelationshipReadWorkspace
+                          activeWorkspaceId={activeWorkspaceId}
                           inspectedRelationshipFile={inspectedRelationshipFile}
+                          openProjectMapRelationshipPath={openProjectMapRelationshipPath}
                           relationshipDashboardData={relationshipDashboardData}
                           relationshipDashboardFileIndex={relationshipDashboardFileIndex}
                           relationshipDashboardModuleByFileId={relationshipDashboardModuleByFileId}
                           selectedRelationshipRelation={selectedRelationshipRelation}
                           selectedRelationshipRelationGroups={selectedRelationshipRelationGroups}
-                          selectedRelationshipScopeWarnings={selectedRelationshipScopeWarnings}
                           setRelationshipDashboardViewMode={setRelationshipDashboardViewMode}
-                          setSelectedRelationshipRelationId={setSelectedRelationshipRelationId}
                         />
                       ) : null}
                     </div>

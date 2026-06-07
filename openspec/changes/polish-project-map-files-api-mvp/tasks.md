@@ -25,6 +25,11 @@
 
 - [x] 4.1 [P0][Depends: specs] Rebuild Read Path as a layered reading route instead of raw relation/context lists; input: selected file, relations, context-pack; output: entry/current/dependency/verification route steps; validation: manual Read tab smoke.
 - [x] 4.2 [P1][Depends: 4.1] Add comprehension checklist and compact route signals; input: route projection and impact/context data; output: user-facing questions and low-noise summary; validation: manual Read tab smoke.
+- [x] 4.3 [P0][Depends: 4.1] Rebuild Read Path again as selected-file anatomy graph; input: selected file, incoming/outgoing/verification relations; output: incoming/current/outgoing visual graph with file/evidence open actions; validation: manual Read tab smoke.
+- [x] 4.4 [P0][Depends: 4.3] Add method-chain explorer; input: scanned symbols, call relations, evidence lines; output: selectable methods with upstream triggers, direct calls, and bounded second-level call chains; validation: manual Read tab smoke.
+- [x] 4.5 [P0][Depends: 4.4] Reduce Read Path noise and redraw method explorer as method-body flow; input: selected file calls, method symbols, evidence lines; output: no right-side checklist, no import anatomy nodes, minimal link-only anatomy cards, and method start/call/end flowchart; validation: manual Read tab smoke.
+- [x] 4.6 [P0][Depends: 4.5] Fix method-body flow ownership; input: method symbols and call-site evidence lines; output: call-expression symbols are excluded from the method index and same-method calls are grouped under the nearest declaration method in source-line order; validation: manual Read tab smoke.
+- [x] 4.7 [P0][Depends: 4.6] Prefer source-derived method parsing for Method Chain; input: selected file preview content; output: method index from source declarations, method-body call flow in source-line order, and method code snippet fallback; validation: manual Read tab smoke.
 
 ## 5. Closure
 
