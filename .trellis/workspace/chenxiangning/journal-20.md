@@ -694,3 +694,43 @@ Codex app-server 对话链路切换为 codex-tui 兼容身份，补 terminal env
 ### Next Steps
 
 - None - task complete
+
+
+## Session 752: 稳定异步测试等待契约
+
+**Date**: 2026-06-07
+**Task**: 稳定异步测试等待契约
+**Branch**: `feature/v0.5.8`
+
+### Summary
+
+(Add summary)
+
+### Main Changes
+
+修复 CI flaky 测试等待契约：
+- McpSection 测试不再等待静态 Session overview，而是等待 OpenCode MCP 切换后的最终数据状态。
+- GitHistoryWorktreePanel 测试在选择 commit message engine 后，显式等待 setTimeout(0) 驱动的英文二级菜单出现。
+
+验证：
+- npx vitest run src/features/settings/components/McpSection.test.tsx src/features/git-history/components/GitHistoryWorktreePanel.test.tsx
+- 结果：2 个 test file passed，23 个 tests passed。
+
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `f2518b86` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
