@@ -779,3 +779,46 @@ Codex app-server 对话链路切换为 codex-tui 兼容身份，补 terminal env
 ### Next Steps
 
 - None - task complete
+
+
+## Session 754: 收口 Project Map 阅读路径与关系精度
+
+**Date**: 2026-06-08
+**Task**: 收口 Project Map 阅读路径与关系精度
+**Branch**: `feature/v0.5.8`
+
+### Summary
+
+优化 Project Map Read Path 定位、收紧 Java calls 关系解析，并清理文件关系底部噪音展示。
+
+### Main Changes
+
+| Area | Summary |
+|------|---------|
+| Project Map Read Path | 重做阅读路径 tab，将原始关系列表改成面向理解顺序的分层 route，包括入口关系、当前文件、依赖阅读、验证材料与 checklist。 |
+| Java calls precision | 后端 Java 关系解析从全局 symbol 猜测收紧为 receiver/import/field/method-backed 解析，减少 DTO getter、Parameter、局部变量等误连。 |
+| Relationship UI noise | 删除文件关系与其他 tab 底部全局 Repair / Read issues 噪音条，避免干扰主要图谱阅读。 |
+| OpenSpec | 回写 polish-project-map-files-api-mvp 的 proposal/design/tasks，并新增 read-path-view delta spec 与 storage 行为约束。 |
+
+**Code commit**: `346fcbf7 feat(project-map): 优化阅读路径与Java关系精度`
+
+**Validation**: 未运行测试、typecheck 或 OpenSpec validate；本轮按用户要求做收口提交与记录。
+
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `346fcbf7` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete

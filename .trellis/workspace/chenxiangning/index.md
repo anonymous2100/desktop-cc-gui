@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-20.md`
-- **Total Sessions**: 753
+- **Total Sessions**: 754
 - **Last Active**: 2026-06-08
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-20.md` | ~781 | Active |
+| `journal-20.md` | ~824 | Active |
 | `journal-19.md` | ~1989 | Archived |
 | `journal-18.md` | ~1966 | Archived |
 | `journal-17.md` | ~1971 | Archived |
@@ -48,6 +48,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 754 | 2026-06-08 | 收口 Project Map 阅读路径与关系精度 | `346fcbf7` | `feature/v0.5.8` |
 | 753 | 2026-06-08 | 打磨 Project Map 文件关系与接口契约视图 | `6acd7dd9` | `feature/v0.5.8` |
 | 752 | 2026-06-07 | 稳定异步测试等待契约 | `f2518b86` | `feature/v0.5.8` |
 | 751 | 2026-06-07 | 收口接口契约边界与大文件门禁 | `6e9c6afb` | `feature/v0.5.7` |
