@@ -1,38 +1,63 @@
+## Status
+
+**Phase 1 complete** — current implementation evidence is recorded in `notes/phase-1-implementation-evidence.md`.
+
+- Phase 1 renderer architecture, real file-view entrypoint routing, parser-derived outline, rich-path outline visibility, yn-style outline interactions, fallback, sanitizer, and validation evidence are complete.
+- Optional Worker adapter is complete and remains file-preview scoped.
+- Closure now depends on final validation / sync / archive process, not missing implementation scope.
+
+---
+
 ## Why
 
-当前文件模块 Markdown preview 已经有 block segmentation、heavy-block lazy render、render budget 等保护，但主路径仍由 `ReactMarkdown + remark/rehype + React component overrides` 承担整份文档渲染。大 Markdown 文档会把 parse、sanitize、syntax highlight、table/code/math/diagram component reconciliation 集中压到主线程，导致预览滚动、切换、注释输入和客户端交互出现卡顿。
+File-view Markdown preview used to depend on a React-owned Markdown tree for the document body. That shape works for small documents, but it makes React reconciliation part of the hot path for long Markdown files with tables, code blocks, KaTeX, Mermaid, source-line annotations, and outline navigation.
 
-`yn` 的 Markdown preview 给出了更适合文档阅读 surface 的方向：Markdown 先编译成 HTML/VNode 文档 DOM，再用事件委托和局部插件增强处理交互。mossx 应复刻该架构思想，而不是照搬其插件全集。
+The product needs a file-preview-specific reading surface with stronger boundaries:
 
-## 目标与边界
+- document rendering must be tied to a stable file snapshot and content hash;
+- same-content UI changes must not recompile or remount the Markdown body;
+- large documents need deterministic bounded rendering instead of machine-local timing decisions;
+- outline navigation should come from parser/source metadata, not repeated mounted-DOM scans;
+- unsafe HTML must fail closed inside the file-preview boundary.
 
-- 将文件 Markdown preview 重构为 fast document renderer 架构：React 负责 preview shell、状态和交互岛；Markdown 主体优先作为 sanitized HTML document surface 挂载。
-- 引入 Markdown compile cache / render cache，使相同 document snapshot、content hash、renderer profile 的预览复用已编译结果。
-- 参考 `yn` 的 token-derived outline：从 Markdown parser token/source-line metadata 生成大纲，而不是从已经挂载的 React/HAST 节点树反复扫描。
-- 保留当前 file-preview GitHub-style 语义：frontmatter、code highlight、table overflow、Mermaid Source/Render tab、KaTeX、annotation source line mapping、large-doc budget、readable fallback。
-- 为后续 Worker 化保留明确 contract：第一阶段可在主线程落地 fast HTML renderer，第二阶段可把 compile/sanitize 前置工作迁入 Worker。
+Yank Note (`yn`) provides the architectural reference: compile Markdown into a document surface, keep parser-derived outline/source metadata, and handle interaction through local islands/delegated events. This change adopts that boundary for mossx file preview without importing the full `yn` plugin ecosystem.
 
-## 非目标
+## What Changed
 
-- 不迁移 chat/message Markdown renderer；`src/features/messages/components/Markdown.tsx` 继续遵守 streaming render contract。
-- 不引入 `yn` 的完整插件系统、extension manager、macro/code-run/mindmap/drawio/luckysheet 等能力。
-- 不改变 Tauri 文件读取、external sync、live edit preview 的 backend contract。
-- 不把大文档退化为纯文本作为默认目标；plain text 只能作为异常或预算兜底。
-- 不以机器测速作为主策略选择依据；策略选择仍基于 deterministic metrics。
+### Renderer architecture
 
-## What Changes
+- Added a file-preview fast Markdown renderer pipeline that compiles Markdown into sanitized HTML plus structured metadata.
+- Kept `rich-react` as the default and reversible fallback profile.
+- Added deterministic renderer profiles: `rich-react`, `fast-html`, `bounded-fast-html`, and `low-cost-readable`.
+- Kept selection based on document metrics and explicit rollout flags, not local timing.
+- Preserved message/chat Markdown isolation; message surfaces are not migrated to the file renderer.
 
-- Add a fast file Markdown renderer path inspired by `yn`:
-  - compile Markdown into sanitized HTML document fragments;
-  - mount the Markdown body through a stable HTML surface;
-  - hydrate only interaction-heavy islands such as Mermaid, math fallback, annotation affordances, and table scroll state.
-- Add a token-derived outline/Toc pipeline:
-  - derive outline entries from Markdown parser tokens and source line ranges;
-  - keep outline independent from rendered DOM queries;
-  - support jump-to-line / scroll-to-heading behavior without causing full preview rebuilds.
-- Modify existing render architecture requirements so the renderer may choose ReactMarkdown fallback or fast HTML renderer by deterministic profile.
-- Preserve all existing large-document and annotation stability guarantees.
-- Add tests and performance sentries for large Markdown preview, outline generation, source-line mapping, Mermaid/math/table/code behavior, and fallback isolation.
+### Real file-view integration
+
+- Routed the real Markdown file-preview entrypoint through `FileMarkdownPreviewFast`.
+- Kept default behavior as `rich-react` unless explicit fast-renderer rollout flags are enabled.
+- Preserved config-level rollback by disabling fast-renderer flags.
+- Forwarded rich renderer props through the wrapper so fallback preserves existing annotation, marker, and render-pressure behavior.
+- Added a preview-only large Markdown read path: normal editable file reads remain capped at 400 KB, while Markdown preview can fetch up to 4 MB and then rely on bounded/fast rendering.
+
+### Outline / Toc
+
+- Added parser-derived outline generation from Markdown heading/source metadata.
+- Made outline visible in the default `rich-react` path, not only in the fast HTML path.
+- Added heading anchors for rich-path navigation and fast-path navigation.
+- Added yn-style outline interactions: collapse/expand, branch folding, pinning, unpinned auto-collapse, and repeated activation of the same item.
+
+### Interaction and fallback boundaries
+
+- Fast HTML path supports source-line attributes, annotation-start affordances, table scroll wrappers, link delegation, diagnostics, and fail-closed fallback.
+- Existing rich file-preview path remains the parity source for annotation overlays and Mermaid Source/Render behavior while richer fast islands mature.
+- Fast compile, sanitize, or hydration failures stay inside the file-preview renderer boundary and fall back to readable file preview.
+- Unsafe unsanitized HTML is never mounted.
+
+### Validation and evidence
+
+- Implementation evidence records OpenSpec validation, focused renderer tests, focused file-preview tests, typecheck, lint, large-file check, dependency decision, diagnostics, fallback behavior, and sanitizer/security fixtures.
+- No new dependencies were introduced; the implementation reuses existing unified / rehype / DOMPurify / KaTeX / Mermaid ecosystem packages already present in the project.
 
 ## Capabilities
 
@@ -42,79 +67,122 @@
 
 ### Modified Capabilities
 
-- `file-markdown-preview-render-architecture`: define fast document renderer, HTML compile cache, interaction islands, Worker-ready boundary, and parser-token outline contract.
-- `file-view-markdown-github-preview`: preserve GitHub-style feature parity while allowing the file preview renderer to use sanitized HTML document output instead of per-block ReactMarkdown.
+- `file-markdown-preview-render-architecture`
+  - Defines stable document snapshots, compile cache identity, heavy-block lifecycle isolation, deterministic large-document profiles, fast sanitized document rendering, parser-derived outline, and Worker-ready compile boundaries.
 
-## 技术方案对比
+- `file-view-markdown-github-preview`
+  - Preserves GitHub-style file-preview semantics while allowing sanitized HTML document output, dedicated file-view renderer routing, file-view-scoped styling, parser-derived outline navigation, stable large-document behavior, and readable fail-closed fallback.
 
-| 方案 | 描述 | 优点 | 缺点 | 结论 |
-|---|---|---|---|---|
-| A. 继续调优 ReactMarkdown | 保持当前 `ReactMarkdown` block map，继续增加阈值、memo、lazy | 改动小，风险低 | 本质仍是 React 管整棵 Markdown DOM；大文档收益有限 | 不选作主线，仅保留为 fallback |
-| B. 主线程 fast HTML renderer | 用 `markdown-it` 类 parser 编译 sanitized HTML，React 只挂载 document surface | 能快速验证 `yn` 架构收益；改动可控 | parse/sanitize 仍可能有主线程尖峰 | 作为第一阶段主线 |
-| C. Worker fast renderer | Worker 编译 Markdown tokens/HTML/outline，主线程只消费 sanitized result 并 hydrate islands | 最符合长期性能目标；降低主线程卡顿 | 需要设计 async cache、cancel、fallback contract | 作为第二阶段闭环目标 |
+## Functional Closure Boundary
 
-取舍：本 change 以 B 为可落地 MVP，以 C 为架构闭环，保留 A 作为失败回退路径。这样既能快速降低卡顿，也不会把实现锁死在主线程。
+This change closes the Phase 1 product behavior when all of the following are true:
+
+- Markdown files opened from the file tree route through the dedicated file-preview wrapper.
+- Default `rich-react` behavior remains available and unchanged unless fast-renderer rollout flags are enabled.
+- Fast renderer can be explicitly enabled and reports profile/cache/fallback diagnostics.
+- Parser-derived outline is available in both default rich path and fast path.
+- Outline interactions match the intended yn-style behavior.
+- Same-content UI updates do not invalidate the compiled document identity.
+- Sanitizer/security fixtures prove unsafe HTML and unsafe URLs are stripped or forced into fallback.
+- Large-document strategy is selected by deterministic metrics and flags.
+- Truncated editable Markdown files can still receive a larger preview-only snapshot without enabling save/edit on partial content.
+- Message Markdown remains isolated.
+
+Worker execution is now included as an optional Phase 1 adapter. The adapter uses the same pure compile request/result contract, falls back to main-thread compile when Worker construction or transport fails, and prevents stale Worker responses from overwriting newer preview snapshots.
+
+## Non-Goals
+
+- Do not migrate chat/message Markdown, Spec Hub Markdown, release notes, or other message-based surfaces.
+- Do not import the full `yn` plugin ecosystem.
+- Do not add macro/code-run/mindmap/drawio/luckysheet style Markdown extensions.
+- Do not change Tauri file-read, file-sync, or storage backend contracts.
+- Do not make machine-local timing the primary renderer strategy selector.
+- Do not let Worker adapter behavior escape the file-preview renderer boundary.
 
 ## Rollout / Fallback Contract
 
-- `rich-react` 是强制保留的 file-preview fallback profile，必须能通过显式 flag 或配置回退。
-- `fast-html` 与 `bounded-fast-html` 只能由 deterministic document metrics 与显式 rollout flag 共同选择，不能依赖机器本地耗时测速作为主决策。
-- fast renderer 的 compile、sanitize、hydrate 任一阶段失败时，必须 fail closed 到 file-preview fallback，不得挂载未消毒 HTML，也不得回退到 message-curtain Markdown renderer。
-- renderer profile、content hash、compile cache key 与 fallback reason 必须能通过 diagnostics 或测试可观测属性确认。
-- 回滚路径必须是配置级或小范围代码级回退到 `rich-react`，不能要求迁移 message Markdown 或修改 Tauri backend contract。
-
-## Phase Boundary
-
-Phase 1 范围：
-
-- 主线程 fast sanitized HTML renderer。
-- parser/token-derived outline。
-- compile result / outline / heavy-block metadata contract。
-- source-line anchors、interaction islands、readable fallback。
-- pure and serializable compile API，为 Worker 化保留边界。
-
-Phase 1 不要求：
-
-- 实现 Worker adapter。
-- 完成所有 `yn` 插件能力。
-- 迁移 chat/message Markdown、Spec Hub、release note 等非 file-preview surfaces。
-
-Phase 2 才考虑 Worker adapter，并且必须复用 Phase 1 的 compile request/result contract，新增 latest-request-wins 与 stale-result discard 语义。
-
-## Impact
-
-- Affected frontend code:
-  - `src/features/files/components/FileMarkdownPreview.tsx`
-  - `src/features/files/utils/fileMarkdownDocument.ts`
-  - new file-preview Markdown renderer utility/service files under `src/features/files/**` or `src/features/markdown/**`
-  - file preview outline / file view surface components, if outline currently lives outside Markdown preview
-  - Markdown preview CSS under `src/styles/**`
-  - focused tests for file Markdown preview, outline, and renderer fallback
-- APIs/dependencies:
-  - Before adding parser or sanitizer dependencies, implementation must first audit the existing dependency graph.
-  - If a new parser or sanitizer is required, record the selected package, maintenance status, bundle/runtime impact, and rejected alternatives in implementation evidence.
-  - Parser/sanitizer selection must prefer maintained allowlist-based libraries over custom Markdown or HTML security logic.
-  - No Tauri command signature change.
-  - No backend storage format change.
-- Systems:
-  - File preview becomes a document-renderer surface rather than a ReactMarkdown component tree surface.
-  - Message Markdown and live conversation streaming remain isolated.
+- Default profile remains `rich-react`.
+- Fast profiles require explicit rollout gates:
+  - `VITE_MOSSX_FILE_MARKDOWN_FAST_HTML=true`
+  - `VITE_MOSSX_FILE_MARKDOWN_BOUNDED_FAST_HTML=true`
+  - `localStorage.mossx.fileMarkdownFastHtml=true`
+  - `localStorage.mossx.fileMarkdownBoundedFastHtml=true`
+- `rich-react` must remain a forced fallback profile.
+- `fast-html` and `bounded-fast-html` must be observable through diagnostics or data attributes.
+- Fast renderer compile, sanitize, or hydration failure must fail closed to file-preview fallback.
+- Worker construction or transport failure must fall back to the existing main-thread fast compile path before renderer fallback is considered.
+- Stale Worker responses must not update preview state after a newer Markdown snapshot has been requested.
+- Fallback must not route to message Markdown.
+- Rollback must be possible by disabling flags or routing the file-view entrypoint directly back to the rich preview path.
 
 ## Security Definition of Done
 
-- Sanitizer uses an allowlist schema scoped to file-preview Markdown output.
-- Event handler attributes such as `onclick` and unsafe URL schemes such as `javascript:` are stripped before mount.
-- Raw HTML handling remains explicit and file-preview scoped; arbitrary plugin HTML is never trusted as safe by default.
+- Sanitizer uses a file-preview-scoped allowlist.
+- Event handler attributes such as `onclick`, `onerror`, and `onload` are stripped.
+- Unsafe URL schemes such as `javascript:`, `vbscript:`, and unsafe `data:` uses are stripped or rejected.
+- Raw HTML handling remains explicit and file-preview scoped.
 - File/local resource opening remains behind existing file-link and external URL policies.
-- XSS regression fixtures cover raw HTML, unsafe links, inline event attributes, tables, code blocks, math, Mermaid placeholders, and sanitizer failure fallback.
+- Sanitizer failure never mounts unsafe HTML and must use fallback.
+- Regression fixtures cover raw HTML, unsafe links, inline event attributes, task lists, tables, code, math, Mermaid placeholders, CJK headings, duplicate headings, and sanitizer fallback.
 
-## 验收标准
+## Impact
 
-- Large Markdown preview remains scrollable and interactive under deterministic render budgets.
-- Same-content annotation typing does not recompile, re-sanitize, or remount the Markdown document body.
-- Mermaid rendered tab, table scroll, and annotation draft state survive same-content rerenders.
-- Outline entries are produced from parser/token/source-line metadata and can jump to rendered headings without DOM-wide rescans or body recompilation.
-- Fast renderer failures fail closed to the existing readable file-preview fallback.
-- Sanitizer failures never mount unsafe HTML and remain isolated to the file-preview boundary.
-- Renderer diagnostics expose profile, cache identity, and fallback reason for focused tests.
+### Affected frontend areas
+
+- `src/features/files/components/FileViewBody.tsx`
+- `src/features/files/components/FileViewPanel.tsx`
+- `src/features/files/components/FileMarkdownPreviewFast.tsx`
+- `src/features/files/components/FileMarkdownPreview.tsx` through wrapper/fallback integration, not as the fast renderer implementation owner
+- `src/features/files/components/PreviewOutlineSidebar.tsx`
+- `src/features/markdown/fastMarkdownRenderer/**`
+- File-preview Markdown styles under `src/styles/**`
+- Focused tests under `src/features/files/components/__tests__/**` and `src/features/markdown/fastMarkdownRenderer/__tests__/**`
+
+### API / dependency impact
+
+- No Tauri command signature change.
+- New preview-only Tauri command: `read_workspace_file_preview`, scoped to file preview and using a larger read budget.
+- No backend storage format change.
+- No message Markdown API change.
+- No new package dependency.
+
+### Product impact
+
+- Markdown file preview becomes a guarded document-renderer surface.
+- Default user behavior remains rich file preview unless rollout flags are enabled.
+- Outline becomes a file-preview reading feature, not a fast-renderer-only affordance.
+- Failure modes remain local and readable.
+
+## Acceptance Criteria
+
+- Large Markdown preview remains readable and interactive under deterministic render budgets.
+- File-view Markdown uses the dedicated file-preview renderer boundary.
+- Fast renderer can mount sanitized HTML without React owning every Markdown node.
+- Same-content annotation, outline, hover, and localized-label changes do not recompile or remount the Markdown body.
+- Mermaid, table scroll, annotation state, code readability, KaTeX behavior, and links retain file-preview semantics or fail closed to rich fallback.
+- Outline entries are parser-derived, source-line stable, duplicate-safe, CJK-safe, and navigable.
+- Outline interactions support collapse/expand, pinning, unpinned auto-collapse, branch folding, and repeated selection.
+- Sanitizer failures and unsafe input never mount unsafe HTML.
+- Renderer diagnostics expose profile, cache identity, status, fallback reason, heading count, heavy-block count, and truncation state.
 - Chat/message Markdown surfaces remain visually and structurally unchanged.
+
+## Closure Calibration
+
+Current readout:
+
+- OpenSpec schema artifacts are complete: proposal, design, specs, and tasks exist.
+- OpenSpec progress should report `35/35` tasks complete after this writeback.
+- All Phase 1 implementation, revalidation, outline backfill, and optional Worker adapter tasks are complete.
+- Worker execution remains optional at runtime and scoped to file-preview fast Markdown compile.
+- Evidence confirms the compile result is JSON-serializable, has a non-DOM sanitizer fallback, stale Worker responses cannot overwrite newer preview state, and preview-only large Markdown reads do not weaken editor truncation protection.
+
+Closure decision:
+
+- **Functionally closable for Phase 1**.
+- **Archive readiness now depends on final validation and governance closeout**, not missing implementation tasks.
+
+Recommended closeout action:
+
+1. Run final OpenSpec validation.
+2. Run focused Worker/hook and fast renderer tests if validation is requested.
+3. If validation passes and no implementation drift is found, sync/archive this Phase 1 change.

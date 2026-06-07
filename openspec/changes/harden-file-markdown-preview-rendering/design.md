@@ -1,3 +1,19 @@
+## Implementation Status
+
+**Phase 1 complete** (see `notes/phase-1-implementation-evidence.md`).
+
+- Fast HTML renderer shipped as opt-in wrapper behind feature flags.
+- Parser-derived outline wired to UI: `PreviewOutlineSidebar` rendered alongside fast HTML surface when `rendererProfile="fast-html"`.
+- Heading IDs injected into HAST tree (`attachHeadingIds`) so outline anchor links resolve in the mounted DOM.
+- Click-to-scroll jump-to-heading works via `anchorId` matching.
+- All validation items (7.1–7.7) passed.
+- No new dependencies introduced.
+- Message Markdown renderer untouched.
+
+Phase 2 (Worker adapter) is tracked as task 6.2 and remains deferred.
+
+---
+
 ## Context
 
 The current file Markdown preview already has several good safeguards: frontmatter extraction, source block segmentation, deterministic render budgets, heavy block reveal cache, Mermaid render cache, KaTeX lazy asset loading, table scroll cache, and annotation line mapping. The remaining architectural problem is that the visible Markdown body is still rendered by many `ReactMarkdown` instances and component overrides. For long documents, this makes React reconciliation part of the document rendering hot path.
