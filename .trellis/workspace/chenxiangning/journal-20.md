@@ -521,3 +521,48 @@
 ### Next Steps
 
 - None - task complete
+
+
+## Session 748: 适配 PDF 预览目录按钮测试
+
+**Date**: 2026-06-07
+**Task**: 适配 PDF 预览目录按钮测试
+**Branch**: `feature/v0.5.7`
+
+### Summary
+
+(Add summary)
+
+### Main Changes
+
+修复 FilePdfPreview 测试对目录按钮 accessible name 的旧断言。
+
+改动：
+- src/features/files/components/FilePdfPreview.test.tsx：将 PDF outline 按钮查询从精确名称改为标题前缀正则匹配。
+
+背景：
+- PreviewOutlineSidebar 的按钮文本现在包含标题和 heading level，例如“Appendix h1”。
+- PDF preview 复用该 sidebar，测试仍使用 role=button + name="Appendix" / "Section A" 精确匹配，导致 waitFor 超时。
+
+验证：
+- 已运行：npx vitest run src/features/files/components/FilePdfPreview.test.tsx
+- 结果：5 tests passed。
+
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `6f343a2d` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
