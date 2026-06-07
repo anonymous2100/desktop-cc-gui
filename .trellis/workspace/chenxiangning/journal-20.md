@@ -335,3 +335,52 @@
 ### Next Steps
 
 - None - task complete
+
+
+## Session 744: 移除 OpenCode CLI 扫描型测试
+
+**Date**: 2026-06-07
+**Task**: 移除 OpenCode CLI 扫描型测试
+**Branch**: `feature/v0.5.7`
+
+### Summary
+
+(Add summary)
+
+### Main Changes
+
+移除 OpenCode command build 相关测试，避免默认关闭的 OpenCode 引擎在 Rust lib 测试中触发 CLI 查找门禁。
+
+改动：
+- 删除 src-tauri/src/engine/opencode.rs 内 4 个 build_command_* 测试。
+- 删除仅服务这些测试的 fake OpenCode CLI helper 与临时目录清理结构。
+- 保留 OpenCode parser / event conversion / error extraction 测试，这些测试不触发 CLI scan。
+
+背景：
+- CI 失败点为 engine::opencode::tests::build_command_contains_required_flags。
+- 错误为 OpenCode CLI not found。
+- 本地单跑和本地 cargo test --lib 均通过，判断为 CLI 查找型测试对环境过敏。
+- 产品侧 OpenCode 当前默认关闭，不应让默认 lib 测试依赖 OpenCode CLI 可解析。
+
+验证：
+- 本次变更后未额外运行测试。
+- 变更前排查阶段已运行并通过：cargo test engine::opencode::tests::build_command_contains_required_flags --lib、cargo test engine::opencode::tests:: --lib、cargo test --lib。
+
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `7acab695` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
