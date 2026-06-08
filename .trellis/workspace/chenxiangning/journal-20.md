@@ -956,3 +956,45 @@ Codex app-server 对话链路切换为 codex-tui 兼容身份，补 terminal env
 ### Next Steps
 
 - None - task complete
+
+
+## Session 758: 修复 markdown 预览标注测试 act warning
+
+**Date**: 2026-06-08
+**Task**: 修复 markdown 预览标注测试 act warning
+**Branch**: `feature/v0.5.8`
+
+### Summary
+
+(Add summary)
+
+### Main Changes
+
+| 项目 | 内容 |
+|---|---|
+| 背景 | CI heavy-test-noise 在 FileViewPanel markdown preview annotation 用例中捕获 FileMarkdownPreviewFast 的 React act warning。 |
+| 根因 | 测试只等待 markdown preview 挂载，未等待 rich preview outline 的异步 compile state update settle，Windows CI timing 下偶发越过 act 边界。 |
+| 改动 | 在 annotation 操作前等待 `Show outline` 按钮出现，确保 outline async update 由 Testing Library async/act 处理。 |
+| 验证 | 目标用例通过；FileViewPanel 所在 4 文件 batch 通过；目标文件 ESLint 通过；`npm run typecheck` 通过。 |
+
+**Updated Files**:
+- `src/features/files/components/FileViewPanel.test.tsx`
+
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `c74d0f9f` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
