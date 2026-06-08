@@ -11,38 +11,11 @@ import type {
   CodeAnnotationSelection,
 } from "../../code-annotations/types";
 import type { GitLineMarkers } from "../utils/gitLineMarkers";
-import type { FastMarkdownFeatureFlags } from "../../markdown/fastMarkdownRenderer";
 import { readDocumentThemeAppearance } from "../../theme/utils/themeAppearance";
 import { parseShortcut } from "../../../utils/shortcuts";
 import { normalizeFsPath } from "../../../utils/workspacePaths";
 
 export const EDITOR_LINE_RANGE_SYNC_DELAY_MS = 90;
-
-function isEnabledFlag(value: unknown) {
-  return typeof value === "string" && /^(1|true|yes|on)$/i.test(value.trim());
-}
-
-function readBooleanStorageFlag(key: string) {
-  try {
-    if (typeof window === "undefined") {
-      return false;
-    }
-    return isEnabledFlag(window.localStorage.getItem(key));
-  } catch {
-    return false;
-  }
-}
-
-export function resolveFileMarkdownFastFeatureFlags(): FastMarkdownFeatureFlags {
-  return {
-    fastHtmlRendererEnabled:
-      isEnabledFlag(import.meta.env.VITE_MOSSX_FILE_MARKDOWN_FAST_HTML) ||
-      readBooleanStorageFlag("ccgui.fileMarkdownFastHtml") || readBooleanStorageFlag("mossx.fileMarkdownFastHtml"),
-    boundedFastHtmlRendererEnabled:
-      isEnabledFlag(import.meta.env.VITE_MOSSX_FILE_MARKDOWN_BOUNDED_FAST_HTML) ||
-      readBooleanStorageFlag("ccgui.fileMarkdownBoundedFastHtml") || readBooleanStorageFlag("mossx.fileMarkdownBoundedFastHtml"),
-  };
-}
 
 export function formatEditorLineRangeKey(
   range: { startLine: number; endLine: number } | null,

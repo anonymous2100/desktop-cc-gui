@@ -8,7 +8,10 @@ import {
   resolveKanbanThreadCreationStrategy,
 } from "../features/kanban/utils/contextMode";
 import { deriveKanbanTaskTitle } from "../features/kanban/utils/taskTitle";
-import { isDefaultWorkspacePath } from "../features/workspaces/utils/defaultWorkspace";
+import {
+  getDefaultWorkspaceCandidatePaths,
+  isDefaultWorkspacePath,
+} from "../features/workspaces/utils/defaultWorkspace";
 import type { MessageSendOptions, ThreadSummary, WorkspaceInfo } from "../types";
 import type { KanbanPanel } from "../features/kanban/types";
 import type { KanbanContextMode } from "../features/kanban/utils/contextMode";
@@ -202,11 +205,7 @@ export function useAppShellKanbanComposerSection(ctx: any) {
               if (!resolvedHome) {
                 throw new Error("Unable to resolve default workspace path.");
               }
-              const preferredPaths = [
-                `${resolvedHome}/.ccgui/workspace`,
-                `${resolvedHome}/.mossx/workspace`,
-                `${resolvedHome}/.codemoss/workspace`,
-              ];
+              const preferredPaths = getDefaultWorkspaceCandidatePaths(resolvedHome);
 
               let createdWorkspacePath: string | null = null;
               let lastError: unknown = null;

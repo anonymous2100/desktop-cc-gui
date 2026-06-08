@@ -109,12 +109,12 @@ import {
   resolveAbsolutePath,
   resolveDeclarationCodeSelectionAnchor,
   resolveEditorTheme,
-  resolveFileMarkdownFastFeatureFlags,
   setGitLineMarkersEffect,
   toCodeMirrorShortcut,
   type AnnotationWidgetCallbacks,
   type EditorTheme,
 } from "./fileViewPanelInternals";
+import { resolveFileMarkdownFastFeatureFlags } from "../utils/fileMarkdownFeatureFlags";
 
 export { resolveEditorAnnotationWidgetOrder } from "./fileViewPanelInternals";
 
