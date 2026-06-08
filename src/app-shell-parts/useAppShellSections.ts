@@ -9,17 +9,6 @@ import {
 import { revealItemInDir } from "@tauri-apps/plugin-opener";
 import { getWorkspaceFiles } from "../services/tauri";
 import { pushErrorToast } from "../services/toasts";
-import {
-  patchTaskRun,
-  saveTaskRunStore,
-} from "../features/tasks/utils/taskRunStorage";
-import {
-  beginOrchestrationTaskDispatch,
-  buildOrchestrationDispatchPrompt,
-  patchOrchestrationTask,
-  saveOrchestrationTaskStore,
-  upsertOrchestrationTask,
-} from "../features/agent-orchestration";
 import { useSoloMode } from "../features/layout/hooks/useSoloMode";
 import { useLiveEditPreview } from "../features/live-edit-preview/hooks/useLiveEditPreview";
 import { useArchiveShortcut } from "../features/app/hooks/useArchiveShortcut";
@@ -556,6 +545,7 @@ export function useAppShellSections(ctx: any) {
     handleForkTaskRun,
     handleCloseTaskConversation,
     handleKanbanCreateTask,
+    handleDispatchOrchestrationTask,
     taskProcessingMap,
     handleDragToInProgress,
   } = useAppShellKanbanExecutionSection(ctx);
