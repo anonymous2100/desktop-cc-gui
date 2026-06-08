@@ -7,6 +7,11 @@
   contain-intrinsic-block-size: auto 120px;
 }
 
+.message.assistant.is-live-streaming {
+  content-visibility: visible;
+  contain-intrinsic-block-size: auto;
+}
+
 .app.windows-desktop .messages-shell.claude-render-safe .message,
 .app.macos-desktop .messages-shell.claude-render-safe .message {
   content-visibility: visible;

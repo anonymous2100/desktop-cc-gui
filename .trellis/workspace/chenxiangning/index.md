@@ -8,8 +8,8 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-20.md`
-- **Total Sessions**: 751
-- **Last Active**: 2026-06-07
+- **Total Sessions**: 765
+- **Last Active**: 2026-06-08
 <!-- @@@/auto:current-status -->
 
 ---
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-20.md` | ~696 | Active |
+| `journal-20.md` | ~1287 | Active |
 | `journal-19.md` | ~1989 | Archived |
 | `journal-18.md` | ~1966 | Archived |
 | `journal-17.md` | ~1971 | Archived |
@@ -48,6 +48,20 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 765 | 2026-06-08 | 拆分消息渲染大文件 | `9e249e7f` | `feature/v0.5.8` |
+| 764 | 2026-06-08 | 收敛旧品牌兼容入口 | `b79ce303` | `feature/v0.5.8` |
+| 763 | 2026-06-08 | 拆分客户端大文件第二组 | `47e36c4f` | `feature/v0.5.8` |
+| 762 | 2026-06-08 | 修复大文件拆分后启动崩溃 | `58ca7358` | `feature/v0.5.8` |
+| 761 | 2026-06-08 | 拆分客户端大文件第一组 | `7473688b` | `feature/v0.5.8` |
+| 760 | 2026-06-08 | 稳定实时对话幕布渲染 | `241f5839` | `feature/v0.5.8` |
+| 759 | 2026-06-08 | 收口 ProjectMap 大文件拆分 | `f64deaf2` | `feature/v0.5.8` |
+| 758 | 2026-06-08 | 修复 markdown 预览标注测试 act warning | `c74d0f9f` | `feature/v0.5.8` |
+| 757 | 2026-06-08 | 拆分 Project Map 关系视图工作区 | `a85570b7` | `feature/v0.5.8` |
+| 756 | 2026-06-08 | Project Map API 合约大文件拆分 | `391a336d` | `feature/v0.5.8` |
+| 755 | 2026-06-08 | 收口 Project Map Read Path 提案与门禁修复 | `5a657356`, `4b916613` | `feature/v0.5.8` |
+| 754 | 2026-06-08 | 收口 Project Map 阅读路径与关系精度 | `346fcbf7` | `feature/v0.5.8` |
+| 753 | 2026-06-08 | 打磨 Project Map 文件关系与接口契约视图 | `6acd7dd9` | `feature/v0.5.8` |
+| 752 | 2026-06-07 | 稳定异步测试等待契约 | `f2518b86` | `feature/v0.5.8` |
 | 751 | 2026-06-07 | 收口接口契约边界与大文件门禁 | `6e9c6afb` | `feature/v0.5.7` |
 | 750 | 2026-06-07 | 记录 Codex codex-tui UA 兼容 | `ba8786a7` | `feature/v0.5.7` |
 | 749 | 2026-06-07 | 补齐 FileViewPanel 预览读取 mock | `dc6a56f1` | `feature/v0.5.7` |

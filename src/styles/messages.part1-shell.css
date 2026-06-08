@@ -27,6 +27,15 @@
   min-height: 100%;
 }
 
+.messages-virtualized-row {
+  contain: layout paint style;
+}
+
+.messages-virtualized-row.is-active-live-row {
+  contain: layout paint;
+  isolation: isolate;
+}
+
 .messages-inline-approval-slot {
   position: sticky;
   bottom: 10px;

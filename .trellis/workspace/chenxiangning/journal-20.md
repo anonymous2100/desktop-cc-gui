@@ -694,3 +694,594 @@ Codex app-server 对话链路切换为 codex-tui 兼容身份，补 terminal env
 ### Next Steps
 
 - None - task complete
+
+
+## Session 752: 稳定异步测试等待契约
+
+**Date**: 2026-06-07
+**Task**: 稳定异步测试等待契约
+**Branch**: `feature/v0.5.8`
+
+### Summary
+
+(Add summary)
+
+### Main Changes
+
+修复 CI flaky 测试等待契约：
+- McpSection 测试不再等待静态 Session overview，而是等待 OpenCode MCP 切换后的最终数据状态。
+- GitHistoryWorktreePanel 测试在选择 commit message engine 后，显式等待 setTimeout(0) 驱动的英文二级菜单出现。
+
+验证：
+- npx vitest run src/features/settings/components/McpSection.test.tsx src/features/git-history/components/GitHistoryWorktreePanel.test.tsx
+- 结果：2 个 test file passed，23 个 tests passed。
+
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `f2518b86` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
+
+
+## Session 753: 打磨 Project Map 文件关系与接口契约视图
+
+**Date**: 2026-06-08
+**Task**: 打磨 Project Map 文件关系与接口契约视图
+**Branch**: `feature/v0.5.8`
+
+### Summary
+
+完成 Project Map Files/API/Graph MVP polish：低信号文件过滤文案、API 三栏与 Inspector 细化、Java 方法链路解析与分层展示、Graph 左右栏拖拽和节点文件名展示，并回写 OpenSpec。
+
+### Main Changes
+
+本次会话围绕 Project Map file relationship、API contract、Graph inspector 的 MVP 打磨收口。
+
+主要变更：
+- Files 视图：将 noise 文案调整为 low-signal，避免 governance/docs 根路径被无条件当作噪音隐藏。
+- API 视图：压缩 toolbar，把 scan/export 放入 advanced filters；调整三栏默认比例；增加 Inspector detail focus / restore；优化 Responses 展示结构；Method chain 改为 endpoint-scoped layered tree，并支持 source/target file-line anchor。
+- Backend scanner：Java/Spring method chain 从 handler body 做静态 receiver call 解析，避免固定范围扫描把 sibling method 调用误归到 endpoint。
+- Graph 视图：Files / Canvas / Inspector 三栏支持左右 pane resize；修正后加载 CSS 覆盖导致拖拽不生效的问题；节点 basename 改为主信息展示，避免不必要省略。
+- OpenSpec：更新 polish-project-map-files-api-mvp 的 proposal/design/tasks/specs，新增 project-map-relationship-graph-view delta spec。
+
+验证：
+- openspec validate polish-project-map-files-api-mvp --strict 通过。
+- 会话中此前跑过 focused Rust unit test 与 TypeScript noEmit，均通过；本次提交前未重复跑全量 typecheck/test。
+
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `6acd7dd9` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
+
+
+## Session 754: 收口 Project Map 阅读路径与关系精度
+
+**Date**: 2026-06-08
+**Task**: 收口 Project Map 阅读路径与关系精度
+**Branch**: `feature/v0.5.8`
+
+### Summary
+
+优化 Project Map Read Path 定位、收紧 Java calls 关系解析，并清理文件关系底部噪音展示。
+
+### Main Changes
+
+| Area | Summary |
+|------|---------|
+| Project Map Read Path | 重做阅读路径 tab，将原始关系列表改成面向理解顺序的分层 route，包括入口关系、当前文件、依赖阅读、验证材料与 checklist。 |
+| Java calls precision | 后端 Java 关系解析从全局 symbol 猜测收紧为 receiver/import/field/method-backed 解析，减少 DTO getter、Parameter、局部变量等误连。 |
+| Relationship UI noise | 删除文件关系与其他 tab 底部全局 Repair / Read issues 噪音条，避免干扰主要图谱阅读。 |
+| OpenSpec | 回写 polish-project-map-files-api-mvp 的 proposal/design/tasks，并新增 read-path-view delta spec 与 storage 行为约束。 |
+
+**Code commit**: `346fcbf7 feat(project-map): 优化阅读路径与Java关系精度`
+
+**Validation**: 未运行测试、typecheck 或 OpenSpec validate；本轮按用户要求做收口提交与记录。
+
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `346fcbf7` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
+
+
+## Session 755: 收口 Project Map Read Path 提案与门禁修复
+
+**Date**: 2026-06-08
+**Task**: 收口 Project Map Read Path 提案与门禁修复
+**Branch**: `feature/v0.5.8`
+
+### Summary
+
+回写 Project Map Read Path 提案，移除无效定位关系入口，并修复完整前端门禁 lint 问题。
+
+### Main Changes
+
+- 回写 polish-project-map-files-api-mvp OpenSpec proposal/design/spec/tasks，使 Read Path 定位到文件解剖图与方法链路闭环。
+- 移除 Read Path 关系卡片里的“定位关系”动作入口，减少无效点击噪音。
+- 修复完整 CI 暴露的 lint 问题：清理未使用 scope warning 类型/变量，修正 Java 方法声明正则中的无效转义。
+- 验证通过：npm run lint && npm run typecheck && npm run test。
+
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `5a657356` | (see git log) |
+| `4b916613` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
+
+
+## Session 756: Project Map API 合约大文件拆分
+
+**Date**: 2026-06-08
+**Task**: Project Map API 合约大文件拆分
+**Branch**: `feature/v0.5.8`
+
+### Summary
+
+(Add summary)
+
+### Main Changes
+
+| 项目 | 内容 |
+|---|---|
+| 背景 | large-file-governance hard gate 指出 `src-tauri/src/project_map_api_contracts.rs` 接近/触发 3000 行 fail 阈值。 |
+| 处理 | 拆出 API contract DTO 到 `project_map_api_contracts_types.rs`，拆出 hash/path/endpoint identity helper 到 `project_map_api_contracts_identity.rs`。 |
+| 验证 | `cargo check --manifest-path src-tauri/Cargo.toml` 通过；`npm run check:large-files:near-threshold` 通过且仅 watch warning；`npm run check:large-files:gate` 通过，found=0。 |
+| 影响 | 主文件从贴近 3000 行红线降至约 2793 行，保留约 200 行安全余量；未改变 API contract 构建行为。 |
+
+**Updated Files**:
+- `src-tauri/src/project_map_api_contracts.rs`
+- `src-tauri/src/project_map_api_contracts_types.rs`
+- `src-tauri/src/project_map_api_contracts_identity.rs`
+
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `391a336d` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
+
+
+## Session 757: 拆分 Project Map 关系视图工作区
+
+**Date**: 2026-06-08
+**Task**: 拆分 Project Map 关系视图工作区
+**Branch**: `feature/v0.5.8`
+
+### Summary
+
+(Add summary)
+
+### Main Changes
+
+| 项目 | 说明 |
+|------|------|
+| P0 拆分 | 完成 Project Map relationship/API/read/graph 工作区拆分，降低巨型组件混合职责。 |
+| API workspace | 拆出 toolbar、group rail、endpoint stage、inspector 及 overview/parameter/response/evidence/method-chain sections。 |
+| Read/File/Graph | 拆出 read workspace、file workspace、graph workspace、graph rail，并提取 read model 与 projection hooks。 |
+| 门禁验证 | 已通过 typecheck、lint、目标 vitest、large-file check 与 diff whitespace check。 |
+
+**Code Commit**: `a85570b7 refactor(project-map): 拆分关系视图工作区组件`
+
+**Key Files**:
+- `src/features/project-map/components/ProjectMapRelationshipSection.tsx`
+- `src/features/project-map/components/ProjectMapRelationshipWorkspaces.tsx`
+- `src/features/project-map/components/ProjectMapRelationshipApiWorkspace.tsx`
+- `src/features/project-map/components/ProjectMapRelationshipGraphWorkspace.tsx`
+- `src/features/project-map/components/ProjectMapRelationshipReadWorkspace.tsx`
+- `src/features/project-map/components/projectMapRelationshipReadModel.ts`
+- `src/features/project-map/hooks/useProjectMapRelationshipApiProjection.ts`
+- `src/features/project-map/hooks/useProjectMapRelationshipFileProjection.ts`
+- `src/features/project-map/hooks/useProjectMapRelationshipGraphProjection.ts`
+
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `a85570b7` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
+
+
+## Session 758: 修复 markdown 预览标注测试 act warning
+
+**Date**: 2026-06-08
+**Task**: 修复 markdown 预览标注测试 act warning
+**Branch**: `feature/v0.5.8`
+
+### Summary
+
+(Add summary)
+
+### Main Changes
+
+| 项目 | 内容 |
+|---|---|
+| 背景 | CI heavy-test-noise 在 FileViewPanel markdown preview annotation 用例中捕获 FileMarkdownPreviewFast 的 React act warning。 |
+| 根因 | 测试只等待 markdown preview 挂载，未等待 rich preview outline 的异步 compile state update settle，Windows CI timing 下偶发越过 act 边界。 |
+| 改动 | 在 annotation 操作前等待 `Show outline` 按钮出现，确保 outline async update 由 Testing Library async/act 处理。 |
+| 验证 | 目标用例通过；FileViewPanel 所在 4 文件 batch 通过；目标文件 ESLint 通过；`npm run typecheck` 通过。 |
+
+**Updated Files**:
+- `src/features/files/components/FileViewPanel.test.tsx`
+
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `c74d0f9f` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
+
+
+## Session 759: 收口 ProjectMap 大文件拆分
+
+**Date**: 2026-06-08
+**Task**: 收口 ProjectMap 大文件拆分
+**Branch**: `feature/v0.5.8`
+
+### Summary
+
+将 ProjectMap 主面板、面板 surface、dataset 测试 fixture 与主 CSS 拆分到 feature-local 组件、hook、test support 与 CSS 分片；ProjectMap 相关原大于 2000 行文件均降到 2000 行以下，并完成批量验证。
+
+### Main Changes
+
+完成内容:
+- 拆分 ProjectMapPanelSurfaces 为导航、关系、证据文件、详情、设置与生成弹窗组件，保留 barrel 兼容既有 import。
+- 从 ProjectMapPanel 抽出 ProjectMapGraphCanvas、ProjectMapStorageSwitch、projectMapPanelModel、useProjectMapGraphInteractionHandlers、useProjectMapIntentCanvasHandlers。
+- 抽出 useProjectMapDataset.testSupport，降低 dataset hook 测试文件体积。
+- 将 project-map.css 中 graph canvas 与 evidence files 样式拆为 project-map.graph-canvas.css / project-map.evidence-files.css，并更新 CSS layout 测试读取分片。
+- ProjectMapPanel.tsx、useProjectMapDataset.test.tsx、project-map.css 均已降至 2000 行以下。
+
+验证:
+- npm run typecheck
+- npm run lint
+- npm run test
+- npm run check:large-files
+- git diff --check
+
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `f64deaf2` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
+
+
+## Session 760: 稳定实时对话幕布渲染
+
+**Date**: 2026-06-08
+**Task**: 稳定实时对话幕布渲染
+**Branch**: `feature/v0.5.8`
+
+### Summary
+
+为 realtime conversation message canvas 增加 OpenSpec 提案和实现：识别 live tail row，检测 virtualizer empty visible set / active live row missing，触发有界 measure 恢复并记录 privacy-safe diagnostics；同时为 streaming assistant row 增加局部渲染稳定 CSS，并补充 focused regression tests。验证通过：OpenSpec strict validate、focused Vitest 36 tests、targeted ESLint、typecheck、large-file check。
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `241f5839` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
+
+
+## Session 761: 拆分客户端大文件第一组
+
+**Date**: 2026-06-08
+**Task**: 拆分客户端大文件第一组
+**Branch**: `feature/v0.5.8`
+
+### Summary
+
+(Add summary)
+
+### Main Changes
+
+| Area | Summary |
+|------|---------|
+| App shell | Extracted composer model/reasoning/collaboration/access-mode state into `useAppShellComposerModelSection`; extracted plan/home/kanban/git-history view-state handling into `useAppShellViewStateSection`. |
+| Kanban shell sections | Extracted composer-linked Kanban send flow into `useAppShellKanbanComposerSection`; extracted Kanban execution/scheduler lifecycle into `useAppShellKanbanExecutionSection`. |
+| Layout hooks | Extracted layout node shared types into `layoutNodesTypes`; extracted topbar session tab state machine into `useLayoutTopbarSessionTabs`. |
+| Governance | Kept original public hook surfaces intact while bringing large-file policy check to `found=0`. |
+
+**Validation**:
+- `npm run typecheck -- --pretty false`
+- `npm run lint`
+- `npm run check:large-files`
+- `npx openspec validate harden-live-message-canvas-rendering --strict --no-interactive`
+- `npm run test` (completed 621 test files)
+
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `7473688b` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
+
+
+## Session 762: 修复大文件拆分后启动崩溃
+
+**Date**: 2026-06-08
+**Task**: 修复大文件拆分后启动崩溃
+**Branch**: `feature/v0.5.8`
+
+### Summary
+
+(Add summary)
+
+### Main Changes
+
+| Area | Summary |
+|------|---------|
+| App shell split regression | Restored `handleDispatchOrchestrationTask` wiring after extracting Kanban execution logic. |
+| Kanban execution section | Moved orchestration dispatch dependencies into `useAppShellKanbanExecutionSection` and returned the handler to `useAppShellSections`. |
+| Regression coverage | Added a static adapter contract assertion so the extracted execution section must destructure and return the dispatch handler. |
+
+**Root Cause**:
+`useAppShellSections.ts` still returned `handleDispatchOrchestrationTask`, but the extracted `useAppShellKanbanExecutionSection` did not return it. Because the adapter file is still under legacy `ts-nocheck`, TypeScript did not catch the missing binding and the app failed at runtime during initial render.
+
+**Validation**:
+- `npm run typecheck -- --pretty false`
+- `npm run lint`
+- `npm run check:large-files`
+- `npx vitest run --maxWorkers 1 --minWorkers 1 src/app-shell-parts/useAppShellSections.kanban-text.test.ts src/app-shell-parts/useAppShellLayoutNodesSection.test.ts src/features/layout/hooks/useLayoutNodes.client-ui-visibility.test.tsx`
+
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `58ca7358` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
+
+
+## Session 763: 拆分客户端大文件第二组
+
+**Date**: 2026-06-08
+**Task**: 拆分客户端大文件第二组
+**Branch**: `feature/v0.5.8`
+
+### Summary
+
+拆分 files 面板与 Sidebar 大文件：抽离 FileView/FileTree helpers、文件树行渲染、Sidebar 菜单/弹层/工具逻辑；验证 typecheck、lint、large-file sentry 与 targeted tests 全部通过。
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `47e36c4f` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
+
+
+## Session 764: 收敛旧品牌兼容入口
+
+**Date**: 2026-06-08
+**Task**: 收敛旧品牌兼容入口
+**Branch**: `feature/v0.5.8`
+
+### Summary
+
+(Add summary)
+
+### Main Changes
+
+修复 v0.5.8 Windows doctor branding gate 失败。
+
+主要变更：
+- 将 HomeChat 默认 workspace 候选路径生成收敛到 src/features/workspaces/utils/defaultWorkspace.ts，避免 app shell hook 直接散落 legacy brand path 字面量。
+- 新增 getDefaultWorkspaceCandidatePaths(homePath)，并补充 defaultWorkspace targeted tests。
+- 将 FileViewPanel markdown fast renderer 的 legacy localStorage key 读取迁移到 src/features/files/utils/fileMarkdownFeatureFlags.ts，使组件 internals 回归 editor/CodeMirror 辅助职责。
+- 同步 scripts/check-branding.mjs 的精确允许规则到实际兼容 utility 文件。
+
+验证：
+- npm run check:branding
+- npm exec vitest run src/features/workspaces/utils/defaultWorkspace.test.ts
+- npm exec vitest run src/features/files/components/FileViewPanel.test.tsx
+- npm run typecheck
+- npm run doctor:win
+
+结果：doctor:win 通过，Doctor: OK。
+
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `b79ce303` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
+
+
+## Session 765: 拆分消息渲染大文件
+
+**Date**: 2026-06-08
+**Task**: 拆分消息渲染大文件
+**Branch**: `feature/v0.5.8`
+
+### Summary
+
+拆分 Messages/MessagesRows 消息渲染大文件，抽出 view model、类型、常量、锚点栏、inline prompts 与上下文摘要卡片，并迁移 reasoning render 测试；已通过 lint、typecheck、大文件检查和消息区 targeted Vitest。
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `9e249e7f` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
