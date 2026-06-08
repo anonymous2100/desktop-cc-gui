@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-20.md`
-- **Total Sessions**: 763
+- **Total Sessions**: 764
 - **Last Active**: 2026-06-08
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-20.md` | ~1205 | Active |
+| `journal-20.md` | ~1254 | Active |
 | `journal-19.md` | ~1989 | Archived |
 | `journal-18.md` | ~1966 | Archived |
 | `journal-17.md` | ~1971 | Archived |
@@ -48,6 +48,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 764 | 2026-06-08 | 收敛旧品牌兼容入口 | `b79ce303` | `feature/v0.5.8` |
 | 763 | 2026-06-08 | 拆分客户端大文件第二组 | `47e36c4f` | `feature/v0.5.8` |
 | 762 | 2026-06-08 | 修复大文件拆分后启动崩溃 | `58ca7358` | `feature/v0.5.8` |
 | 761 | 2026-06-08 | 拆分客户端大文件第一组 | `7473688b` | `feature/v0.5.8` |

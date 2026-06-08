@@ -1203,3 +1203,52 @@ Codex app-server 对话链路切换为 codex-tui 兼容身份，补 terminal env
 ### Next Steps
 
 - None - task complete
+
+
+## Session 764: 收敛旧品牌兼容入口
+
+**Date**: 2026-06-08
+**Task**: 收敛旧品牌兼容入口
+**Branch**: `feature/v0.5.8`
+
+### Summary
+
+(Add summary)
+
+### Main Changes
+
+修复 v0.5.8 Windows doctor branding gate 失败。
+
+主要变更：
+- 将 HomeChat 默认 workspace 候选路径生成收敛到 src/features/workspaces/utils/defaultWorkspace.ts，避免 app shell hook 直接散落 legacy brand path 字面量。
+- 新增 getDefaultWorkspaceCandidatePaths(homePath)，并补充 defaultWorkspace targeted tests。
+- 将 FileViewPanel markdown fast renderer 的 legacy localStorage key 读取迁移到 src/features/files/utils/fileMarkdownFeatureFlags.ts，使组件 internals 回归 editor/CodeMirror 辅助职责。
+- 同步 scripts/check-branding.mjs 的精确允许规则到实际兼容 utility 文件。
+
+验证：
+- npm run check:branding
+- npm exec vitest run src/features/workspaces/utils/defaultWorkspace.test.ts
+- npm exec vitest run src/features/files/components/FileViewPanel.test.tsx
+- npm run typecheck
+- npm run doctor:win
+
+结果：doctor:win 通过，Doctor: OK。
+
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `b79ce303` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
