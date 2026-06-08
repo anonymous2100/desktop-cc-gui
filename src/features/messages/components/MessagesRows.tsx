@@ -1897,8 +1897,15 @@ export const MessageRow = memo(function MessageRow({
     </div>
   ) : null;
 
+  const messageClassName = [
+    "message",
+    item.role,
+    agentTaskNotification ? "message-agent-task" : "",
+    item.role === "assistant" && isStreaming ? "is-live-streaming" : "",
+  ].filter(Boolean).join(" ");
+
   return (
-    <div className={`message ${item.role}${agentTaskNotification ? " message-agent-task" : ""}`}>
+    <div className={messageClassName}>
       {hasExternalAgentBadge ? (
         <div className="message-user-layout">
           {agentBadgeNode}
