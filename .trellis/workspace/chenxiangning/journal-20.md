@@ -1331,3 +1331,45 @@ Codex app-server 对话链路切换为 codex-tui 兼容身份，补 terminal env
 ### Next Steps
 
 - None - task complete
+
+
+## Session 767: 修复用户输入提交与取消收口
+
+**Date**: 2026-06-09
+**Task**: 修复用户输入提交与取消收口
+**Branch**: `feature/v0.5.8`
+
+### Summary
+
+(Add summary)
+
+### Main Changes
+
+| Area | Summary |
+|------|---------|
+| Thread user input | Distinguished submit vs dismiss settlement for AskUserQuestion/requestUserInput handling. |
+| Regression coverage | Updated stale timeout test to use dismiss path and added retryable empty-submit/malformed-empty-submit cases. |
+| Verification | Passed `npm run lint`, `npm run typecheck`, full `npm run test`, targeted `npx vitest run src/features/threads/hooks/useThreadUserInput.test.tsx`, and `git diff --check`. |
+
+**Updated Files**:
+- `src/features/threads/hooks/useThreadUserInput.ts`
+- `src/features/threads/hooks/useThreadUserInput.test.tsx`
+
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `9b074c8f` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete

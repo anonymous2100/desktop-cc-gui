@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-20.md`
-- **Total Sessions**: 766
+- **Total Sessions**: 767
 - **Last Active**: 2026-06-09
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-20.md` | ~1333 | Active |
+| `journal-20.md` | ~1375 | Active |
 | `journal-19.md` | ~1989 | Archived |
 | `journal-18.md` | ~1966 | Archived |
 | `journal-17.md` | ~1971 | Archived |
@@ -48,6 +48,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 767 | 2026-06-09 | 修复用户输入提交与取消收口 | `9b074c8f` | `feature/v0.5.8` |
 | 766 | 2026-06-09 | 提交 Codex provider 作用域会话启动变更 | `d1b8c648`, `1b572f99`, `6e1c97b6`, `319293be` | `feature/v0.5.8` |
 | 765 | 2026-06-08 | 拆分消息渲染大文件 | `9e249e7f` | `feature/v0.5.8` |
 | 764 | 2026-06-08 | 收敛旧品牌兼容入口 | `b79ce303` | `feature/v0.5.8` |
