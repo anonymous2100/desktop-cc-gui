@@ -1373,3 +1373,51 @@ Codex app-server 对话链路切换为 codex-tui 兼容身份，补 terminal env
 ### Next Steps
 
 - None - task complete
+
+
+## Session 768: Composer provider 标签显示
+
+**Date**: 2026-06-09
+**Task**: Composer provider 标签显示
+**Branch**: `feature/v0.5.8`
+
+### Summary
+
+(Add summary)
+
+### Main Changes
+
+本次完成 composer 底部右侧 Codex provider/source 标签显示。
+
+主要改动：
+- 复用 sidebar 的 Codex provider label 解析逻辑，在 layout 层从 active thread 解析当前 provider label。
+- 将 providerProfileLabel 贯穿 Composer、ChatInputBoxAdapter、ChatInputBox、ChatInputBoxFooter 到 ButtonArea。
+- 在 ButtonArea 右侧 send/stop 按钮前渲染 compact provider tag，并增加局部 toolbar CSS。
+- 增加 ButtonArea 单测，锁定 provider tag 出现在 send control 前。
+
+验证：
+- npx vitest run src/features/composer/components/ChatInputBox/ButtonArea.test.tsx
+- npm run typecheck
+- npm run check:large-files
+- npm run lint
+
+注意：提交时刻工作区仍有非本次任务的 Rust 文件未提交，已排除在本次 code commit 外。
+
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `1d2797bc` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
