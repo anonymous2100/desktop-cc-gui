@@ -1506,3 +1506,55 @@ Codex app-server 对话链路切换为 codex-tui 兼容身份，补 terminal env
 ### Next Steps
 
 - None - task complete
+
+
+## Session 771: 会话列表供应商标签显示开关
+
+**Date**: 2026-06-09
+**Task**: 会话列表供应商标签显示开关
+**Branch**: `feature/v0.5.8`
+
+### Summary
+
+(Add summary)
+
+### Main Changes
+
+| Area | Summary |
+|------|---------|
+| Settings | Added `showSidebarProviderLabels` app setting with TS/Rust defaults normalized to false. |
+| UI | Moved the provider-label visibility switch into Settings -> Vendor Management -> Codex, instead of Basic Appearance. |
+| Sidebar | ThreadList, PinnedThreadList, Sidebar, WorktreeSection, folder-tree thread list props now hide Codex provider labels by default and show them only when the setting is enabled. |
+| Tests | Added/updated focused coverage for default-hidden labels, explicit opt-in rendering, settings normalization, Rust defaults, and VendorSettingsPanel switch persistence. |
+
+**Validation**:
+- `npx vitest run src/features/vendors/components/VendorSettingsPanel.test.tsx src/features/settings/components/SettingsView.test.tsx src/features/app/components/ThreadList.test.tsx src/features/app/components/PinnedThreadList.test.tsx src/features/app/components/Sidebar.test.tsx`
+- `npm run typecheck`
+- `npm run lint`
+- `cargo test --manifest-path src-tauri/Cargo.toml app_settings_defaults --quiet`
+- `cargo fmt --manifest-path src-tauri/Cargo.toml --check`
+- `openspec validate add-codex-provider-scoped-session-launch --strict --no-interactive`
+
+**Notes**:
+- Default behavior remains hidden to reduce sidebar noise.
+- The setting controls display only; it does not change Codex provider binding or launch semantics.
+- Untracked `openspec/changes/harden-codex-provider-session-catalog-recovery/` was detected and intentionally left out of this commit/session record.
+
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `3b4a975a` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete

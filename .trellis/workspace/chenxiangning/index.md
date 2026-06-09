@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-20.md`
-- **Total Sessions**: 770
+- **Total Sessions**: 771
 - **Last Active**: 2026-06-09
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-20.md` | ~1508 | Active |
+| `journal-20.md` | ~1560 | Active |
 | `journal-19.md` | ~1989 | Archived |
 | `journal-18.md` | ~1966 | Archived |
 | `journal-17.md` | ~1971 | Archived |
@@ -48,6 +48,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 771 | 2026-06-09 | 会话列表供应商标签显示开关 | `3b4a975a` | `feature/v0.5.8` |
 | 770 | 2026-06-09 | 同步 Codex 供应商契约文档 | `e6dc2157` | `feature/v0.5.8` |
 | 769 | 2026-06-09 | 修复 Codex 磁盘会话 stale thread 重试 | `24b92415` | `feature/v0.5.8` |
 | 768 | 2026-06-09 | Composer provider 标签显示 | `1d2797bc` | `feature/v0.5.8` |
