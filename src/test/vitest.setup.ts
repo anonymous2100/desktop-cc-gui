@@ -189,6 +189,15 @@ vi.mock("react-i18next", () => ({
         "messages.finalMessageBoundary": "Final Message",
         "messages.agentBadgeAriaLabel": "Agent badge",
         "messages.agentBadgeWithNameAriaLabel": `Show agent badge: ${String(params?.name ?? "")}`,
+        "git.semanticDiff.intent.springExceptionHandler":
+          `Adds handler ${String(params?.method ?? "")} for ${String(params?.exception ?? "")}.`,
+        "git.semanticDiff.behavior.springExceptionStatus":
+          `${String(params?.exception ?? "")} maps to HTTP ${String(params?.status ?? "")} through ${String(params?.method ?? "")}.`,
+        "git.semanticDiff.behavior.apiResponseError":
+          `${String(params?.method ?? "")} returns ApiResponse.error(${String(params?.code ?? "")}, ...).`,
+        "git.semanticDiff.risk.exceptionContract":
+          `${String(params?.exception ?? "")} response mapping is now part of the API error contract.`,
+        "git.semanticDiff.evidence.pathLine": `Evidence: ${String(params?.evidence ?? "")}`,
         "messages.generatedImageTitle": "Generated image",
         "messages.generatedImageProcessing": "Making",
         "messages.generatedImageCompleted": "Completed",

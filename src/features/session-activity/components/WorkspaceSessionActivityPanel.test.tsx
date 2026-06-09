@@ -189,6 +189,14 @@ function createViewModel(): WorkspaceSessionActivityViewModel {
   };
 }
 
+function getPrimaryFileChangeEvent(viewModel: WorkspaceSessionActivityViewModel) {
+  const event = viewModel.timeline.find((candidate) => candidate.kind === "fileChange");
+  if (!event) {
+    throw new Error("Expected test view model to include a file-change event");
+  }
+  return event;
+}
+
 describe("WorkspaceSessionActivityPanel", () => {
   afterEachTest(() => {
     cleanup();
@@ -197,7 +205,7 @@ describe("WorkspaceSessionActivityPanel", () => {
     mockEditableDiffReviewSurface.mockReset();
   });
 
-  it("routes file cards to the correct jump target", () => {
+  it("routes turn artifact file rows to the correct jump target", () => {
     const onOpenDiffPath = vi.fn();
 
     render(
@@ -209,7 +217,7 @@ describe("WorkspaceSessionActivityPanel", () => {
       />,
     );
 
-    fireEvent.click(screen.getByRole("button", { name: /File change · src\/App\.tsx/i }));
+    fireEvent.click(screen.getByRole("button", { name: /App\.tsx\+3-1/i }));
 
     expect(onOpenDiffPath).toHaveBeenCalledWith(
       "src/App.tsx",
@@ -244,6 +252,108 @@ describe("WorkspaceSessionActivityPanel", () => {
       { highlightMarkers: { added: [1, 2], modified: [] } },
     );
     expect(onEnsureEditorFileMaximized).toHaveBeenCalledTimes(1);
+  });
+
+  it("shows semantic diff facts inside the turn artifact tabs", () => {
+    const viewModel = createViewModel();
+    const primaryFileChangeEvent = getPrimaryFileChangeEvent(viewModel);
+    viewModel.timeline[0] = {
+      ...primaryFileChangeEvent,
+      summary: "File change · GlobalExceptionHandler.java",
+      turnSemantic:
+        "请处理 <OperationLog> 不存在时的 404 响应，并避免泄漏内部异常。",
+      fileChanges: [
+        {
+          filePath: "src/main/java/com/example/demo/exception/GlobalExceptionHandler.java",
+          fileName: "GlobalExceptionHandler.java",
+          statusLetter: "M",
+          additions: 10,
+          deletions: 0,
+          diff: [
+            "@@ -76,0 +77,10 @@",
+            "+    /**",
+            "+     * 处理操作日志不存在异常",
+            "+     */",
+            "+    @ExceptionHandler(OperationLogNotFoundException.class)",
+            "+    public ResponseEntity<ApiResponse<Void>> handleOperationLogNotFoundException(OperationLogNotFoundException e) {",
+            "+        return ResponseEntity",
+            "+                .status(HttpStatus.NOT_FOUND)",
+            "+                .body(ApiResponse.<Void>error(404, e.getMessage()));",
+            "+    }",
+          ].join("\n"),
+        },
+      ],
+    };
+
+    render(
+      <WorkspaceSessionActivityPanel
+        workspaceId="workspace-1"
+        viewModel={viewModel}
+        onOpenDiffPath={vi.fn()}
+        onSelectThread={vi.fn()}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("tab", { name: "activityPanel.artifacts.tabs.semantic" }));
+
+    expect(screen.getByText("activityPanel.artifacts.turnSemanticTitle")).toBeTruthy();
+    expect(
+      screen.getByText(
+        "请处理 <OperationLog> 不存在时的 404 响应，并避免泄漏内部异常。",
+      ),
+    ).toBeTruthy();
+    expect(document.body.innerHTML).not.toContain("<OperationLog> 不存在时");
+    expect(
+      screen.getByText(
+        "Adds handler handleOperationLogNotFoundException for OperationLogNotFoundException.",
+      ),
+    ).toBeTruthy();
+    expect(
+      screen.getByText(
+        "OperationLogNotFoundException maps to HTTP 404 NOT_FOUND through handleOperationLogNotFoundException.",
+      ),
+    ).toBeTruthy();
+    expect(
+      screen.getByText(
+        "handleOperationLogNotFoundException returns ApiResponse.error(404, ...).",
+      ),
+    ).toBeTruthy();
+  });
+
+  it("counts artifacts by deduped files instead of raw file-change events", () => {
+    const viewModel = createViewModel();
+    const primaryFileChangeEvent = getPrimaryFileChangeEvent(viewModel);
+    viewModel.timeline = [
+      primaryFileChangeEvent,
+      {
+        ...primaryFileChangeEvent,
+        eventId: "file:file-duplicate",
+        occurredAt: 31,
+        fileChanges: [
+          {
+            filePath: "src/App.tsx",
+            fileName: "App.tsx",
+            statusLetter: "M",
+            additions: 5,
+            deletions: 0,
+            diff: "@@ -2 +2 @@\n-old\n+newer",
+          },
+        ],
+      },
+    ];
+
+    const view = render(
+      <WorkspaceSessionActivityPanel
+        workspaceId="workspace-1"
+        viewModel={viewModel}
+        onOpenDiffPath={vi.fn()}
+        onSelectThread={vi.fn()}
+      />,
+    );
+
+    const artifactsTab = screen.getByRole("tab", { name: /activityPanel\.tabs\.file/i });
+    expect(artifactsTab.querySelector(".session-activity-tab-count")?.textContent).toBe("2");
+    expect(view.container.querySelectorAll(".session-activity-file-row")).toHaveLength(2);
   });
 
   it("opens diff preview modal from the dedicated file action button", () => {
@@ -713,6 +823,15 @@ describe("WorkspaceSessionActivityPanel", () => {
       event.kind === "fileChange"
         ? {
             ...event,
+            fileChanges: event.fileChanges?.map((fileChange) =>
+              fileChange.filePath === "src/App.tsx"
+                ? {
+                    ...fileChange,
+                    line: undefined,
+                    markers: { added: [], modified: [] },
+                  }
+                : fileChange,
+            ),
             jumpTarget:
               event.jumpTarget?.type === "file"
                 ? {
@@ -734,7 +853,7 @@ describe("WorkspaceSessionActivityPanel", () => {
       />,
     );
 
-    fireEvent.click(screen.getByRole("button", { name: /File change · src\/App\.tsx/i }));
+    fireEvent.click(screen.getByRole("button", { name: /App\.tsx\+3-1/i }));
 
     expect(onOpenDiffPath).toHaveBeenCalledWith("src/App.tsx", undefined, undefined);
   });
@@ -1830,7 +1949,7 @@ describe("WorkspaceSessionActivityPanel", () => {
     );
 
     const timeLabels = view.container.querySelectorAll(".session-activity-card-time");
-    expect(timeLabels).toHaveLength(5);
+    expect(timeLabels).toHaveLength(4);
     for (const label of timeLabels) {
       expect(label.textContent).toMatch(/\d{2}:\d{2}:\d{2}/);
     }
@@ -1846,10 +1965,10 @@ describe("WorkspaceSessionActivityPanel", () => {
       />,
     );
 
-    expect(view.container.querySelectorAll(".session-activity-event")).toHaveLength(5);
+    expect(view.container.querySelectorAll(".session-activity-event")).toHaveLength(4);
     fireEvent.click(screen.getByRole("tab", { name: /activityPanel\.tabs\.file/i }));
-    expect(view.container.querySelectorAll(".session-activity-event")).toHaveLength(1);
-    expect(view.container.querySelector(".session-activity-event-fileChange")).toBeTruthy();
+    expect(view.container.querySelectorAll(".session-activity-event")).toHaveLength(0);
+    expect(view.container.querySelector(".session-activity-turn-artifacts")).toBeTruthy();
     expect(view.container.querySelector(".session-activity-event-command")).toBeNull();
     fireEvent.click(screen.getByRole("tab", { name: /activityPanel\.tabs\.explore/i }));
     expect(view.container.querySelectorAll(".session-activity-event")).toHaveLength(1);
