@@ -742,3 +742,52 @@
 ### Next Steps
 
 - None - task complete
+
+
+## Session 800: 归档阻塞 OpenSpec 提案
+
+**Date**: 2026-06-10
+**Task**: 归档阻塞 OpenSpec 提案
+**Branch**: `feature/v0.5.9`
+
+### Summary
+
+(Add summary)
+
+### Main Changes
+
+本次按用户要求清理并归档 OpenSpec 阻塞提案：
+
+- 将 add-custom-theme-palette-presets 归档到 openspec/changes/archive/2026-06-10-add-custom-theme-palette-presets，并同步 settings-custom-theme-presets main spec。
+- 将 harden-codex-tui-compatible-user-agent 归档到 openspec/changes/archive/2026-06-10-harden-codex-tui-compatible-user-agent，并创建 codex-tui-compatible-user-agent main spec。
+- 删除 harden-codex-tui-compatible-user-agent tasks 中未完成的 Deferred / Not Done 项后归档。
+- 将 harden-realtime-composer-status-panel-performance 删除未完成 validation/follow-up task 后以 --skip-specs 归档到 openspec/changes/archive/2026-06-10-harden-realtime-composer-status-panel-performance。
+- 删除空的 add-intent-change-review-workflow change 目录。
+
+验证：
+
+- openspec validate --all --strict --no-interactive 通过，330 passed, 0 failed。
+
+注意：
+
+- 本次提交未包含既有未提交改动 AGENTS.md。
+- 本次提交未包含仍处于 active planning 的 enforce-bundle-budget-gate、parallelize-bootstrap-locale-loading、refresh-v059-performance-baseline、split-startup-css-loading。
+
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `2a09c927` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
