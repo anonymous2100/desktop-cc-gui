@@ -227,7 +227,7 @@
 }
 
 .message.user .bubble {
-  max-width: 85%;
+  max-width: var(--message-user-bubble-max-width, 85%);
   margin-left: auto;
   background: var(--color-message-user-bg, var(--surface-bubble-user));
   color: var(--color-message-user-text, #ffffff);
@@ -1468,7 +1468,24 @@
 }
 
 .message-context-stack.is-user {
+  width: var(--message-user-bubble-max-width, 85%);
+  max-width: none;
+  margin-left: auto;
   justify-items: end;
+}
+
+.message-context-stack.is-user > .bubble {
+  max-width: 100%;
+}
+
+.message-context-stack.is-user > .memory-context-summary-card,
+.message-context-stack.is-user > .browser-context-summary-card,
+.message-context-stack.is-user > .intent-canvas-context-summary-card,
+.message-context-stack.is-user > .note-card-context-summary-card,
+.message-context-stack.is-user > .message-code-annotation-context {
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
 }
 
 .message-code-annotation-context {
