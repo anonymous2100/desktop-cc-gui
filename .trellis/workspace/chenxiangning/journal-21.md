@@ -311,3 +311,36 @@
 ### Next Steps
 
 - None - task complete
+
+
+## Session 790: 添加 v0.5.8 changelog
+
+**Date**: 2026-06-10
+**Task**: 添加 v0.5.8 changelog
+**Branch**: `feature/v0.5.8`
+
+### Summary
+
+基于 v0.5.7..HEAD 的 git log 汇总新增 CHANGELOG.md v0.5.8 中英文 release note，并单独提交 changelog 文件。
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `1bd88ff5` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete

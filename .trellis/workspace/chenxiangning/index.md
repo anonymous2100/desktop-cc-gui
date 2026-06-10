@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-21.md`
-- **Total Sessions**: 789
+- **Total Sessions**: 790
 - **Last Active**: 2026-06-10
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-21.md` | ~313 | Active |
+| `journal-21.md` | ~346 | Active |
 | `journal-20.md` | ~1997 | Archived |
 | `journal-19.md` | ~1989 | Archived |
 | `journal-18.md` | ~1966 | Archived |
@@ -49,6 +49,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 790 | 2026-06-10 | 添加 v0.5.8 changelog | `1bd88ff5` | `feature/v0.5.8` |
 | 789 | 2026-06-10 | 拆分 AppShell 运行态编排边界 | `6837f5a5`, `09126ce7` | `feature/v0.5.8` |
 | 788 | 2026-06-10 | 修复追加上下文用户气泡列宽 | `11eb5b27` | `feature/v0.5.8` |
 | 787 | 2026-06-10 | 稳定 Project Map 批量候选确认测试 | `cf159107` | `feature/v0.5.8` |
