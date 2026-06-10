@@ -657,3 +657,41 @@
 ### Next Steps
 
 - None - task complete
+
+
+## Session 798: 补充消息 Fork 文件保护回归测试
+
+**Date**: 2026-06-10
+**Task**: 补充消息 Fork 文件保护回归测试
+**Branch**: `feature/v0.5.8`
+
+### Summary
+
+(Add summary)
+
+### Main Changes
+
+| Area | Summary |
+|------|---------|
+| Test | Strengthened `useThreadActions.codex-rewind.test.tsx` so `messages-only` message fork asserts no workspace file read, delete, or write occurs. |
+| Spec record | Updated `fix-message-fork-workspace-mutation` verification record to include the runtime regression test command. |
+| Verification | Ran related Vitest files, OpenSpec strict validate, typecheck, lint, large-file check, and `git diff --check`; all passed. |
+
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `5e155324` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
