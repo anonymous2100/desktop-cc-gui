@@ -190,3 +190,49 @@
 ### Next Steps
 
 - None - task complete
+
+
+## Session 787: 稳定 Project Map 批量候选确认测试
+
+**Date**: 2026-06-10
+**Task**: 稳定 Project Map 批量候选确认测试
+**Branch**: `feature/v0.5.8`
+
+### Summary
+
+修复 ProjectMapPanel 批量确认候选测试在慢速 CI 环境中因全局 DOM waitFor 轮询导致的超时风险。
+
+### Main Changes
+
+| Area | Description |
+|------|-------------|
+| Project Map test | 将批量确认候选用例改为 `act` flush async click 后直接断言 mock 调用和结果消息。 |
+| CI stability | 移除对大 DOM 的重复 `waitFor + screen.getByText` 轮询，降低 Windows batch timeout 风险。 |
+
+**Updated Files**:
+- `src/features/project-map/components/ProjectMapPanel.test.tsx`
+
+**Validation**:
+- `npm run typecheck`
+- `npx vitest run src/features/project-map/components/ProjectMapPanel.test.tsx -t "accepts all current candidates from the toolbar" --reporter verbose`
+- `npx vitest run src/features/project-map/components/ProjectMapPanel.test.tsx --reporter verbose`
+- `npx eslint src/features/project-map/components/ProjectMapPanel.test.tsx`
+
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `cf159107` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
