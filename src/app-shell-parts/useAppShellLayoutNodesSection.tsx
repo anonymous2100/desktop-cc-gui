@@ -1207,6 +1207,7 @@ export function useAppShellLayoutNodesSection(ctx: any) {
         messageId,
         {
           activate: true,
+          mode: "messages-only",
           providerProfileId: options?.providerProfileId ?? null,
           providerProfile: options?.providerProfile ?? null,
         },

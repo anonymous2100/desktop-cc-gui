@@ -138,6 +138,7 @@ describe("useAppShellLayoutNodesSection adapter contract", () => {
 
     expect(forkHandler).toContain("forkSessionFromMessageForWorkspace");
     expect(forkHandler).toContain("messageId");
+    expect(forkHandler).toContain('mode: "messages-only"');
     expect(forkHandler).toContain("providerProfileId: options?.providerProfileId ?? null");
     expect(forkHandler).toContain("providerProfile: options?.providerProfile ?? null");
     expect(forkHandler).toContain('throw new Error("Fork did not return a child conversation.")');
