@@ -89,3 +89,53 @@
 ### Next Steps
 
 - None - task complete
+
+
+## Session 785: 提示词增强支持手动配置模型
+
+**Date**: 2026-06-10
+**Task**: 提示词增强支持手动配置模型
+**Branch**: `feature/v0.5.8`
+
+### Summary
+
+增强提示词窗体改为用户主动运行，并支持按次选择供应商、模型和超时时间。
+
+### Main Changes
+
+| Area | Details |
+|------|---------|
+| OpenSpec | Added `add-prompt-enhancer-manual-provider-timeout` proposal/design/tasks/spec for Composer prompt enhancer manual-run behavior. |
+| Composer UI | Prompt enhancer dialog now shows provider, model, timeout, and an explicit start action before runtime execution. |
+| Hook behavior | `usePromptEnhancer` now separates dialog opening from enhancement execution, applies selected engine/model/timeout, and preserves stale-request invalidation. |
+| Tests | Focused hook suite passed: `pnpm vitest run src/features/composer/components/ChatInputBox/hooks/usePromptEnhancer.test.tsx` → 1 file / 7 tests passed. |
+
+**Updated Files**:
+- `openspec/changes/add-prompt-enhancer-manual-provider-timeout/**`
+- `src/features/composer/components/ChatInputBox/hooks/usePromptEnhancer.ts`
+- `src/features/composer/components/ChatInputBox/PromptEnhancerDialog.tsx`
+- `src/features/composer/components/ChatInputBox/ChatInputBoxFooter.tsx`
+- `src/features/composer/components/ChatInputBox/ChatInputBox.tsx`
+- `src/features/composer/components/ChatInputBox/styles/enhance-prompt.css`
+- `src/features/composer/components/ChatInputBox/hooks/usePromptEnhancer.test.tsx`
+- `src/i18n/locales/zh.part6.ts`
+- `src/i18n/locales/en.part6.ts`
+
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `5bb5b56f` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
