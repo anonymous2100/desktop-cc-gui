@@ -355,6 +355,8 @@ const enPart6 = {
     rename: "Rename",
     autoName: "Auto name",
     autoNaming: "Auto naming...",
+    runtimeProcessing: "Running",
+    runtimeReviewing: "Reviewing",
     archive: "Archive",
     delete: "Delete",
     deleteThreadTitle: "Delete conversation",

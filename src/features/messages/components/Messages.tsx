@@ -68,6 +68,11 @@ import { parseAgentTaskNotification } from "../utils/agentTaskNotification";
 import { dedupeExitPlanItemsKeepFirst } from "./messagesExitPlan";
 import { buildSuppressedUserMemoryContextMessageIdSet } from "./messagesMemoryContext";
 import { buildSuppressedUserNoteCardContextMessageIdSet } from "./messagesNoteCardContext";
+import { dispatchOpenTaskRunEvent } from "../../agent-orchestration/utils/navigationEvents";
+import {
+  compareTaskRunSurfacePriority,
+  describeTaskRunSurface,
+} from "../../tasks/utils/taskRunSurface";
 import {
   countRenderableCollapsedEntries,
   findLastAssistantMessageIndex,
@@ -122,6 +127,8 @@ import type {
   MessagesProps,
 } from "./messagesTypes";
 
+const EMPTY_TASK_RUNS: NonNullable<MessagesProps["taskRuns"]> = [];
+
 export const Messages = memo(function Messages({
   items: legacyItems,
   threadId: legacyThreadId,
@@ -166,6 +173,7 @@ export const Messages = memo(function Messages({
   onThreadRecoveryFork,
   onForkFromMessage,
   onRewindFromMessage,
+  taskRuns = EMPTY_TASK_RUNS,
 }: MessagesProps) {
   const { t } = useTranslation();
   const isWindowsDesktop = useMemo(() => isWindowsPlatform(), []);
@@ -1841,6 +1849,20 @@ export const Messages = memo(function Messages({
     shouldRenderUserInputNode &&
     Boolean(legacyOnUserInputSubmit) &&
     activeUserInputRequestId !== null;
+  const linkedConversationRun = useMemo(() => {
+    if (!threadId) {
+      return null;
+    }
+    return taskRuns
+      .filter((run) =>
+        run.linkedThreadId === threadId &&
+        (!workspaceId || run.task.workspaceId === workspaceId),
+      )
+      .sort(compareTaskRunSurfacePriority)[0] ?? null;
+  }, [taskRuns, threadId, workspaceId]);
+  const linkedConversationRunSurface = linkedConversationRun
+    ? describeTaskRunSurface(linkedConversationRun)
+    : null;
 
   const scrollToAnchor = useCallback((messageId: string) => {
     const node = messageNodeByIdRef.current.get(messageId);
@@ -1912,6 +1934,28 @@ export const Messages = memo(function Messages({
         ref={containerRef}
         onScroll={updateAutoScroll}
       >
+        {linkedConversationRun && linkedConversationRunSurface ? (
+          <div className={`messages-linked-run messages-linked-run--${linkedConversationRunSurface.severity}`}>
+            <div>
+              <span className="messages-linked-run-eyebrow">
+                {t("messages.linkedRunEyebrow", "Linked run")}
+              </span>
+              <strong>{linkedConversationRun.task.title || linkedConversationRun.task.taskId}</strong>
+              <span>
+                {t(`taskCenter.status.${linkedConversationRun.status}`, linkedConversationRun.status)}
+                {" · "}
+                {linkedConversationRunSurface.summary ||
+                  t("taskCenter.unavailable", "Unavailable")}
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={() => dispatchOpenTaskRunEvent(linkedConversationRun.runId)}
+            >
+              {t("messages.openLinkedRun", "Open run detail")}
+            </button>
+          </div>
+        ) : null}
         <MessagesTimeline
           activeCollaborationModeId={activeCollaborationModeId}
           activeEngine={activeEngine}

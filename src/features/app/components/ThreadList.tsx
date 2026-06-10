@@ -73,6 +73,7 @@ type ThreadRowItemProps = {
   onShowThreadMenu: ShowThreadMenuHandler;
   onToggleThreadPin?: (workspaceId: string, threadId: string) => void;
   relativeTime: string | null;
+  runtimeBadge: { label: string; severity: "processing" | "reviewing" } | null;
   selectTargetThreadId: string;
   showProxyBadge: boolean;
   statusClass: string;
@@ -146,6 +147,7 @@ const ThreadRowItem = memo(function ThreadRowItem({
   onShowThreadMenu,
   onToggleThreadPin,
   relativeTime,
+  runtimeBadge,
   selectTargetThreadId,
   showProxyBadge,
   statusClass,
@@ -290,6 +292,11 @@ const ThreadRowItem = memo(function ThreadRowItem({
                   title={providerLabel}
                 >
                   {providerLabel}
+                </span>
+              ) : null}
+              {runtimeBadge ? (
+                <span className={`thread-runtime-badge thread-runtime-badge--${runtimeBadge.severity}`}>
+                  {runtimeBadge.label}
                 </span>
               ) : null}
               {relativeTime ? <span className="thread-time">{relativeTime}</span> : null}
@@ -497,6 +504,11 @@ export function ThreadList({
         : status?.hasUnread
           ? "unread"
           : "ready";
+    const runtimeBadge = status?.isReviewing
+      ? { label: t("threads.runtimeReviewing"), severity: "reviewing" as const }
+      : status?.isProcessing
+        ? { label: t("threads.runtimeProcessing"), severity: "processing" as const }
+        : null;
     const isProcessing = Boolean(status?.isProcessing);
     const canPin = depth === 0;
     const isPinned = canPin && isThreadPinned(workspaceId, thread.id);
@@ -571,6 +583,7 @@ export function ThreadList({
         onShowThreadMenu={onShowThreadMenu}
         onToggleThreadPin={onToggleThreadPin}
         relativeTime={relativeTime}
+        runtimeBadge={runtimeBadge}
         selectTargetThreadId={selectTargetThreadId}
         showProxyBadge={showProxyBadge}
         statusClass={statusClass}

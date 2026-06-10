@@ -102,6 +102,11 @@ export function PinnedThreadList({
             : status?.hasUnread
               ? "unread"
               : "ready";
+        const runtimeBadge = status?.isReviewing
+          ? { label: t("threads.runtimeReviewing"), severity: "reviewing" as const }
+          : status?.isProcessing
+            ? { label: t("threads.runtimeProcessing"), severity: "processing" as const }
+            : null;
         const isProcessing = Boolean(status?.isProcessing);
         const canPin = depth === 0;
         const isPinned = canPin && isThreadPinned(workspaceId, thread.id);
@@ -226,6 +231,11 @@ export function PinnedThreadList({
                         title={providerLabel}
                       >
                         {providerLabel}
+                      </span>
+                    ) : null}
+                    {runtimeBadge ? (
+                      <span className={`thread-runtime-badge thread-runtime-badge--${runtimeBadge.severity}`}>
+                        {runtimeBadge.label}
                       </span>
                     ) : null}
                     {relativeTime ? <span className="thread-time">{relativeTime}</span> : null}

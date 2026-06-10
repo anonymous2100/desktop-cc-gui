@@ -2135,6 +2135,28 @@
   white-space: nowrap;
 }
 
+.thread-runtime-badge {
+  max-width: 68px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  border-radius: 999px;
+  padding: 1px 6px;
+  font-size: var(--sidebar-caption-font-size);
+  line-height: 1.25;
+  font-weight: 650;
+}
+
+.thread-runtime-badge--processing {
+  color: #ffb86b;
+  background: rgba(255, 159, 67, 0.14);
+}
+
+.thread-runtime-badge--reviewing {
+  color: #7db7ff;
+  background: rgba(84, 160, 255, 0.14);
+}
+
 .thread-provider-label {
   max-width: 116px;
   overflow: hidden;

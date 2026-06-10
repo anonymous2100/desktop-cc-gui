@@ -137,6 +137,28 @@ import type {
   RightPanelTabSelection,
 } from "./layoutNodesTypes";
 const EMPTY_COMMANDS: CustomCommandOption[] = [];
+let lastOrchestrationProjectionSignature: string | null = null;
+
+function buildOrchestrationProjectionSignature(
+  orchestrationTaskStore: ReturnType<typeof useOrchestrationTaskStore>,
+  taskRuns: ReturnType<typeof useTaskRunStore>["runs"],
+): string {
+  return JSON.stringify({
+    tasks: orchestrationTaskStore.tasks.map((task) => ({
+      taskId: task.taskId,
+      status: task.status,
+      reviewState: task.reviewState,
+      linkedRunIds: task.linkedRunIds,
+    })),
+    runs: taskRuns.map((run) => ({
+      runId: run.runId,
+      taskId: run.task.taskId,
+      orchestrationTaskId: run.task.orchestrationTaskId,
+      status: run.status,
+      updatedAt: run.updatedAt,
+    })),
+  });
+}
 
 function toConversationEngine(engine: EngineType | undefined): ConversationEngine {
   if (engine === "claude" || engine === "gemini" || engine === "opencode") {
@@ -680,6 +702,8 @@ export function useLayoutNodes(options: LayoutNodesOptions): LayoutNodesResult {
     );
   }, []);
 
+  const taskRunStore = useTaskRunStore();
+
   const messagesNode = useMemo(() => (
     <>
       <Messages
@@ -731,6 +755,7 @@ export function useLayoutNodes(options: LayoutNodesOptions): LayoutNodesResult {
         lastDurationMs={activeThreadStatus?.lastDurationMs ?? null}
         heartbeatPulse={heartbeatPulseRef.current ?? 0}
         codexSilentSuspectedAt={activeThreadStatus?.codexSilentSuspectedAt ?? null}
+        taskRuns={taskRunStore.runs}
       />
       <MessageForkConfirmDialog
         userMessageId={forkConfirmUserMessageId}
@@ -794,6 +819,7 @@ export function useLayoutNodes(options: LayoutNodesOptions): LayoutNodesResult {
     activeThreadStatus?.processingStartedAt,
     activeThreadStatus?.lastDurationMs,
     activeThreadStatus?.codexSilentSuspectedAt,
+    taskRunStore.runs,
     // heartbeatPulse removed from deps — uses ref to avoid
     // recreating messagesNode on every heartbeat tick
   ]
@@ -1577,7 +1603,6 @@ export function useLayoutNodes(options: LayoutNodesOptions): LayoutNodesResult {
     [options.gitStatus.files],
   );
   const orchestrationTaskStore = useOrchestrationTaskStore();
-  const taskRunStore = useTaskRunStore();
   const [isOrchestrationCenterOpen, setIsOrchestrationCenterOpen] = useState(false);
   const [selectedOrchestrationTaskId, setSelectedOrchestrationTaskId] = useState<string | null>(null);
   const [projectMapSourceFocusNodeId, setProjectMapSourceFocusNodeId] = useState<string | null>(null);
@@ -1659,6 +1684,15 @@ export function useLayoutNodes(options: LayoutNodesOptions): LayoutNodesResult {
     if (orchestrationTaskStore.tasks.length === 0 || taskRunStore.runs.length === 0) {
       return;
     }
+
+    const projectionSignature = buildOrchestrationProjectionSignature(
+      orchestrationTaskStore,
+      taskRunStore.runs,
+    );
+    if (lastOrchestrationProjectionSignature === projectionSignature) {
+      return;
+    }
+    lastOrchestrationProjectionSignature = projectionSignature;
 
     const projectedStore = projectLinkedTaskRunsToOrchestrationStore({
       orchestrationStore: orchestrationTaskStore,

@@ -172,6 +172,8 @@ const zhPart6 = {
     rename: "重命名",
     autoName: "自动命名",
     autoNaming: "自动命名中...",
+    runtimeProcessing: "运行中",
+    runtimeReviewing: "复核中",
     archive: "归档",
     delete: "删除",
     deleteThreadTitle: "删除会话",
