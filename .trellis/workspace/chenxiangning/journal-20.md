@@ -1962,3 +1962,36 @@ Codex app-server 对话链路切换为 codex-tui 兼容身份，补 terminal env
 ### Next Steps
 
 - None - task complete
+
+
+## Session 782: 扩展客户端字号覆盖范围
+
+**Date**: 2026-06-10
+**Task**: 扩展客户端字号覆盖范围
+**Branch**: `feature/v0.5.8`
+
+### Summary
+
+将客户端字号设置扩展到主窗口和 detached/client windows 的可读文本区域，覆盖文件树、Git worktree、diff metadata、sidebar、message canvas、tool block、session activity 与 mobile tabbar；保留图标、命中区、行高和布局密度不随内容字号隐式缩放。
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `fc2a2a1f` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete

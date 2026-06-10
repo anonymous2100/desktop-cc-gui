@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-20.md`
-- **Total Sessions**: 781
+- **Total Sessions**: 782
 - **Last Active**: 2026-06-10
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-20.md` | ~1964 | Active |
+| `journal-20.md` | ~1997 | Active |
 | `journal-19.md` | ~1989 | Archived |
 | `journal-18.md` | ~1966 | Archived |
 | `journal-17.md` | ~1971 | Archived |
@@ -48,6 +48,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 782 | 2026-06-10 | 扩展客户端字号覆盖范围 | `fc2a2a1f` | `feature/v0.5.8` |
 | 781 | 2026-06-10 | 扩展自定义主题配色 | `f79e269e` | `feature/v0.5.8` |
 | 780 | 2026-06-10 | 深化 Session Activity 语义 Diff 证据审查 | `9daa596c` | `feature/v0.5.8` |
 | 779 | 2026-06-10 | Session Activity 轮次产物语义 diff 第一版 | `1c5e6a6e`, `0192308a` | `feature/v0.5.8` |
