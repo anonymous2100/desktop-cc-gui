@@ -42,3 +42,50 @@
 ### Next Steps
 
 - None - task complete
+
+
+## Session 784: 归档已验证 OpenSpec 提案批次
+
+**Date**: 2026-06-10
+**Task**: 归档已验证 OpenSpec 提案批次
+**Branch**: `feature/v0.5.8`
+
+### Summary
+
+批量归档 7 个已验证 OpenSpec change，同步主 capability specs，并刷新 OpenSpec workspace 快照。
+
+### Main Changes
+
+- Archived and synced 7 verified OpenSpec changes:
+  - `extend-client-font-size-coverage`
+  - `add-semantic-diff-review`
+  - `deepen-semantic-diff-review`
+  - `harden-live-message-canvas-rendering`
+  - `polish-project-map-files-api-mvp`
+  - `refine-project-map-api-contract-detail-view`
+  - `harden-file-markdown-preview-rendering`
+- Updated main specs including `client-global-ui-scaling`, `file-tree-visual-consistency`, `git-panel-diff-view`, `conversation-live-message-canvas-rendering`, Project Map relationship/API specs, and Markdown preview specs.
+- Updated `openspec/project.md` to reflect tracked active=5, archive=451, specs=320, and documented the remaining all-validate blocker.
+- Validation:
+  - `openspec validate --specs --strict --no-interactive` passed for 320 specs.
+  - `openspec validate --all --strict --no-interactive` remains blocked by pre-existing active change `harden-realtime-composer-status-panel-performance` missing spec deltas.
+- Left untracked and intentionally excluded: `.trellis/tasks/06-10-client-module-integration-plan/`, `openspec/changes/unify-client-workflow-runtime-model/`.
+
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `8615451e` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete

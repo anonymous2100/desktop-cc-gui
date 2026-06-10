@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-21.md`
-- **Total Sessions**: 783
+- **Total Sessions**: 784
 - **Last Active**: 2026-06-10
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-21.md` | ~44 | Active |
+| `journal-21.md` | ~91 | Active |
 | `journal-20.md` | ~1997 | Archived |
 | `journal-19.md` | ~1989 | Archived |
 | `journal-18.md` | ~1966 | Archived |
@@ -49,6 +49,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 784 | 2026-06-10 | 归档已验证 OpenSpec 提案批次 | `8615451e` | `feature/v0.5.8` |
 | 783 | 2026-06-10 | 补充 Codex 供应商面板背景验收 | `9b8b17d9` | `feature/v0.5.8` |
 | 782 | 2026-06-10 | 扩展客户端字号覆盖范围 | `fc2a2a1f` | `feature/v0.5.8` |
 | 781 | 2026-06-10 | 扩展自定义主题配色 | `f79e269e` | `feature/v0.5.8` |
