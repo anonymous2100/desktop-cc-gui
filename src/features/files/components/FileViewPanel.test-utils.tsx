@@ -1,6 +1,8 @@
 import { vi } from "vitest";
 
 export const mockCodeMirrorDispatch = vi.fn();
+export const mockCodeMirrorExtensionsSnapshots: unknown[] = [];
+export const mockCodeMirrorExtensionTokenSnapshots: string[][] = [];
 export const mockOpenNewDetachedFileExplorerWindow = vi.fn(async () => "created" as const);
 
 function createDoc(text: string) {
@@ -50,12 +52,14 @@ vi.mock("@uiw/react-codemirror", async () => {
       onCreateEditor?: (view: any, state: any) => void;
       onUpdate?: (update: any) => void;
       theme?: string;
+      extensions?: unknown;
     }
   >((props, ref) => {
     const viewRef = React.useRef<any>({
       state: {
         doc: createDoc(props.value ?? ""),
         selection: { main: { head: 0 } },
+        field: () => null,
       },
       dispatch: mockCodeMirrorDispatch.mockImplementation((transaction: any) => {
         const anchor = transaction?.selection?.anchor;
@@ -69,7 +73,13 @@ vi.mock("@uiw/react-codemirror", async () => {
 
     React.useEffect(() => {
       viewRef.current.state.doc = createDoc(props.value ?? "");
+      viewRef.current.state.field = () => null;
     }, [props.value]);
+
+    React.useEffect(() => {
+      mockCodeMirrorExtensionsSnapshots.push(props.extensions);
+      mockCodeMirrorExtensionTokenSnapshots.push(extractMockExtensionTokens(props.extensions));
+    }, [props.extensions]);
 
     React.useEffect(() => {
       props.onCreateEditor?.(viewRef.current, viewRef.current.state);
@@ -104,6 +114,30 @@ vi.mock("@uiw/react-codemirror", async () => {
     default: MockCodeMirror,
   };
 });
+
+function extractMockExtensionTokens(value: unknown): string[] {
+  const tokens: string[] = [];
+  const seen = new Set<unknown>();
+  const visit = (candidate: unknown) => {
+    if (candidate == null || seen.has(candidate)) {
+      return;
+    }
+    seen.add(candidate);
+    if (typeof candidate === "string") {
+      tokens.push(candidate);
+      return;
+    }
+    if (Array.isArray(candidate)) {
+      candidate.forEach(visit);
+      return;
+    }
+    if (typeof candidate === "object" && "extension" in candidate) {
+      visit((candidate as { extension?: unknown }).extension);
+    }
+  };
+  visit(value);
+  return tokens;
+}
 
 vi.mock("../../app/components/OpenAppMenu", () => ({
   OpenAppMenu: () => <div data-testid="open-app-menu" />,

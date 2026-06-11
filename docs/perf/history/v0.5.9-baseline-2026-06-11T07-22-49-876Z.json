@@ -1,6 +1,6 @@
 {
   "schemaVersion": "1.0",
-  "generatedAt": "2026-06-11T07:23:49.070Z",
+  "generatedAt": "2026-06-11T07:22:49.817Z",
   "version": "0.5.9",
   "git": {
     "branch": "feature/v0.5.9",
@@ -198,12 +198,12 @@
     {
       "scenario": "S-CS-COLD",
       "metric": "bundleSizeMain",
-      "value": 1121481,
+      "value": 1122891,
       "unit": "bytes",
-      "notes": "App-GOSdMQOY.js",
+      "notes": "App-Bnwfi4Wz.js",
       "evidenceClass": "measured",
       "budget": {
-        "observed": 1121481,
+        "observed": 1122891,
         "target": 950000,
         "hardFail": 1100000,
         "unit": "bytes-gzip",
@@ -215,12 +215,12 @@
     {
       "scenario": "S-CS-COLD",
       "metric": "bundleSizeVendor",
-      "value": 741552,
+      "value": 741567,
       "unit": "bytes",
-      "notes": "subset-shared.chunk-BukY6QKG.js",
+      "notes": "subset-shared.chunk-BRYm78sj.js",
       "evidenceClass": "measured",
       "budget": {
-        "observed": 741552,
+        "observed": 741567,
         "target": 680000,
         "hardFail": 760000,
         "unit": "bytes-gzip",
@@ -261,7 +261,7 @@
     },
     {
       "source": "cold-start",
-      "generatedAt": "2026-06-11T07:23:48.615Z"
+      "generatedAt": "2026-06-11T06:15:11.905Z"
     }
   ],
   "residualRisks": [],
@@ -496,8 +496,8 @@
         "metric": "bundleSizeMain",
         "unit": "bytes",
         "previousValue": 1284244,
-        "currentValue": 1121481,
-        "delta": -162763,
+        "currentValue": 1122891,
+        "delta": -161353,
         "evidenceClass": "measured",
         "status": "comparable",
         "reason": ""
@@ -507,8 +507,8 @@
         "metric": "bundleSizeVendor",
         "unit": "bytes",
         "previousValue": 672901,
-        "currentValue": 741552,
-        "delta": 68651,
+        "currentValue": 741567,
+        "delta": 68666,
         "evidenceClass": "measured",
         "status": "comparable",
         "reason": ""

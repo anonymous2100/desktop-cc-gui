@@ -1,6 +1,6 @@
 {
   "schemaVersion": "1.0",
-  "generatedAt": "2026-06-10T13:39:04.093Z",
+  "generatedAt": "2026-06-11T07:23:55.566Z",
   "sources": {
     "perfBaseline": "docs/perf/baseline.json",
     "browserScroll": "docs/perf/long-list-browser-scroll.json",
@@ -12,7 +12,7 @@
       "source": "docs/perf/baseline.json",
       "scenario": "S-LL-200",
       "metric": "commitDurationP50",
-      "value": 9.99,
+      "value": 10.15,
       "unit": "ms",
       "evidenceClass": "proxy",
       "budget": null,
@@ -23,7 +23,7 @@
       "source": "docs/perf/baseline.json",
       "scenario": "S-LL-200",
       "metric": "commitDurationP95",
-      "value": 9.99,
+      "value": 10.15,
       "unit": "ms",
       "evidenceClass": "proxy",
       "budget": null,
@@ -34,7 +34,7 @@
       "source": "docs/perf/baseline.json",
       "scenario": "S-LL-200",
       "metric": "firstPaintAfterMount",
-      "value": 35.78,
+      "value": 35.81,
       "unit": "ms",
       "evidenceClass": "proxy",
       "budget": null,
@@ -45,7 +45,7 @@
       "source": "docs/perf/baseline.json",
       "scenario": "S-LL-500",
       "metric": "commitDurationP50",
-      "value": 16.91,
+      "value": 13.84,
       "unit": "ms",
       "evidenceClass": "proxy",
       "budget": null,
@@ -56,7 +56,7 @@
       "source": "docs/perf/baseline.json",
       "scenario": "S-LL-500",
       "metric": "commitDurationP95",
-      "value": 16.91,
+      "value": 13.84,
       "unit": "ms",
       "evidenceClass": "proxy",
       "budget": null,
@@ -67,7 +67,7 @@
       "source": "docs/perf/baseline.json",
       "scenario": "S-LL-500",
       "metric": "firstPaintAfterMount",
-      "value": 35.87,
+      "value": 33.48,
       "unit": "ms",
       "evidenceClass": "proxy",
       "budget": null,
@@ -78,7 +78,7 @@
       "source": "docs/perf/baseline.json",
       "scenario": "S-LL-1000",
       "metric": "commitDurationP50",
-      "value": 33.22,
+      "value": 18.03,
       "unit": "ms",
       "evidenceClass": "proxy",
       "budget": null,
@@ -89,7 +89,7 @@
       "source": "docs/perf/baseline.json",
       "scenario": "S-LL-1000",
       "metric": "commitDurationP95",
-      "value": 33.22,
+      "value": 18.03,
       "unit": "ms",
       "evidenceClass": "proxy",
       "budget": null,
@@ -100,7 +100,7 @@
       "source": "docs/perf/baseline.json",
       "scenario": "S-LL-1000",
       "metric": "firstPaintAfterMount",
-      "value": 54.51,
+      "value": 36.91,
       "unit": "ms",
       "evidenceClass": "proxy",
       "budget": null,
@@ -130,11 +130,11 @@
       "source": "docs/perf/baseline.json",
       "scenario": "S-CI-50",
       "metric": "keystrokeToCommitP95",
-      "value": 0.15,
+      "value": 0.09,
       "unit": "ms",
       "evidenceClass": "proxy",
       "budget": {
-        "observed": 0.15,
+        "observed": 0.09,
         "target": 16,
         "hardFail": 32,
         "unit": "ms",
@@ -171,11 +171,11 @@
       "source": "docs/perf/baseline.json",
       "scenario": "S-CI-100-IME",
       "metric": "keystrokeToCommitP95",
-      "value": 0.04,
+      "value": 0.03,
       "unit": "ms",
       "evidenceClass": "proxy",
       "budget": {
-        "observed": 0.04,
+        "observed": 0.03,
         "target": 16,
         "hardFail": 32,
         "unit": "ms",
@@ -201,7 +201,7 @@
       "source": "docs/perf/baseline.json",
       "scenario": "S-CI-100-IME",
       "metric": "compositionToCommit",
-      "value": 0.11,
+      "value": 0.13,
       "unit": "ms",
       "evidenceClass": "proxy",
       "budget": null,
@@ -261,7 +261,7 @@
       "source": "docs/perf/baseline.json",
       "scenario": "S-RS-PE",
       "metric": "assemblerLatency",
-      "value": 4.16,
+      "value": 4.09,
       "unit": "ms",
       "evidenceClass": "proxy",
       "budget": null,
@@ -272,11 +272,11 @@
       "source": "docs/perf/baseline.json",
       "scenario": "S-CS-COLD",
       "metric": "bundleSizeMain",
-      "value": 1366201,
+      "value": 1121481,
       "unit": "bytes",
       "evidenceClass": "measured",
       "budget": {
-        "observed": 1366201,
+        "observed": 1121481,
         "target": 950000,
         "hardFail": 1100000,
         "unit": "bytes-gzip",
@@ -284,18 +284,18 @@
         "source": "docs/perf/baseline.json",
         "rollout": "advisory-until-bundle-optimization"
       },
-      "reason": "App-C808ExI3.js",
+      "reason": "App-GOSdMQOY.js",
       "nextAction": "Track for regression."
     },
     {
       "source": "docs/perf/baseline.json",
       "scenario": "S-CS-COLD",
       "metric": "bundleSizeVendor",
-      "value": 741566,
+      "value": 741552,
       "unit": "bytes",
       "evidenceClass": "measured",
       "budget": {
-        "observed": 741566,
+        "observed": 741552,
         "target": 680000,
         "hardFail": 760000,
         "unit": "bytes-gzip",
@@ -303,7 +303,7 @@
         "source": "docs/perf/baseline.json",
         "rollout": "advisory"
       },
-      "reason": "subset-shared.chunk-CvxDN6kq.js",
+      "reason": "subset-shared.chunk-BukY6QKG.js",
       "nextAction": "Track for regression."
     },
     {
@@ -343,7 +343,7 @@
   "realtimeSummary": {
     "firstTokenLatencyMs": 5000,
     "interTokenJitterP95Ms": 920,
-    "assemblerLatencyMs": 4.16,
+    "assemblerLatencyMs": 4.09,
     "evidenceClass": "proxy",
     "visibleLagRisk": "high",
     "terminalPressure": "not-directly-measured",
@@ -357,26 +357,23 @@
   },
   "archiveReadiness": {
     "source": "openspec list --json",
-    "completed": [],
+    "completed": [
+      {
+        "name": "lazy-file-preview-dependencies",
+        "tasks": "17/17",
+        "recommendation": "archive-candidate-after-qualifier-review",
+        "qualifier": "Review validation and platform qualifiers before archive."
+      }
+    ],
     "inProgress": [
       {
-        "name": "parallelize-bootstrap-locale-loading",
-        "tasks": "0/17",
+        "name": "search-index-and-bounded-hydration",
+        "tasks": "10/16",
         "recommendation": "not-archive-ready"
       },
       {
-        "name": "split-startup-css-loading",
-        "tasks": "0/17",
-        "recommendation": "not-archive-ready"
-      },
-      {
-        "name": "enforce-bundle-budget-gate",
-        "tasks": "0/9",
-        "recommendation": "not-archive-ready"
-      },
-      {
-        "name": "refresh-v059-performance-baseline",
-        "tasks": "0/12",
+        "name": "realtime-trace-correlation-gate",
+        "tasks": "0/15",
         "recommendation": "not-archive-ready"
       }
     ],

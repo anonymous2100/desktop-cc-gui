@@ -24,12 +24,7 @@ import Rows2 from "lucide-react/dist/esm/icons/rows-2";
 import Save from "lucide-react/dist/esm/icons/save";
 import Search from "lucide-react/dist/esm/icons/search";
 import X from "lucide-react/dist/esm/icons/x";
-import type {
-  ReactCodeMirrorProps,
-  ReactCodeMirrorRef,
-} from "@uiw/react-codemirror";
-import { keymap } from "@codemirror/view";
-import { search } from "@codemirror/search";
+import type { ReactCodeMirrorProps } from "@uiw/react-codemirror";
 import { convertFileSrc } from "@tauri-apps/api/core";
 import {
   getGitFileFullDiff,
@@ -81,6 +76,7 @@ import {
   resolveFileViewSurface,
 } from "../utils/fileViewSurface";
 import { FileViewBody } from "./FileViewBody";
+import type { FileCodeMirrorEditorHandle } from "./FileCodeMirrorEditor";
 import { FileViewNavigationPanel } from "./FileViewNavigationPanel";
 import { useFileDocumentState } from "../hooks/useFileDocumentState";
 import { useFileExternalSync } from "../hooks/useFileExternalSync";
@@ -105,23 +101,19 @@ import {
 import {
   EDITOR_LINE_RANGE_SYNC_DELAY_MS,
   EXTERNAL_CHANGE_POLL_INTERVAL_MS,
-  codeAnnotationWidgetsExtension,
   formatEditorLineRangeKey,
   formatFileSize,
-  gitLineMarkersExtension,
   hasGitLineMarkers,
   isSameEditorLineRange,
   resolveAbsolutePath,
   resolveDeclarationCodeSelectionAnchor,
   resolveEditorTheme,
-  setGitLineMarkersEffect,
-  toCodeMirrorShortcut,
   type AnnotationWidgetCallbacks,
   type EditorTheme,
-} from "./fileViewPanelInternals";
+} from "./fileViewPanelShared";
 import { resolveFileMarkdownFastFeatureFlags } from "../utils/fileMarkdownFeatureFlags";
 
-export { resolveEditorAnnotationWidgetOrder } from "./fileViewPanelInternals";
+export { resolveEditorAnnotationWidgetOrder } from "./fileViewPanelShared";
 
 type FileViewPanelProps = {
   workspaceId: string;
@@ -278,7 +270,7 @@ export function FileViewPanel({
   const lastPublishedEditorLineRangeKeyRef = useRef(
     formatEditorLineRangeKey(activeFileLineRange),
   );
-  const cmRef = useRef<ReactCodeMirrorRef>(null);
+  const cmRef = useRef<FileCodeMirrorEditorHandle | null>(null);
   const lastReportedLineRangeRef = useRef<string>("");
   const tabsContainerRef = useRef<HTMLDivElement | null>(null);
   const panelRootRef = useRef<HTMLDivElement | null>(null);
@@ -670,8 +662,7 @@ export function FileViewPanel({
     navigateToLocation,
     runDefinitionFromCursor,
     runReferencesFromCursor,
-    editorNavigationKeymapExt,
-    ctrlClickDefinitionExt,
+    resolveDefinitionAtOffset,
     openFindPanelInEditor,
     toggleFindPanelInEditor,
   } = useFileNavigation({
@@ -916,7 +907,8 @@ export function FileViewPanel({
   }, [mode, isLoading, truncated]);
 
   const languageExtensionRequestRef = useRef(0);
-  const [languageExtensions, setLanguageExtensions] = useState<ReactCodeMirrorProps["extensions"]>([]);
+  const [languageExtensions, setLanguageExtensions] =
+    useState<ReactCodeMirrorProps["extensions"]>([]);
 
   useEffect(() => {
     const requestId = languageExtensionRequestRef.current + 1;
@@ -938,51 +930,6 @@ export function FileViewPanel({
         }
       });
   }, [mode, renderProfile.editorLanguage]);
-
-  // CodeMirror extensions (Mod-s handled inside CM; window-level handles preview mode)
-  const cmExtensions = useMemo(() => {
-    return [...(languageExtensions ?? []), gitLineMarkersExtension()];
-  }, [languageExtensions]);
-
-  useEffect(() => {
-    const view = cmRef.current?.view;
-    if (!view || mode !== "edit") {
-      return;
-    }
-    view.dispatch({
-      effects: setGitLineMarkersEffect.of(effectiveGitLineMarkers),
-    });
-  }, [effectiveGitLineMarkers, mode, filePath]);
-
-  // Use ref to always have latest handleSave for CodeMirror keymap
-  const handleSaveRef = useRef(handleSave);
-  handleSaveRef.current = handleSave;
-
-  const saveKeymapExt = useMemo(
-    () => {
-      const codeMirrorSaveShortcut = toCodeMirrorShortcut(saveFileShortcut);
-      if (!codeMirrorSaveShortcut) {
-        return [];
-      }
-      return keymap.of([
-        {
-          key: codeMirrorSaveShortcut,
-          run: () => {
-            handleSaveRef.current();
-            return true;
-          },
-        },
-      ]);
-    },
-    [saveFileShortcut],
-  );
-  const persistentSearchExtension = useMemo(() => search({ top: true }), []);
-  const handleCodeMirrorCreate: NonNullable<ReactCodeMirrorProps["onCreateEditor"]> =
-    useCallback((view) => {
-      view.dispatch({
-        effects: setGitLineMarkersEffect.of(effectiveGitLineMarkers),
-      });
-    }, [effectiveGitLineMarkers]);
 
   // Keyboard shortcut: Cmd+S / Ctrl+S (works in any mode, including preview)
   useEffect(() => {
@@ -1244,43 +1191,17 @@ export function FileViewPanel({
     }),
     [handleConfirmAnnotationDraft, onRemoveCodeAnnotation],
   );
-  const annotationWidgetsExt = useMemo(
+  const editorCodeAnnotations = useMemo(
     () =>
-      codeAnnotationWidgetsExtension({
-        annotations: visibleCodeAnnotations.filter(
-          (annotation) => annotation.source === "file-edit-mode",
-        ),
-        draft: effectiveAnnotationDraft?.source === "file-edit-mode"
-          ? effectiveAnnotationDraft
-          : null,
-        labels: annotationWidgetLabels,
-        callbacks: annotationWidgetCallbacks,
-      }),
-    [
-      effectiveAnnotationDraft,
-      annotationWidgetCallbacks,
-      annotationWidgetLabels,
-      visibleCodeAnnotations,
-    ],
+      visibleCodeAnnotations.filter(
+        (annotation) => annotation.source === "file-edit-mode",
+      ),
+    [visibleCodeAnnotations],
   );
-  const editorExtensions = useMemo(
-    () => [
-      saveKeymapExt,
-      editorNavigationKeymapExt,
-      ctrlClickDefinitionExt,
-      persistentSearchExtension,
-      annotationWidgetsExt,
-      ...cmExtensions,
-    ],
-    [
-      annotationWidgetsExt,
-      cmExtensions,
-      ctrlClickDefinitionExt,
-      editorNavigationKeymapExt,
-      persistentSearchExtension,
-      saveKeymapExt,
-    ],
-  );
+  const editorAnnotationDraft =
+    effectiveAnnotationDraft?.source === "file-edit-mode"
+      ? effectiveAnnotationDraft
+      : null;
 
   const visibleTabs = openTabs && openTabs.length > 0 ? openTabs : [filePath];
   const canCloseAllTabs = Boolean(onCloseAllTabs && visibleTabs.length > 0);
@@ -1837,8 +1758,16 @@ export function FileViewPanel({
         markdownRendererProfile={markdownRendererProfile}
         markdownFastFeatureFlags={markdownFastFeatureFlags}
         cmRef={cmRef}
-      handleCodeMirrorCreate={handleCodeMirrorCreate}
       onActiveFileLineRangeChange={handleEditorLineRangeChange}
+      languageExtensions={languageExtensions}
+      gitLineMarkers={effectiveGitLineMarkers}
+      editorCodeAnnotations={editorCodeAnnotations}
+      editorAnnotationDraft={editorAnnotationDraft}
+      annotationWidgetLabels={annotationWidgetLabels}
+      annotationWidgetCallbacks={annotationWidgetCallbacks}
+      runDefinitionFromCursor={runDefinitionFromCursor}
+      runReferencesFromCursor={runReferencesFromCursor}
+      resolveDefinitionAtOffset={resolveDefinitionAtOffset}
       onPreviewAnnotationStart={(lineRange) =>
         beginAnnotationDraft(lineRange, "file-preview-mode")
       }
@@ -1854,7 +1783,8 @@ export function FileViewPanel({
       }}
       onAnnotationDraftConfirm={handleConfirmAnnotationDraft}
       lastReportedLineRangeRef={lastReportedLineRangeRef}
-      editorExtensions={editorExtensions}
+      saveFileShortcut={saveFileShortcut}
+      handleSave={handleSave}
       editorTheme={editorTheme}
       previewLanguage={previewLanguage}
       highlightedLines={highlightedLines}

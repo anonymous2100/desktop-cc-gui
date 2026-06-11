@@ -58,15 +58,15 @@ The product in this repository is `ccgui`: a Tauri 2 desktop AI engineering work
 - Archive changes: `469`
 - Main specs: `328`
 - Completed task sets still active: `0`
-- In-progress task sets: `3`
+- In-progress task sets: `2`
 
 ## Active Changes
 
 ### `lazy-file-preview-dependencies`
 
-- Task state: in progress (`11/17`).
-- Current artifact fact: file preview dependency inventory is complete; CodeMirror language packages now load through async per-language cache with stale request guards, and PDF preview is behind a React lazy boundary with focused tests. Production build emits a `FilePdfPreview-*.js` chunk, while `vendor-codemirror` remains grouped by current chunk strategy and `@codemirror/search` is still eager.
-- Action: keep active until CodeMirror runtime/search activation and chunk strategy evidence are resolved.
+- Task state: completed (`17/17`) and archive-candidate after qualifier review.
+- Current artifact fact: file preview dependency inventory is complete; `FileViewPanel` and `FileViewBody` no longer runtime-import CodeMirror. `FileCodeMirrorEditorImpl-*` is a lazy editor chunk that synchronously owns `@uiw/react-codemirror`, CodeMirror state/view/search commands, git line markers, and annotation widgets. CodeMirror language packages load through async per-language cache with stale request guards, and PDF preview remains behind a React lazy boundary with focused tests. Latest baseline-mode production build keeps `vendor-codemirror-*` out of `dist/index.html` modulepreload and pulls it through the lazy editor edge only.
+- Action: archive after final qualifier review and any required main-spec sync.
 
 ### `search-index-and-bounded-hydration`
 
@@ -82,7 +82,8 @@ The product in this repository is `ccgui`: a Tauri 2 desktop AI engineering work
 
 ## P0 Performance Reconciliation Order
 
-1. Continue implementation backlog: `lazy-file-preview-dependencies`, `search-index-and-bounded-hydration`, `realtime-trace-correlation-gate`.
+1. Archive candidate: `lazy-file-preview-dependencies`.
+2. Continue implementation backlog: `search-index-and-bounded-hydration`, `realtime-trace-correlation-gate`.
 
 Detailed attribution note: `openspec/docs/p0-performance-workspace-reconciliation-2026-06-10.md`.
 

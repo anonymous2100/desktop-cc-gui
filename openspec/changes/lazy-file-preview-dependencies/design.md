@@ -6,7 +6,6 @@
 |---|---|
 | CodeMirror editor runtime | edit mode or text editor surface activation |
 | CodeMirror language package | matching language first use |
-| `@codemirror/search` | find-in-file first open |
 | PDF.js runtime/worker | PDF preview activation |
 | Office/spreadsheet preview runtime | matching preview activation |
 | Image/plain preview | no CodeMirror/PDF dependency required |
@@ -25,4 +24,4 @@ Evidence should include Vite build chunks and startup import graph notes proving
 
 ## Rollback / 回滚
 
-Each dependency group should be reversible independently: CodeMirror runtime, per-language loaders, find-in-file search, PDF runtime.
+Each dependency group should be reversible independently: CodeMirror runtime, per-language loaders, PDF runtime. `@codemirror/search` is intentionally **not** lazy because its persistent extension state and contiguous search/replace flow depend on a synchronously available `searchState` field. See the proposal's “Withdrawn Optimization” section for the detailed rationale.

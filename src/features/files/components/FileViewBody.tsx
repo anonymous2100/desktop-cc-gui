@@ -10,10 +10,9 @@ import type {
 } from "react";
 import { lazy, Suspense, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useVirtualizer } from "@tanstack/react-virtual";
-import CodeMirror, {
-  type ReactCodeMirrorProps,
-  type ReactCodeMirrorRef,
-} from "@uiw/react-codemirror";
+import type { EditorView } from "@codemirror/view";
+import type { ReactCodeMirrorProps } from "@uiw/react-codemirror";
+import { FileCodeMirrorEditor, type FileCodeMirrorEditorHandle } from "./FileCodeMirrorEditor";
 import { FileDocumentPreview } from "./FileDocumentPreview";
 import { FileMarkdownPreviewFast } from "./FileMarkdownPreviewFast";
 import { FileStructuredPreview } from "./FileStructuredPreview";
@@ -31,6 +30,11 @@ import type {
   CodeAnnotationLineRange,
   CodeAnnotationSelection,
 } from "../../code-annotations/types";
+import type {
+  AnnotationWidgetCallbacks,
+  FileAnnotationDraftState,
+} from "./fileViewPanelShared";
+import type { GitLineMarkers } from "../utils/gitLineMarkers";
 
 const EDITOR_CONTENT_PUBLISH_DELAY_MS = 120;
 
@@ -67,9 +71,23 @@ type FileViewBodyProps = {
     markdownRendererProfile?: FastMarkdownRendererProfileId;
     markdownFastFeatureFlags?: FastMarkdownFeatureFlags;
     onFastMarkdownRendererFallback?: (reason: string) => void;
-  cmRef: RefObject<ReactCodeMirrorRef | null>;
-  handleCodeMirrorCreate: NonNullable<ReactCodeMirrorProps["onCreateEditor"]>;
+  cmRef: RefObject<FileCodeMirrorEditorHandle | null>;
   onActiveFileLineRangeChange?: (range: { startLine: number; endLine: number } | null) => void;
+  languageExtensions: ReactCodeMirrorProps["extensions"];
+  gitLineMarkers: GitLineMarkers;
+  editorCodeAnnotations: CodeAnnotationSelection[];
+  editorAnnotationDraft: FileAnnotationDraftState | null;
+  annotationWidgetLabels: {
+    title: string;
+    remove: string;
+    placeholder: string;
+    cancel: string;
+    submit: string;
+  };
+  annotationWidgetCallbacks: AnnotationWidgetCallbacks;
+  runDefinitionFromCursor: () => void;
+  runReferencesFromCursor: () => void;
+  resolveDefinitionAtOffset: (offset: number, view?: EditorView) => void | Promise<void>;
   onPreviewAnnotationStart?: (lineRange: CodeAnnotationLineRange) => void;
   annotationDraft?: {
     lineRange: CodeAnnotationLineRange;
@@ -82,8 +100,9 @@ type FileViewBodyProps = {
   onAnnotationDraftCancel?: () => void;
   onAnnotationDraftConfirm?: (bodyOverride?: string) => void;
   lastReportedLineRangeRef: MutableRefObject<string>;
-  editorExtensions: ReactCodeMirrorProps["extensions"];
-  editorTheme: ReactCodeMirrorProps["theme"];
+  saveFileShortcut: string | null | undefined;
+  handleSave: () => void;
+  editorTheme: "light" | "dark";
   previewLanguage: string | null;
   highlightedLines: string[];
   lines: string[];
@@ -550,8 +569,16 @@ export function FileViewBody({
     markdownFastFeatureFlags,
     onFastMarkdownRendererFallback,
   cmRef,
-  handleCodeMirrorCreate,
   onActiveFileLineRangeChange,
+  languageExtensions,
+  gitLineMarkers,
+  editorCodeAnnotations,
+  editorAnnotationDraft,
+  annotationWidgetLabels,
+  annotationWidgetCallbacks,
+  runDefinitionFromCursor,
+  runReferencesFromCursor,
+  resolveDefinitionAtOffset,
   onPreviewAnnotationStart,
   annotationDraft = null,
   codeAnnotations = [],
@@ -560,7 +587,8 @@ export function FileViewBody({
   onAnnotationDraftCancel,
   onAnnotationDraftConfirm,
   lastReportedLineRangeRef,
-  editorExtensions,
+  saveFileShortcut,
+  handleSave,
   editorTheme,
   previewLanguage,
   highlightedLines,
@@ -872,43 +900,28 @@ export function FileViewBody({
 
   if (viewSurface.kind === "editor") {
     return (
-      <div className="fvp-editor">
-        <CodeMirror
-          key={filePath}
-          ref={cmRef}
-          value={editorContent}
-          onChange={handleEditorContentChange}
-          onCreateEditor={handleCodeMirrorCreate}
-          onUpdate={(update) => {
-            if (!update.selectionSet) {
-              return;
-            }
-            const mainSelection = update.state.selection.main;
-            const from = Math.min(mainSelection.from, mainSelection.to);
-            const to = Math.max(mainSelection.from, mainSelection.to);
-            const startLine = update.state.doc.lineAt(from).number;
-            const endLine = update.state.doc.lineAt(to).number;
-            const rangeKey = `${startLine}-${endLine}`;
-            if (rangeKey === lastReportedLineRangeRef.current) {
-              return;
-            }
-            lastReportedLineRangeRef.current = rangeKey;
-            onActiveFileLineRangeChange?.({ startLine, endLine });
-          }}
-          extensions={editorExtensions}
-          theme={editorTheme}
-          className="fvp-cm"
-          basicSetup={{
-            lineNumbers: true,
-            foldGutter: true,
-            bracketMatching: true,
-            closeBrackets: true,
-            highlightActiveLine: true,
-            indentOnInput: true,
-            tabSize: 2,
-          }}
-        />
-      </div>
+      <FileCodeMirrorEditor
+        cmRef={cmRef}
+        filePath={filePath}
+        value={editorContent}
+        onChange={handleEditorContentChange}
+        onActiveFileLineRangeChange={onActiveFileLineRangeChange}
+        theme={editorTheme}
+        languageExtensions={languageExtensions}
+        gitLineMarkers={gitLineMarkers}
+        codeAnnotations={editorCodeAnnotations}
+        annotationDraft={editorAnnotationDraft}
+        annotationWidgetLabels={annotationWidgetLabels}
+        annotationWidgetCallbacks={annotationWidgetCallbacks}
+        runDefinitionFromCursor={runDefinitionFromCursor}
+        runReferencesFromCursor={runReferencesFromCursor}
+        resolveDefinitionAtOffset={resolveDefinitionAtOffset}
+        className="fvp-cm"
+        lastReportedLineRangeRef={lastReportedLineRangeRef}
+        saveFileShortcut={saveFileShortcut}
+        handleSave={handleSave}
+        fallback={<div className="fvp-status">{t("files.loadingFile")}</div>}
+      />
     );
   }
 

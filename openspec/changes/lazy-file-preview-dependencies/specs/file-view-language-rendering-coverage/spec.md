@@ -27,8 +27,8 @@
 
 本变更 MUST 采用新增优先策略；既有已支持文件类型的渲染行为不得被破坏或回退，但 Markdown 文件允许按照文件预览专用 renderer 的新契约演进，且主窗口与独立文件窗口 MUST 保持共享渲染基线。
 
-#### Scenario: find-in-file search loads without startup dependency
+#### Scenario: find-in-file search remains in the file panel startup path
 
 - **WHEN** 用户打开 find-in-file in editor mode
-- **THEN** search/keymap runtime MAY load lazily at first use
-- **AND** once loaded, find-in-file behavior MUST match the existing search interaction contract.
+- **THEN** `@codemirror/search` SHALL be available synchronously alongside the editor so that the `searchState` field, contiguous navigation, and replace/replace-all flows behave identically to the pre-change baseline
+- **AND** the file panel SHALL NOT introduce a dynamic import boundary around `@codemirror/search` because doing so breaks the contiguous search/replace contract (see the proposal's “Withdrawn Optimization” section).

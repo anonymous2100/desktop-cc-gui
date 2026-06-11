@@ -189,8 +189,12 @@ describe("FileViewPanel external change awareness in detached mode", () => {
       />,
     );
 
-    const editor = await screen.findByTestId("mock-codemirror");
-    expect((editor as HTMLTextAreaElement).value).toBe("const value = 1;");
+    // The editor renders behind a `React.lazy` boundary, so the
+    // initial CodeMirror snapshot may be reached after the external
+    // change poller has already synced disk content. What we are
+    // asserting is the end-to-end behaviour: the user sees the
+    // auto-sync toast and the editor surfaces the latest disk content.
+    await screen.findByTestId("mock-codemirror");
 
     await waitFor(() => {
       expect(screen.getByText("files.externalChangeAutoSynced")).toBeTruthy();
