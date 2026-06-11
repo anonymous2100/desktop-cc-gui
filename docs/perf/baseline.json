@@ -1,10 +1,10 @@
 {
   "schemaVersion": "1.0",
-  "generatedAt": "2026-06-11T07:23:49.070Z",
+  "generatedAt": "2026-06-11T14:21:21.611Z",
   "version": "0.5.9",
   "git": {
     "branch": "feature/v0.5.9",
-    "commit": "0bd4c9cbdbd5c079e06351b3ff284e6393dd2e10"
+    "commit": "e16f08a15bfacef871c65be4da08502a2334fb56"
   },
   "metrics": [
     {
@@ -190,9 +190,41 @@
     {
       "scenario": "S-RS-PE",
       "metric": "assemblerLatency",
-      "value": 4.09,
+      "value": 4.18,
       "unit": "ms",
       "notes": "replay reducer-path proxy latency",
+      "evidenceClass": "proxy"
+    },
+    {
+      "scenario": "S-RS-VL",
+      "metric": "visibleTextLagP95",
+      "value": 24,
+      "unit": "ms",
+      "notes": "first engine delta ingress -> first visible text growth (per-turn P95, turn-trace correlation gate)",
+      "evidenceClass": "proxy"
+    },
+    {
+      "scenario": "S-RS-RA",
+      "metric": "reducerAmplificationMedian",
+      "value": 4,
+      "unit": "ratio",
+      "notes": "reducer commit count / delta count (median across completed turns)",
+      "evidenceClass": "proxy"
+    },
+    {
+      "scenario": "S-RS-FD",
+      "metric": "batchFlushDurationP95",
+      "value": 13.33,
+      "unit": "ms",
+      "notes": "batch flush duration P95 across completed turns",
+      "evidenceClass": "proxy"
+    },
+    {
+      "scenario": "S-RS-TS",
+      "metric": "terminalSettlementP95",
+      "value": 60,
+      "unit": "ms",
+      "notes": "last reducer commit -> terminal settlement P95 across completed turns",
       "evidenceClass": "proxy"
     },
     {
@@ -257,7 +289,7 @@
     },
     {
       "source": "realtime-extended",
-      "generatedAt": "2026-06-11T06:15:33.432Z"
+      "generatedAt": "2026-06-11T14:21:21.202Z"
     },
     {
       "source": "cold-start",
@@ -270,6 +302,8 @@
     "previousVersion": "0.5.6",
     "currentVersion": "0.5.9",
     "status": "available",
+    "missingCount": 4,
+    "notComparableCount": 2,
     "metrics": [
       {
         "scenario": "S-LL-200",
@@ -485,11 +519,55 @@
         "metric": "assemblerLatency",
         "unit": "ms",
         "previousValue": 5.73,
-        "currentValue": 4.09,
-        "delta": -1.64,
+        "currentValue": 4.18,
+        "delta": -1.55,
         "evidenceClass": "proxy",
         "status": "comparable",
         "reason": ""
+      },
+      {
+        "scenario": "S-RS-VL",
+        "metric": "visibleTextLagP95",
+        "unit": "ms",
+        "previousValue": null,
+        "currentValue": 24,
+        "delta": null,
+        "evidenceClass": "proxy",
+        "status": "missing",
+        "reason": "Previous baseline metric not found."
+      },
+      {
+        "scenario": "S-RS-RA",
+        "metric": "reducerAmplificationMedian",
+        "unit": "ratio",
+        "previousValue": null,
+        "currentValue": 4,
+        "delta": null,
+        "evidenceClass": "proxy",
+        "status": "missing",
+        "reason": "Previous baseline metric not found."
+      },
+      {
+        "scenario": "S-RS-FD",
+        "metric": "batchFlushDurationP95",
+        "unit": "ms",
+        "previousValue": null,
+        "currentValue": 13.33,
+        "delta": null,
+        "evidenceClass": "proxy",
+        "status": "missing",
+        "reason": "Previous baseline metric not found."
+      },
+      {
+        "scenario": "S-RS-TS",
+        "metric": "terminalSettlementP95",
+        "unit": "ms",
+        "previousValue": null,
+        "currentValue": 60,
+        "delta": null,
+        "evidenceClass": "proxy",
+        "status": "missing",
+        "reason": "Previous baseline metric not found."
       },
       {
         "scenario": "S-CS-COLD",

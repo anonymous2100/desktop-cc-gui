@@ -1,17 +1,18 @@
 # Runtime Evidence Gate Governance Report
 
-Generated at: 2026-06-11T07:23:55.566Z
+Generated at: 2026-06-11T14:21:26.591Z
 
 ## Archive Readiness
 
 | Change | Tasks | Recommendation | Qualifier |
 |---|---:|---|---|
+| realtime-trace-correlation-gate | 15/15 | archive-candidate-after-qualifier-review | Review validation and platform qualifiers before archive. |
+| search-index-and-bounded-hydration | 16/16 | archive-candidate-after-qualifier-review | Review validation and platform qualifiers before archive. |
 | lazy-file-preview-dependencies | 17/17 | archive-candidate-after-qualifier-review | Review validation and platform qualifiers before archive. |
 
 ## In Progress
 
-- search-index-and-bounded-hydration: 10/16, not-archive-ready
-- realtime-trace-correlation-gate: 0/15, not-archive-ready
+- No in-progress active changes.
 
 ## Compatibility / Cleanup Matrix
 

@@ -172,6 +172,8 @@ function buildComparison(previousBaseline, currentReport) {
     previousVersion: previousBaseline.version ?? "unknown",
     currentVersion: currentReport.version,
     status: "available",
+    missingCount: metrics.filter((entry) => entry.status === "missing").length,
+    notComparableCount: metrics.filter((entry) => entry.status === "not comparable").length,
     metrics,
   };
 }
@@ -229,6 +231,16 @@ function createMarkdown(report) {
     lines.push("|---|---|---:|---:|---:|---|---|---|");
     for (const entry of report.comparison.metrics) {
       lines.push(`| ${escapeMarkdownCell(entry.scenario)} | ${escapeMarkdownCell(entry.metric)} | ${escapeMarkdownCell(formatValue(entry.previousValue))} | ${escapeMarkdownCell(formatValue(entry.currentValue))} | ${escapeMarkdownCell(entry.delta ?? "")} | ${escapeMarkdownCell(entry.unit)} | ${escapeMarkdownCell(entry.evidenceClass)} | ${escapeMarkdownCell(entry.status)} |`);
+    }
+  }
+  // Append a short summary line so users can see at a glance whether the
+  // comparison is fully comparable.
+  if (report.comparison?.status === "available") {
+    const missing = report.comparison.missingCount ?? 0;
+    const notComparable = report.comparison.notComparableCount ?? 0;
+    if (missing > 0 || notComparable > 0) {
+      lines.push("");
+      lines.push(`> Comparison status: ${report.comparison.metrics.length - missing - notComparable}/${report.comparison.metrics.length} metrics comparable; ${missing} missing, ${notComparable} not comparable.`);
     }
   }
   lines.push("", "## Section D — Residual Risks", "");

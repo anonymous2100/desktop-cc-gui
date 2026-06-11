@@ -1,9 +1,9 @@
 # v0.5.9 Performance Baseline
 
-Generated at: 2026-06-11T07:23:49.070Z
+Generated at: 2026-06-11T14:21:21.611Z
 Schema version: 1.0
 Branch: feature/v0.5.9
-Commit: 0bd4c9cbdbd5c079e06351b3ff284e6393dd2e10
+Commit: e16f08a15bfacef871c65be4da08502a2334fb56
 
 ## Section A — Fixture-Replay Baseline
 
@@ -28,7 +28,11 @@ Commit: 0bd4c9cbdbd5c079e06351b3ff284e6393dd2e10
 | S-RS-FT | firstTokenLatency | 5000 | ms | proxy | 2000 | 5000 | turn start to first assistant delta |
 | S-RS-FT | interTokenJitterP95 | 920 | ms | proxy | 500 | 920 |  |
 | S-RS-PE | dedupHitRatio | 0.25 | ratio | proxy |  |  |  |
-| S-RS-PE | assemblerLatency | 4.09 | ms | proxy |  |  | replay reducer-path proxy latency |
+| S-RS-PE | assemblerLatency | 4.18 | ms | proxy |  |  | replay reducer-path proxy latency |
+| S-RS-VL | visibleTextLagP95 | 24 | ms | proxy |  |  | first engine delta ingress -> first visible text growth (per-turn P95, turn-trace correlation gate) |
+| S-RS-RA | reducerAmplificationMedian | 4 | ratio | proxy |  |  | reducer commit count / delta count (median across completed turns) |
+| S-RS-FD | batchFlushDurationP95 | 13.33 | ms | proxy |  |  | batch flush duration P95 across completed turns |
+| S-RS-TS | terminalSettlementP95 | 60 | ms | proxy |  |  | last reducer commit -> terminal settlement P95 across completed turns |
 | S-CS-COLD | bundleSizeMain | 1121481 | bytes | measured | 950000 | 1100000 | App-GOSdMQOY.js |
 | S-CS-COLD | bundleSizeVendor | 741552 | bytes | measured | 680000 | 760000 | subset-shared.chunk-BukY6QKG.js |
 | S-CS-COLD | firstPaintMs | unsupported | ms | unsupported |  |  | Tauri webview headless cold-start timing is not available in this script; bundle baseline is recorded. |
@@ -64,11 +68,17 @@ Previous baseline: v0.5.6 (docs/perf/history/v0.5.6-baseline.json)
 | S-RS-FT | firstTokenLatency | 5000 | 5000 | 0 | ms | proxy | comparable |
 | S-RS-FT | interTokenJitterP95 | 920 | 920 | 0 | ms | proxy | comparable |
 | S-RS-PE | dedupHitRatio | 0.25 | 0.25 | 0 | ratio | proxy | comparable |
-| S-RS-PE | assemblerLatency | 5.73 | 4.09 | -1.64 | ms | proxy | comparable |
+| S-RS-PE | assemblerLatency | 5.73 | 4.18 | -1.55 | ms | proxy | comparable |
+| S-RS-VL | visibleTextLagP95 | unsupported | 24 |  | ms | proxy | missing |
+| S-RS-RA | reducerAmplificationMedian | unsupported | 4 |  | ratio | proxy | missing |
+| S-RS-FD | batchFlushDurationP95 | unsupported | 13.33 |  | ms | proxy | missing |
+| S-RS-TS | terminalSettlementP95 | unsupported | 60 |  | ms | proxy | missing |
 | S-CS-COLD | bundleSizeMain | 1284244 | 1121481 | -162763 | bytes | measured | comparable |
 | S-CS-COLD | bundleSizeVendor | 672901 | 741552 | 68651 | bytes | measured | comparable |
 | S-CS-COLD | firstPaintMs | unsupported | unsupported |  | ms | unsupported | not comparable |
 | S-CS-COLD | firstInteractiveMs | unsupported | unsupported |  | ms | unsupported | not comparable |
+
+> Comparison status: 22/28 metrics comparable; 4 missing, 2 not comparable.
 
 ## Section D — Residual Risks
 

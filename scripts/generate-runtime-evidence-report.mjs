@@ -8,6 +8,7 @@ import { pathToFileURL } from "node:url";
 
 const PERF_BASELINE_PATH = "docs/perf/baseline.json";
 const BROWSER_SCROLL_PATH = "docs/perf/long-list-browser-scroll.json";
+const REALTIME_TURN_TRACE_PATH = "docs/perf/realtime-turn-trace.json";
 const LARGE_FILE_WATCHLIST_PATH = ".artifacts/large-files-near-threshold.json";
 const OUTPUT_JSON_PATH = "docs/perf/runtime-evidence-gates.json";
 const OUTPUT_PERF_MARKDOWN_PATH = "docs/perf/runtime-evidence-gates.md";
@@ -180,10 +181,14 @@ function toFiniteNumber(value) {
   return Number.isFinite(numericValue) ? numericValue : null;
 }
 
-function buildRealtimeSummary(perfEvidence) {
+function buildRealtimeSummary(perfEvidence, turnTraceFragment) {
   const firstToken = findMetric(perfEvidence, "S-RS-FT", "firstTokenLatency");
   const jitter = findMetric(perfEvidence, "S-RS-FT", "interTokenJitterP95");
   const assembler = findMetric(perfEvidence, "S-RS-PE", "assemblerLatency");
+  const visibleTextLag = findMetric(perfEvidence, "S-RS-VL", "visibleTextLagP95");
+  const reducerAmplification = findMetric(perfEvidence, "S-RS-RA", "reducerAmplificationMedian");
+  const batchFlushDuration = findMetric(perfEvidence, "S-RS-FD", "batchFlushDurationP95");
+  const terminalSettlement = findMetric(perfEvidence, "S-RS-TS", "terminalSettlementP95");
   const firstTokenValue = toFiniteNumber(firstToken?.value);
   const jitterValue = toFiniteNumber(jitter?.value);
   const visibleLagRisk = firstTokenValue == null && jitterValue == null
@@ -191,15 +196,73 @@ function buildRealtimeSummary(perfEvidence) {
     : (firstTokenValue ?? 0) >= 2000 || (jitterValue ?? 0) >= 500
       ? "high"
       : "bounded";
+  const traceEvidenceClass = turnTraceFragment && typeof turnTraceFragment === "object"
+    ? "proxy"
+    : "unsupported";
   return {
     firstTokenLatencyMs: firstToken?.value ?? null,
     interTokenJitterP95Ms: jitter?.value ?? null,
     assemblerLatencyMs: assembler?.value ?? null,
+    visibleTextLagP95Ms: visibleTextLag?.value ?? null,
+    reducerAmplificationMedian: reducerAmplification?.value ?? null,
+    batchFlushDurationP95Ms: batchFlushDuration?.value ?? null,
+    terminalSettlementP95Ms: terminalSettlement?.value ?? null,
     evidenceClass: visibleLagRisk === "unsupported" ? "unsupported" : "proxy",
     visibleLagRisk,
     terminalPressure: "not-directly-measured",
+    turnTraceEvidenceClass: traceEvidenceClass,
+    turnTraceSource: turnTraceFragment ? REALTIME_TURN_TRACE_PATH : null,
     nextAction: "Add runtime trace that correlates ingress cadence, batch flush, render-visible cadence, and terminal settlement.",
   };
+}
+
+const REALTIME_TRACE_BUDGETS = {
+  "S-RS-VL": {
+    target: 2000,
+    hardFail: 5000,
+    reason: "Replay-derived first-delta -> first-visible-text P95; jsdom/PerformanceObserver path is the follow-up.",
+    nextAction: "Wire PerformanceObserver in Tauri webview to record first visible text growth and bring this to measured.",
+  },
+  "S-RS-RA": {
+    target: 2,
+    hardFail: 4,
+    reason: "Replay-derived reducer amplification median; reflects fixture batch grouping.",
+    nextAction: "Cross-check with renderer-side reducer commit count under live Tauri session.",
+  },
+  "S-RS-FD": {
+    target: 8,
+    hardFail: 16,
+    reason: "Replay-derived batch flush duration P95; replay group window is the surrogate.",
+    nextAction: "Replace with measured wall-clock gap between batcher flush-start and flush-end in the renderer hot path.",
+  },
+  "S-RS-TS": {
+    target: 100,
+    hardFail: 250,
+    reason: "Replay-derived terminal settlement P95 (last reducer commit -> agentCompleted).",
+    nextAction: "Wire real Tauri/webview terminal signal (provider final + reducer final) and reclassify to measured.",
+  },
+};
+
+function buildRealtimeTraceBudgets(perfEvidence) {
+  // Enrich existing baseline rows with target / hardFail / clearer next-action.
+  // Returns the (mutated) perfEvidence so callers can append the same array.
+  for (const entry of perfEvidence) {
+    const budget = REALTIME_TRACE_BUDGETS[entry.scenario];
+    if (budget && entry.metric === (
+      entry.scenario === "S-RS-VL" ? "visibleTextLagP95"
+        : entry.scenario === "S-RS-RA" ? "reducerAmplificationMedian"
+        : entry.scenario === "S-RS-FD" ? "batchFlushDurationP95"
+        : entry.scenario === "S-RS-TS" ? "terminalSettlementP95"
+        : null
+    )) {
+      entry.budget = { target: budget.target, hardFail: budget.hardFail };
+      entry.reason = budget.reason;
+      entry.nextAction = budget.nextAction;
+      entry.evidenceClass = "proxy";
+      entry.source = "docs/perf/realtime-extended-baseline.json";
+    }
+  }
+  return perfEvidence;
 }
 
 function buildColdStartSummary(perfEvidence) {
@@ -324,8 +387,13 @@ function createPerfMarkdown(report) {
   lines.push("", "## Realtime Correlation", "");
   lines.push(`- First token latency: ${report.realtimeSummary.firstTokenLatencyMs ?? "unsupported"} ms`);
   lines.push(`- Inter-token jitter P95: ${report.realtimeSummary.interTokenJitterP95Ms ?? "unsupported"} ms`);
+  lines.push(`- Visible text lag P95: ${report.realtimeSummary.visibleTextLagP95Ms ?? "unsupported"} ms (turn-trace correlation gate)`);
+  lines.push(`- Reducer amplification median: ${report.realtimeSummary.reducerAmplificationMedian ?? "unsupported"} ratio`);
+  lines.push(`- Batch flush duration P95: ${report.realtimeSummary.batchFlushDurationP95Ms ?? "unsupported"} ms`);
+  lines.push(`- Terminal settlement P95: ${report.realtimeSummary.terminalSettlementP95Ms ?? "unsupported"} ms`);
   lines.push(`- Visible lag risk: ${report.realtimeSummary.visibleLagRisk}`);
   lines.push(`- Terminal pressure: ${report.realtimeSummary.terminalPressure}`);
+  lines.push(`- Turn trace evidence class: ${report.realtimeSummary.turnTraceEvidenceClass ?? "unsupported"} (source: ${report.realtimeSummary.turnTraceSource ?? "n/a"})`);
   lines.push(`- Next action: ${report.realtimeSummary.nextAction}`);
   lines.push("", "## Cold Start", "");
   lines.push(`- First paint evidence: ${report.coldStartSummary.firstPaintEvidence}`);
@@ -379,23 +447,28 @@ function createOpenSpecMarkdown(report) {
 async function main() {
   const perfBaseline = await readJsonIfExists(PERF_BASELINE_PATH);
   const browserScroll = await readJsonIfExists(BROWSER_SCROLL_PATH);
+  const realtimeTurnTrace = await readJsonIfExists(REALTIME_TURN_TRACE_PATH);
   const largeFileReport = await readJsonIfExists(LARGE_FILE_WATCHLIST_PATH);
   const openSpecState = runJson("openspec", ["list", "--json"]);
   const performanceEvidence = buildPerfEvidence([
     { path: PERF_BASELINE_PATH, fragment: perfBaseline },
     { path: BROWSER_SCROLL_PATH, fragment: browserScroll },
   ]);
+  // Enrich baseline rows in place; the function mutates and returns the same array.
+  const realtimeTraceBudgets = buildRealtimeTraceBudgets(performanceEvidence);
   const report = {
     schemaVersion: "1.0",
     generatedAt: new Date().toISOString(),
     sources: {
       perfBaseline: existsSync(repoPath(PERF_BASELINE_PATH)) ? PERF_BASELINE_PATH : null,
       browserScroll: existsSync(repoPath(BROWSER_SCROLL_PATH)) ? BROWSER_SCROLL_PATH : null,
+      realtimeTurnTrace: existsSync(repoPath(REALTIME_TURN_TRACE_PATH)) ? REALTIME_TURN_TRACE_PATH : null,
       largeFileWatchlist: existsSync(repoPath(LARGE_FILE_WATCHLIST_PATH)) ? LARGE_FILE_WATCHLIST_PATH : null,
       openSpec: "openspec list --json",
     },
     performanceEvidence,
-    realtimeSummary: buildRealtimeSummary(performanceEvidence),
+    realtimeSummary: buildRealtimeSummary(performanceEvidence, realtimeTurnTrace),
+    realtimeTraceBudgets,
     coldStartSummary: buildColdStartSummary(performanceEvidence),
     archiveReadiness: buildArchiveReadiness(openSpecState),
     compatibilityPaths,
@@ -413,6 +486,7 @@ export const runtimeEvidenceReportInternals = {
   buildLargeFileSummary,
   buildPerfEvidence,
   buildRealtimeSummary,
+  buildRealtimeTraceBudgets,
 };
 
 const isDirectExecution =
