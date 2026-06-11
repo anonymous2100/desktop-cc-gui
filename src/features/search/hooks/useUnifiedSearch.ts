@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type {
   ConversationItem,
   CustomCommandOption,
@@ -8,6 +8,11 @@ import type {
 import type { KanbanTask } from "../../kanban/types";
 import type { HistoryItem } from "../../composer/hooks/useInputHistoryStore";
 import { takeLimited } from "../perf/chunker";
+import {
+  type SearchEvidence,
+  type SearchProviderTiming,
+  sumProviderCandidates,
+} from "../perf/evidence";
 import {
   SEARCH_DEBOUNCE_MS,
   SEARCH_PROVIDER_LIMITS,
@@ -23,6 +28,10 @@ import { searchSkills } from "../providers/skillsProvider";
 import { searchThreads } from "../providers/threadProvider";
 import { loadSearchRecencyMap } from "../ranking/recencyStore";
 import { compareSearchResults } from "../ranking/score";
+import {
+  discardIfStale,
+  useSearchQueryToken,
+} from "./searchQueryToken";
 import type { SearchContentFilter, SearchResult } from "../types";
 
 type WorkspaceSearchSource = {
@@ -50,6 +59,11 @@ export type ComputeUnifiedSearchOptions = Omit<UseUnifiedSearchOptions, "query" 
   query: string;
   recencyMap?: Record<string, number>;
   reportMetrics?: boolean;
+  // Optional evidence sink. When provided, the compute path emits a
+  // `SearchEvidence` record per call. The hook does NOT pass this today;
+  // fixture tests and future diagnostic tooling use it to assert on
+  // per-call perf signals without having to mock `console.debug`.
+  evidenceSink?: (evidence: SearchEvidence) => void;
 };
 
 function shouldIncludeSection(
@@ -94,6 +108,19 @@ export function useUnifiedSearch({
   const [debouncedQuery, setDebouncedQuery] = useState("");
   const [recencyMap] = useState(() => loadSearchRecencyMap());
 
+  // Query token guard. The ref advances on every (query, bumpKey) change so
+  // any future async provider work can detect that it has been superseded.
+  // Today the compute path is synchronous, so `discardIfStale` always
+  // reports `staleDropped === false`; the hook is wired up so the stale
+  // drop count can be plumbed into metrics without further refactor.
+  const queryTokenRef = useSearchQueryToken(query);
+  // Last successful (non-stale) result set. Used as the fallback when a
+  // future async provider reports `staleDropped === true`: rather than
+  // flicker to an empty list while the next query resolves, the consumer
+  // keeps the previous stable results. In the current synchronous compute
+  // path staleDropped is never true, so this ref is effectively the same
+  // value as the most recent useMemo result.
+  const lastCommittedResultsRef = useRef<SearchResult[]>([]);
   useEffect(() => {
     if (!query.trim()) {
       setDebouncedQuery("");
@@ -106,7 +133,8 @@ export function useUnifiedSearch({
   }, [query]);
 
   const computedResults = useMemo(() => {
-    return computeUnifiedSearchResults({
+    const capturedToken = queryTokenRef.current;
+    const raw = computeUnifiedSearchResults({
       query: debouncedQuery,
       contentFilters,
       workspaceSources,
@@ -121,6 +149,12 @@ export function useUnifiedSearch({
       reportMetrics: true,
       workspaceNameByPath,
     });
+    const guarded = discardIfStale(queryTokenRef.current, capturedToken, raw);
+    if (guarded.staleDropped) {
+      return lastCommittedResultsRef.current;
+    }
+    lastCommittedResultsRef.current = guarded.value;
+    return guarded.value;
   }, [
     debouncedQuery,
     historyItems,
@@ -134,6 +168,7 @@ export function useUnifiedSearch({
     workspaceSources,
     workspaceNameByPath,
     recencyMap,
+    queryTokenRef,
   ]);
 
   return computedResults;
@@ -153,6 +188,7 @@ export function computeUnifiedSearchResults({
   recencyMap,
   reportMetrics = false,
   workspaceNameByPath,
+  evidenceSink,
 }: ComputeUnifiedSearchOptions): SearchResult[] {
   const normalizedQuery = query.trim();
   if (!normalizedQuery) {
@@ -161,12 +197,7 @@ export function computeUnifiedSearchResults({
 
   const startedAt = performance.now();
   const recentOpenMap = recencyMap ?? loadSearchRecencyMap();
-  const providerTimings: Array<{
-    provider: string;
-    elapsedMs: number;
-    candidateCount: number;
-    resultCount: number;
-  }> = [];
+  const providerTimings: SearchProviderTiming[] = [];
   const workspaceNameById = new Map(
     workspaceSources.map((source) => [source.workspaceId, source.workspaceName]),
   );
@@ -271,6 +302,21 @@ export function computeUnifiedSearchResults({
       providerTimings,
       hydrationState: workspaceSources.length <= 1 ? "active-only" : "partial-global",
       staleDropCount: 0,
+    });
+  }
+
+  if (evidenceSink) {
+    evidenceSink({
+      query: normalizedQuery,
+      elapsedMs: Math.round(performance.now() - startedAt),
+      resultCount: sliced.length,
+      providerTimings,
+      hydrationState:
+        workspaceSources.length <= 1 ? "active-only" : "partial-global",
+      staleDropCount: 0,
+      candidateTotal: sumProviderCandidates(providerTimings),
+      capturedAt:
+        typeof performance !== "undefined" ? performance.now() : Date.now(),
     });
   }
 
