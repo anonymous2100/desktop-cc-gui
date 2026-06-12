@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-21.md`
-- **Total Sessions**: 816
+- **Total Sessions**: 817
 - **Last Active**: 2026-06-13
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-21.md` | ~1522 | Active |
+| `journal-21.md` | ~1575 | Active |
 | `journal-20.md` | ~1997 | Archived |
 | `journal-19.md` | ~1989 | Archived |
 | `journal-18.md` | ~1966 | Archived |
@@ -49,6 +49,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 817 | 2026-06-13 | 收口性能迭代结构债 | `9e99f6f9` | `feature/v0.5.9` |
 | 816 | 2026-06-13 | 同步性能证据归档状态 | `d5c96d7d` | `feature/v0.5.9` |
 | 815 | 2026-06-13 | 收口实时线程状态行级订阅 | `18de443a` | `feature/v0.5.9` |
 | 814 | 2026-06-13 | 补齐文件编辑卡顿收口提案 | `a0082032` | `feature/v0.5.9` |

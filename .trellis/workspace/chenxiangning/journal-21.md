@@ -1520,3 +1520,56 @@ During verification, `TaskCreateModal.test.tsx` exposed an async state assertion
 ### Next Steps
 
 - None - task complete
+
+
+## Session 817: 收口性能迭代结构债
+
+**Date**: 2026-06-13
+**Task**: 收口性能迭代结构债
+**Branch**: `feature/v0.5.9`
+
+### Summary
+
+(Add summary)
+
+### Main Changes
+
+本次完成 `calibrate-performance-iteration-debt` OpenSpec 变更的实现与提交收口。
+
+**Summary**
+- 新增中英文结合 OpenSpec change，校准性能迭代 evidence / archive readiness / structural debt 边界。
+- 抽取 `src-tauri/src/shared/workspace_listing.rs`，统一 desktop Tauri 与 `cc_gui_daemon` 的 workspace file-tree listing core。
+- workspace listing initial / directory-child paths 复用 backend `ScanCache`，输出 `miss` / `hit` / `invalidated` cache evidence。
+- `ScanCache` miss / invalidated compute 移出 mutex，避免重 IO 持锁。
+- 清理 daemon/desktop 旧 scanner/cache duplicate branch，并保留 adapter-specific file IO / external listing。
+- 校准 `frontend-prop-chain-stability-2026-06` 与 runtime evidence docs，避免 task-complete 被误写成 archive-ready。
+
+**Validation**
+- `cargo test --manifest-path src-tauri/Cargo.toml workspaces::files -- --nocapture` passed, 43 tests。
+- `cargo test --manifest-path src-tauri/Cargo.toml --bin cc_gui_daemon workspace_io -- --nocapture` passed, 8 tests。
+- `cargo test --manifest-path src-tauri/Cargo.toml backend_budget -- --nocapture` passed。
+- `npm run typecheck` passed。
+- `openspec validate calibrate-performance-iteration-debt --strict --no-interactive` passed。
+- `git diff --check` / staged diff check passed。
+
+**Code Commit**
+- `9e99f6f9 feat(performance): 收口性能迭代结构债`
+
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `9e99f6f9` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
