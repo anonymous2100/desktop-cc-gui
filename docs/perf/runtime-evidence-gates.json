@@ -1,6 +1,6 @@
 {
   "schemaVersion": "1.0",
-  "generatedAt": "2026-06-12T13:24:15.959Z",
+  "generatedAt": "2026-06-12T14:51:41.875Z",
   "sources": {
     "perfBaseline": "docs/perf/baseline.json",
     "composerBaseline": "docs/perf/composer-baseline.json",
@@ -1288,12 +1288,12 @@
     "inProgress": [
       {
         "name": "frontend-prop-chain-stability-2026-06",
-        "tasks": "43/45",
+        "tasks": "44/45",
         "recommendation": "not-archive-ready"
       },
       {
         "name": "realtime-input-and-io-isolation-2026-06",
-        "tasks": "63/68",
+        "tasks": "66/68",
         "recommendation": "not-archive-ready"
       }
     ],

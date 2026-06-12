@@ -1,6 +1,6 @@
 # Runtime Evidence Gate Governance Report
 
-Generated at: 2026-06-12T13:24:15.959Z
+Generated at: 2026-06-12T14:51:41.875Z
 
 ## Archive Readiness
 
@@ -14,8 +14,8 @@ Generated at: 2026-06-12T13:24:15.959Z
 
 ## In Progress
 
-- frontend-prop-chain-stability-2026-06: 43/45, not-archive-ready
-- realtime-input-and-io-isolation-2026-06: 63/68, not-archive-ready
+- frontend-prop-chain-stability-2026-06: 44/45, not-archive-ready
+- realtime-input-and-io-isolation-2026-06: 66/68, not-archive-ready
 
 ## Compatibility / Cleanup Matrix
 

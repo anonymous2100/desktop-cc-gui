@@ -1030,845 +1030,864 @@ export function useAppShellLayoutNodesSection(
     compactGitBackNode,
     codeAnnotationBridgeProps,
   } = useLayoutNodes({
-    workspaces,
-    groupedWorkspaces,
-    hasWorkspaceGroups: workspaceGroups.length > 0,
-    deletingWorktreeIds,
-    threadsByWorkspace,
-    threadParentById,
-    threadStatusById,
-    historyLoadingByThreadId,
-    historyRestoredAtMsByThread,
-    runningSessionCountByWorkspaceId,
-    recentCompletedSessionCountByWorkspaceId,
-    hydratedThreadListWorkspaceIds: hydratedThreadListWorkspaceIdsRef.current,
-    threadListLoadingByWorkspace,
-    threadListPagingByWorkspace,
-    threadListCursorByWorkspace,
-    activeWorkspaceId,
-    activeThreadId,
-    isPhone,
-    isTablet,
-    systemProxyEnabled: appSettings.systemProxyEnabled,
-    systemProxyUrl: appSettings.systemProxyUrl,
-    activeItems,
-    activeQueuedHandoffBubble,
-    threadItemsByThread,
-    sessionRadarRunningSessions,
-    sessionRadarRecentCompletedSessions,
-    activeRateLimits,
-    usageShowRemaining: appSettings.usageShowRemaining,
-    showSidebarProviderLabels: appSettings.showSidebarProviderLabels,
-    onRefreshAccountRateLimits: handleRefreshAccountRateLimits,
-    showMessageAnchors: appSettings.showMessageAnchors,
-    accountInfo: activeAccount,
-    onSwitchAccount: handleSwitchAccount,
-    onCancelSwitchAccount: handleCancelSwitchAccount,
-    accountSwitching,
-    codeBlockCopyUseModifier: appSettings.composerCodeBlockCopyUseModifier,
-    openAppTargets: appSettings.openAppTargets,
-    openAppIconById,
-    selectedOpenAppId: appSettings.selectedOpenAppId,
-    onSelectOpenAppId: handleSelectOpenAppId,
-    approvals,
-    userInputRequests,
-    handleApprovalDecision,
-    handleApprovalBatchAccept,
-    handleApprovalRemember,
-    handleUserInputSubmit: handleUserInputSubmitWithPlanApply,
-    handleUserInputDismiss,
-    onRecoverThreadRuntime: async (workspaceId, threadId) =>
-      recoverThreadBindingForManualRecovery({
-        workspaceId,
-        threadId,
-        threadsByWorkspace,
-        refreshThread,
-        startThreadForWorkspace,
-      }),
-    onRecoverThreadRuntimeAndResend: async (workspaceId, threadId, message) =>
-      recoverThreadBindingAndResendForManualRecovery({
-        workspaceId,
-        threadId,
-        message,
-        threadsByWorkspace,
-        resolveWorkspace: (targetWorkspaceId) =>
-          (typeof workspacesById?.get === "function"
-            ? workspacesById.get(targetWorkspaceId)
-            : workspacesById?.[targetWorkspaceId]) ??
-          workspaces.find((entry: any) => entry.id === targetWorkspaceId) ??
-          null,
-        refreshThread,
-        forkThreadForWorkspace,
-        startThreadForWorkspace,
-        connectWorkspace,
-        sendUserMessageToThread,
-      }),
-    onThreadRecoveryFork: async () => {
-      await startFork("/fork");
+    workspace: {
+      workspaces,
+      groupedWorkspaces,
+      hasWorkspaceGroups: workspaceGroups.length > 0,
+      deletingWorktreeIds,
+      threadsByWorkspace,
+      threadParentById,
+      threadStatusById,
+      historyLoadingByThreadId,
+      historyRestoredAtMsByThread,
+      runningSessionCountByWorkspaceId,
+      recentCompletedSessionCountByWorkspaceId,
+      hydratedThreadListWorkspaceIds: hydratedThreadListWorkspaceIdsRef.current,
+      threadListLoadingByWorkspace,
+      threadListPagingByWorkspace,
+      threadListCursorByWorkspace,
+      activeWorkspaceId,
+      activeThreadId,
+      isPhone,
+      isTablet,
+      systemProxyEnabled: appSettings.systemProxyEnabled,
+      systemProxyUrl: appSettings.systemProxyUrl,
     },
-    handleExitPlanModeExecute,
-    onOpenSettings: () => openSettings(),
-    onOpenAgentSettings: () =>
-      openSettings("agent-prompt-management", "agent-management"),
-    onOpenPromptSettings: () =>
-      openSettings("agent-prompt-management", "prompt-library"),
-    onOpenModelSettings: handleOpenModelSettings,
-    onRefreshModelConfig: handleRefreshModelConfig,
-    isModelConfigRefreshing,
-    onOpenDictationSettings: () => openSettings("dictation"),
-    onOpenDebug: handleDebugClick,
-    showDebugButton,
-    onAddWorkspace: handleAddWorkspace,
-    onSelectHome: () => {
-      closeSettings();
-      handleOpenHomeChat();
-    },
-    onSelectWorkspace: (workspaceId) => {
-      closeSettings();
-      exitDiffView();
-      resetPullRequestSelection();
-      setHomeOpen(false);
-      setWorkspaceHomeWorkspaceId(null);
-      setCenterMode("chat");
-      setActiveWorkspaceId(workspaceId);
-      if (isCompact) {
-        setActiveTab("codex");
-      }
-      ensureWorkspaceThreadListLoaded(workspaceId);
-      setActiveThreadId(null, workspaceId);
-    },
-    onConnectWorkspace: async (workspace) => {
-      await connectWorkspace(workspace);
-      ensureWorkspaceThreadListLoaded(workspace.id, { force: true });
-      if (isCompact) {
-        setActiveTab("codex");
-      }
-    },
-    onAddAgent: handleAddAgent,
-    engineOptions: availableEngines,
-    enabledEngines: {
-      gemini: appSettings.geminiEnabled !== false,
-      opencode: appSettings.opencodeEnabled !== false,
-    },
-    onRefreshEngineOptions: refreshEngines,
-    onAddSharedAgent: handleStartSharedConversation,
-    onAddWorktreeAgent: handleAddWorktreeAgent,
-    onAddCloneAgent: handleAddCloneAgent,
-    onToggleWorkspaceCollapse: (workspaceId, collapsed) => {
-      const target = workspacesById.get(workspaceId);
-      if (!target) {
-        return;
-      }
-      void updateWorkspaceSettings(workspaceId, {
-        sidebarCollapsed: collapsed,
-      }).then(() => {
-        if (!collapsed) {
-          ensureWorkspaceThreadListLoaded(workspaceId);
-        }
-      });
-    },
-    onSelectThread: (workspaceId, threadId) => {
-      const preserveEditor = shouldPreserveEditorOnThreadSelect({
-        isCompact,
-        centerMode,
-        activeWorkspaceId,
-        targetWorkspaceId: workspaceId,
-        activeEditorFilePath,
-      });
-      const diffCleanupAction =
-        getThreadSelectDiffCleanupAction(preserveEditor);
-      closeSettings();
-      if (diffCleanupAction === "clear-selected-diff") {
-        setSelectedDiffPath(null);
-      } else {
-        exitDiffView();
-      }
-      resetPullRequestSelection();
-      setHomeOpen(false);
-      setWorkspaceHomeWorkspaceId(null);
-      if (!preserveEditor) {
-        setCenterMode("chat");
-      }
-      setAppMode("chat");
-      setActiveTab("codex");
-      selectWorkspace(workspaceId);
-      setActiveThreadId(threadId, workspaceId);
-      // Auto-switch engine based on thread's engineSource
-      const threads = threadsByWorkspace[workspaceId] ?? [];
-      const thread = threads.find(
-        (threadEntry: { id: string }) => threadEntry.id === threadId,
-      );
-      if (thread?.engineSource) {
-        setActiveEngine(thread.engineSource);
-      }
-    },
-    onSelectHomeWorkspace: handleSelectHomeWorkspace,
-    onDeleteThread: async (workspaceId, threadId) => {
-      openDeleteThreadPrompt(workspaceId, threadId);
-    },
-    onArchiveThread: async (workspaceId, threadId) => {
-      try {
-        const response = await archiveWorkspaceSessions(workspaceId, [
+    runtime: {
+      activeItems,
+      activeQueuedHandoffBubble,
+      threadItemsByThread,
+      sessionRadarRunningSessions,
+      sessionRadarRecentCompletedSessions,
+      activeRateLimits,
+      usageShowRemaining: appSettings.usageShowRemaining,
+      showSidebarProviderLabels: appSettings.showSidebarProviderLabels,
+      onRefreshAccountRateLimits: handleRefreshAccountRateLimits,
+      showMessageAnchors: appSettings.showMessageAnchors,
+      accountInfo: activeAccount,
+      onSwitchAccount: handleSwitchAccount,
+      onCancelSwitchAccount: handleCancelSwitchAccount,
+      accountSwitching,
+      codeBlockCopyUseModifier: appSettings.composerCodeBlockCopyUseModifier,
+      openAppTargets: appSettings.openAppTargets,
+      openAppIconById,
+      selectedOpenAppId: appSettings.selectedOpenAppId,
+      onSelectOpenAppId: handleSelectOpenAppId,
+      approvals,
+      userInputRequests,
+      handleApprovalDecision,
+      handleApprovalBatchAccept,
+      handleApprovalRemember,
+      handleUserInputSubmit: handleUserInputSubmitWithPlanApply,
+      handleUserInputDismiss,
+      onRecoverThreadRuntime: async (workspaceId, threadId) =>
+        recoverThreadBindingForManualRecovery({
+          workspaceId,
           threadId,
-        ]);
-        const mutationResult = response.results.find(
-          (result: any) => result.sessionId === threadId,
-        );
-        if (!mutationResult?.ok) {
-          throw new Error(
-            mutationResult?.error ?? t("workspace.archiveConversationFailed"),
-          );
+          threadsByWorkspace,
+          refreshThread,
+          startThreadForWorkspace,
+        }),
+      onRecoverThreadRuntimeAndResend: async (workspaceId, threadId, message) =>
+        recoverThreadBindingAndResendForManualRecovery({
+          workspaceId,
+          threadId,
+          message,
+          threadsByWorkspace,
+          resolveWorkspace: (targetWorkspaceId) =>
+            (typeof workspacesById?.get === "function"
+              ? workspacesById.get(targetWorkspaceId)
+              : workspacesById?.[targetWorkspaceId]) ??
+            workspaces.find((entry: any) => entry.id === targetWorkspaceId) ??
+            null,
+          refreshThread,
+          forkThreadForWorkspace,
+          startThreadForWorkspace,
+          connectWorkspace,
+          sendUserMessageToThread,
+        }),
+      onThreadRecoveryFork: async () => {
+        await startFork("/fork");
+      },
+      handleExitPlanModeExecute,
+    },
+    chrome: {
+      onOpenSettings: () => openSettings(),
+      onOpenAgentSettings: () =>
+        openSettings("agent-prompt-management", "agent-management"),
+      onOpenPromptSettings: () =>
+        openSettings("agent-prompt-management", "prompt-library"),
+      onOpenModelSettings: handleOpenModelSettings,
+      onRefreshModelConfig: handleRefreshModelConfig,
+      isModelConfigRefreshing,
+      onOpenDictationSettings: () => openSettings("dictation"),
+      onOpenDebug: handleDebugClick,
+      showDebugButton,
+      onAddWorkspace: handleAddWorkspace,
+      onSelectHome: () => {
+        closeSettings();
+        handleOpenHomeChat();
+      },
+      onSelectWorkspace: (workspaceId) => {
+        closeSettings();
+        exitDiffView();
+        resetPullRequestSelection();
+        setHomeOpen(false);
+        setWorkspaceHomeWorkspaceId(null);
+        setCenterMode("chat");
+        setActiveWorkspaceId(workspaceId);
+        if (isCompact) {
+          setActiveTab("codex");
         }
-        if (activeWorkspaceId === workspaceId && activeThreadId === threadId) {
-          setActiveThreadId(null, workspaceId);
+        ensureWorkspaceThreadListLoaded(workspaceId);
+        setActiveThreadId(null, workspaceId);
+      },
+      onConnectWorkspace: async (workspace) => {
+        await connectWorkspace(workspace);
+        ensureWorkspaceThreadListLoaded(workspace.id, { force: true });
+        if (isCompact) {
+          setActiveTab("codex");
         }
-        ensureWorkspaceThreadListLoaded(workspaceId, { force: true });
-      } catch (error: unknown) {
-        alertError(error instanceof Error ? error.message : String(error));
-      }
-    },
-    deleteConfirmThreadId: deleteThreadPrompt?.threadId ?? null,
-    deleteConfirmWorkspaceId: deleteThreadPrompt?.workspaceId ?? null,
-    deleteConfirmBusy: isDeleteThreadPromptBusy,
-    onCancelDeleteConfirm: handleDeleteThreadPromptCancel,
-    onConfirmDeleteConfirm: () => {
-      void handleDeleteThreadPromptConfirm();
-    },
-    onSyncThread: (workspaceId, threadId) => {
-      void refreshThread(workspaceId, threadId);
-    },
-    pinThread,
-    unpinThread,
-    isThreadPinned,
-    getPinTimestamp,
-    pinnedThreadsVersion,
-    isThreadAutoNaming,
-    onRenameThread: (workspaceId, threadId) => {
-      handleRenameThread(workspaceId, threadId);
-    },
-    onAutoNameThread: (workspaceId, threadId) => {
-      addDebugEntry({
-        id: `${Date.now()}-thread-title-manual-trigger`,
-        timestamp: Date.now(),
-        source: "client",
-        label: "thread/title manual trigger",
-        payload: { workspaceId, threadId },
-      });
-      void triggerAutoThreadTitle(workspaceId, threadId, { force: true })
-        .then((title: string | null | undefined) => {
-          if (!title) {
-            addDebugEntry({
-              id: `${Date.now()}-thread-title-manual-empty`,
-              timestamp: Date.now(),
-              source: "client",
-              label: "thread/title manual skipped",
-              payload: { workspaceId, threadId },
-            });
-            return;
+      },
+      onAddAgent: handleAddAgent,
+      engineOptions: availableEngines,
+      enabledEngines: {
+        gemini: appSettings.geminiEnabled !== false,
+        opencode: appSettings.opencodeEnabled !== false,
+      },
+      onRefreshEngineOptions: refreshEngines,
+      onAddSharedAgent: handleStartSharedConversation,
+      onAddWorktreeAgent: handleAddWorktreeAgent,
+      onAddCloneAgent: handleAddCloneAgent,
+      onToggleWorkspaceCollapse: (workspaceId, collapsed) => {
+        const target = workspacesById.get(workspaceId);
+        if (!target) {
+          return;
+        }
+        void updateWorkspaceSettings(workspaceId, {
+          sidebarCollapsed: collapsed,
+        }).then(() => {
+          if (!collapsed) {
+            ensureWorkspaceThreadListLoaded(workspaceId);
           }
-          addDebugEntry({
-            id: `${Date.now()}-thread-title-manual-success`,
-            timestamp: Date.now(),
-            source: "server",
-            label: "thread/title manual generated",
-            payload: { workspaceId, threadId, title },
-          });
-        })
-        .catch((error: unknown) => {
-          addDebugEntry({
-            id: `${Date.now()}-thread-title-manual-error`,
-            timestamp: Date.now(),
-            source: "error",
-            label: "thread/title manual error",
-            payload: error instanceof Error ? error.message : String(error),
-          });
         });
-    },
-    onOpenClaudeTui: handleOpenClaudeTui,
-    onDeleteWorkspace: (workspaceId) => {
-      void removeWorkspace(workspaceId);
-    },
-    onDeleteWorktree: (workspaceId) => {
-      void removeWorktree(workspaceId);
-    },
-    onRenameWorkspaceAlias: handleRenameWorkspaceAlias,
-    onLoadOlderThreads: (workspaceId) => {
-      const workspace = workspacesById.get(workspaceId);
-      if (!workspace) {
-        return;
-      }
-      void loadOlderThreadsForWorkspace(workspace);
-    },
-    onQuickReloadWorkspaceThreads: (workspaceId) => {
-      const workspace = workspacesById.get(workspaceId);
-      if (!workspace) {
-        return;
-      }
-      const targets =
-        workspace.kind === "main"
-          ? [
-              workspace,
-              ...workspaces.filter(
-                (candidate: WorkspaceInfo) =>
-                  candidate.parentId === workspace.id,
-              ),
-            ]
-          : [workspace];
-      void Promise.allSettled(
-        targets.map((target) => listThreadsForWorkspaceTracked(target)),
-      );
-    },
-    onReloadWorkspaceThreads: async (workspaceId) => {
-      const workspace = workspacesById.get(workspaceId);
-      if (!workspace) {
-        return;
-      }
-      const workspaceName =
-        workspace.name || t("workspace.noWorkspaceSelected");
-      const detailLines = [
-        t("workspace.reloadWorkspaceThreadsEffectRefresh"),
-        t("workspace.reloadWorkspaceThreadsEffectDisplayOnly"),
-        t("workspace.reloadWorkspaceThreadsEffectNoDelete"),
-        t("workspace.reloadWorkspaceThreadsEffectNoGitWrite"),
-      ];
-      const confirmed = await ask(
-        `${t("workspace.reloadWorkspaceThreadsConfirm", { name: workspaceName })}\n\n${t("workspace.reloadWorkspaceThreadsBeforeYouConfirm")}\n${detailLines.map((line) => `• ${line}`).join("\n")}`,
-        {
-          title: t("workspace.reloadWorkspaceThreadsTitle"),
-          kind: "warning",
-          okLabel: t("threads.reloadThreads"),
-          cancelLabel: t("common.cancel"),
-        },
-      );
-      if (!confirmed) {
-        return;
-      }
-      const targets =
-        workspace.kind === "main"
-          ? [
-              workspace,
-              ...workspaces.filter(
-                (candidate: WorkspaceInfo) =>
-                  candidate.parentId === workspace.id,
-              ),
-            ]
-          : [workspace];
-      void Promise.allSettled(
-        targets.map((target) => listThreadsForWorkspaceTracked(target)),
-      );
-    },
-    updaterState,
-    onUpdate: startUpdate,
-    onDismissUpdate: dismissUpdate,
-    errorToasts,
-    onDismissErrorToast: dismissErrorToast,
-    latestAgentRuns,
-    isLoadingLatestAgents,
-    onSelectHomeThread: handleSelectWorkspaceInstance,
-    onOpenSpecHub: handleOpenSpecHub,
-    showLoadingProgressDialog,
-    hideLoadingProgressDialog,
-    activeWorkspace,
-    activeParentWorkspace,
-    worktreeLabel,
-    worktreeRename: worktreeRename ?? undefined,
-    isWorktreeWorkspace,
-    branchName: gitStatus.branchName,
-    branches,
-    onCheckoutBranch: handleCheckoutBranch,
-    onCreateBranch: handleCreateBranch,
-    onCopyThread: handleCopyThread,
-    onLockPanel: handleLockPanel,
-    onToggleTerminal: handleToggleTerminalPanel,
-    showTerminalButton: !isCompact,
-    launchScript: launchScriptState.launchScript,
-    launchScriptEditorOpen: launchScriptState.editorOpen,
-    launchScriptDraft: launchScriptState.draftScript,
-    launchScriptSaving: launchScriptState.isSaving,
-    launchScriptError: launchScriptState.error,
-    onRunLaunchScript: launchScriptState.onRunLaunchScript,
-    onOpenLaunchScriptEditor: launchScriptState.onOpenEditor,
-    onCloseLaunchScriptEditor: launchScriptState.onCloseEditor,
-    onLaunchScriptDraftChange: launchScriptState.onDraftScriptChange,
-    onSaveLaunchScript: launchScriptState.onSaveLaunchScript,
-    launchScriptsState,
-    mainHeaderActionsNode: (
-      <MainHeaderActions
-        isCompact={isCompact}
-        rightPanelCollapsed={rightPanelCollapsed}
-        sidebarToggleProps={mainHeaderSidebarToggleProps}
-        showRuntimeConsoleButton={
-          !isCompact &&
-          clientUiVisibility.isControlVisible("topTool.runtimeConsole")
+      },
+      onSelectThread: (workspaceId, threadId) => {
+        const preserveEditor = shouldPreserveEditorOnThreadSelect({
+          isCompact,
+          centerMode,
+          activeWorkspaceId,
+          targetWorkspaceId: workspaceId,
+          activeEditorFilePath,
+        });
+        const diffCleanupAction =
+          getThreadSelectDiffCleanupAction(preserveEditor);
+        closeSettings();
+        if (diffCleanupAction === "clear-selected-diff") {
+          setSelectedDiffPath(null);
+        } else {
+          exitDiffView();
         }
-        isRuntimeConsoleVisible={runtimeRunState.runtimeConsoleVisible}
-        onToggleRuntimeConsole={handleToggleRuntimeConsole}
-        showTerminalButton={
-          !isCompact && clientUiVisibility.isControlVisible("topTool.terminal")
+        resetPullRequestSelection();
+        setHomeOpen(false);
+        setWorkspaceHomeWorkspaceId(null);
+        if (!preserveEditor) {
+          setCenterMode("chat");
         }
-        isTerminalOpen={terminalOpen}
-        onToggleTerminal={handleToggleTerminalPanel}
-        showSoloButton={
-          soloModeEnabled &&
-          clientUiVisibility.isControlVisible("topTool.focus")
+        setAppMode("chat");
+        setActiveTab("codex");
+        selectWorkspace(workspaceId);
+        setActiveThreadId(threadId, workspaceId);
+        // Auto-switch engine based on thread's engineSource
+        const threads = threadsByWorkspace[workspaceId] ?? [];
+        const thread = threads.find(
+          (threadEntry: { id: string }) => threadEntry.id === threadId,
+        );
+        if (thread?.engineSource) {
+          setActiveEngine(thread.engineSource);
         }
-        isSoloMode={isSoloMode}
-        onToggleSoloMode={toggleSoloMode}
-        isBrowserDockOpen={browserDockOpen}
-        onToggleBrowserDock={
-          clientUiVisibility.isControlVisible("topTool.browserDock")
-            ? handleToggleBrowserDock
-            : undefined
+      },
+      onSelectHomeWorkspace: handleSelectHomeWorkspace,
+      onDeleteThread: async (workspaceId, threadId) => {
+        openDeleteThreadPrompt(workspaceId, threadId);
+      },
+      onArchiveThread: async (workspaceId, threadId) => {
+        try {
+          const response = await archiveWorkspaceSessions(workspaceId, [
+            threadId,
+          ]);
+          const mutationResult = response.results.find(
+            (result: any) => result.sessionId === threadId,
+          );
+          if (!mutationResult?.ok) {
+            throw new Error(
+              mutationResult?.error ?? t("workspace.archiveConversationFailed"),
+            );
+          }
+          if (
+            activeWorkspaceId === workspaceId &&
+            activeThreadId === threadId
+          ) {
+            setActiveThreadId(null, workspaceId);
+          }
+          ensureWorkspaceThreadListLoaded(workspaceId, { force: true });
+        } catch (error: unknown) {
+          alertError(error instanceof Error ? error.message : String(error));
         }
-        showClientDocumentationButton={
-          !isCompact &&
-          clientUiVisibility.isControlVisible("topTool.clientDocumentation")
+      },
+      deleteConfirmThreadId: deleteThreadPrompt?.threadId ?? null,
+      deleteConfirmWorkspaceId: deleteThreadPrompt?.workspaceId ?? null,
+      deleteConfirmBusy: isDeleteThreadPromptBusy,
+      onCancelDeleteConfirm: handleDeleteThreadPromptCancel,
+      onConfirmDeleteConfirm: () => {
+        void handleDeleteThreadPromptConfirm();
+      },
+      onSyncThread: (workspaceId, threadId) => {
+        void refreshThread(workspaceId, threadId);
+      },
+      pinThread,
+      unpinThread,
+      isThreadPinned,
+      getPinTimestamp,
+      pinnedThreadsVersion,
+      isThreadAutoNaming,
+      onRenameThread: (workspaceId, threadId) => {
+        handleRenameThread(workspaceId, threadId);
+      },
+      onAutoNameThread: (workspaceId, threadId) => {
+        addDebugEntry({
+          id: `${Date.now()}-thread-title-manual-trigger`,
+          timestamp: Date.now(),
+          source: "client",
+          label: "thread/title manual trigger",
+          payload: { workspaceId, threadId },
+        });
+        void triggerAutoThreadTitle(workspaceId, threadId, { force: true })
+          .then((title: string | null | undefined) => {
+            if (!title) {
+              addDebugEntry({
+                id: `${Date.now()}-thread-title-manual-empty`,
+                timestamp: Date.now(),
+                source: "client",
+                label: "thread/title manual skipped",
+                payload: { workspaceId, threadId },
+              });
+              return;
+            }
+            addDebugEntry({
+              id: `${Date.now()}-thread-title-manual-success`,
+              timestamp: Date.now(),
+              source: "server",
+              label: "thread/title manual generated",
+              payload: { workspaceId, threadId, title },
+            });
+          })
+          .catch((error: unknown) => {
+            addDebugEntry({
+              id: `${Date.now()}-thread-title-manual-error`,
+              timestamp: Date.now(),
+              source: "error",
+              label: "thread/title manual error",
+              payload: error instanceof Error ? error.message : String(error),
+            });
+          });
+      },
+      onOpenClaudeTui: handleOpenClaudeTui,
+      onDeleteWorkspace: (workspaceId) => {
+        void removeWorkspace(workspaceId);
+      },
+      onDeleteWorktree: (workspaceId) => {
+        void removeWorktree(workspaceId);
+      },
+      onRenameWorkspaceAlias: handleRenameWorkspaceAlias,
+      onLoadOlderThreads: (workspaceId) => {
+        const workspace = workspacesById.get(workspaceId);
+        if (!workspace) {
+          return;
         }
-        onOpenClientDocumentation={handleOpenClientDocumentation}
-      />
-    ),
-    filePanelMode,
-    onFilePanelModeChange: setFilePanelMode,
-    liveEditPreviewEnabled,
-    onToggleLiveEditPreview: () => {
-      setLiveEditPreviewEnabled((current: boolean) => !current);
-    },
-    fileTreeLoading: isFilesLoading,
-    fileTreeLoadError,
-    onRefreshFiles: refreshFiles,
-    onOpenDetachedFileExplorer: handleOpenDetachedFileExplorer,
-    onToggleRuntimeConsole: handleToggleRuntimeConsole,
-    runtimeConsoleVisible: runtimeRunState.runtimeConsoleVisible,
-    browserDockOpen,
-    onCloseBrowserDock: handleCloseBrowserDock,
-    centerMode,
-    setCenterMode,
-    editorSplitCompanion,
-    setEditorSplitCompanion,
-    editorSplitLayout,
-    onToggleEditorSplitLayout: () =>
-      setEditorSplitLayout((prev: "vertical" | "horizontal") =>
-        prev === "vertical" ? "horizontal" : "vertical",
+        void loadOlderThreadsForWorkspace(workspace);
+      },
+      onQuickReloadWorkspaceThreads: (workspaceId) => {
+        const workspace = workspacesById.get(workspaceId);
+        if (!workspace) {
+          return;
+        }
+        const targets =
+          workspace.kind === "main"
+            ? [
+                workspace,
+                ...workspaces.filter(
+                  (candidate: WorkspaceInfo) =>
+                    candidate.parentId === workspace.id,
+                ),
+              ]
+            : [workspace];
+        void Promise.allSettled(
+          targets.map((target) => listThreadsForWorkspaceTracked(target)),
+        );
+      },
+      onReloadWorkspaceThreads: async (workspaceId) => {
+        const workspace = workspacesById.get(workspaceId);
+        if (!workspace) {
+          return;
+        }
+        const workspaceName =
+          workspace.name || t("workspace.noWorkspaceSelected");
+        const detailLines = [
+          t("workspace.reloadWorkspaceThreadsEffectRefresh"),
+          t("workspace.reloadWorkspaceThreadsEffectDisplayOnly"),
+          t("workspace.reloadWorkspaceThreadsEffectNoDelete"),
+          t("workspace.reloadWorkspaceThreadsEffectNoGitWrite"),
+        ];
+        const confirmed = await ask(
+          `${t("workspace.reloadWorkspaceThreadsConfirm", { name: workspaceName })}\n\n${t("workspace.reloadWorkspaceThreadsBeforeYouConfirm")}\n${detailLines.map((line) => `• ${line}`).join("\n")}`,
+          {
+            title: t("workspace.reloadWorkspaceThreadsTitle"),
+            kind: "warning",
+            okLabel: t("threads.reloadThreads"),
+            cancelLabel: t("common.cancel"),
+          },
+        );
+        if (!confirmed) {
+          return;
+        }
+        const targets =
+          workspace.kind === "main"
+            ? [
+                workspace,
+                ...workspaces.filter(
+                  (candidate: WorkspaceInfo) =>
+                    candidate.parentId === workspace.id,
+                ),
+              ]
+            : [workspace];
+        void Promise.allSettled(
+          targets.map((target) => listThreadsForWorkspaceTracked(target)),
+        );
+      },
+      updaterState,
+      onUpdate: startUpdate,
+      onDismissUpdate: dismissUpdate,
+      errorToasts,
+      onDismissErrorToast: dismissErrorToast,
+      latestAgentRuns,
+      isLoadingLatestAgents,
+      onSelectHomeThread: handleSelectWorkspaceInstance,
+      onOpenSpecHub: handleOpenSpecHub,
+      showLoadingProgressDialog,
+      hideLoadingProgressDialog,
+      activeWorkspace,
+      activeParentWorkspace,
+      worktreeLabel,
+      worktreeRename: worktreeRename ?? undefined,
+      isWorktreeWorkspace,
+      branchName: gitStatus.branchName,
+      branches,
+      onCheckoutBranch: handleCheckoutBranch,
+      onCreateBranch: handleCreateBranch,
+      onCopyThread: handleCopyThread,
+      onLockPanel: handleLockPanel,
+      onToggleTerminal: handleToggleTerminalPanel,
+      showTerminalButton: !isCompact,
+      launchScript: launchScriptState.launchScript,
+      launchScriptEditorOpen: launchScriptState.editorOpen,
+      launchScriptDraft: launchScriptState.draftScript,
+      launchScriptSaving: launchScriptState.isSaving,
+      launchScriptError: launchScriptState.error,
+      onRunLaunchScript: launchScriptState.onRunLaunchScript,
+      onOpenLaunchScriptEditor: launchScriptState.onOpenEditor,
+      onCloseLaunchScriptEditor: launchScriptState.onCloseEditor,
+      onLaunchScriptDraftChange: launchScriptState.onDraftScriptChange,
+      onSaveLaunchScript: launchScriptState.onSaveLaunchScript,
+      launchScriptsState,
+      mainHeaderActionsNode: (
+        <MainHeaderActions
+          isCompact={isCompact}
+          rightPanelCollapsed={rightPanelCollapsed}
+          sidebarToggleProps={mainHeaderSidebarToggleProps}
+          showRuntimeConsoleButton={
+            !isCompact &&
+            clientUiVisibility.isControlVisible("topTool.runtimeConsole")
+          }
+          isRuntimeConsoleVisible={runtimeRunState.runtimeConsoleVisible}
+          onToggleRuntimeConsole={handleToggleRuntimeConsole}
+          showTerminalButton={
+            !isCompact &&
+            clientUiVisibility.isControlVisible("topTool.terminal")
+          }
+          isTerminalOpen={terminalOpen}
+          onToggleTerminal={handleToggleTerminalPanel}
+          showSoloButton={
+            soloModeEnabled &&
+            clientUiVisibility.isControlVisible("topTool.focus")
+          }
+          isSoloMode={isSoloMode}
+          onToggleSoloMode={toggleSoloMode}
+          isBrowserDockOpen={browserDockOpen}
+          onToggleBrowserDock={
+            clientUiVisibility.isControlVisible("topTool.browserDock")
+              ? handleToggleBrowserDock
+              : undefined
+          }
+          showClientDocumentationButton={
+            !isCompact &&
+            clientUiVisibility.isControlVisible("topTool.clientDocumentation")
+          }
+          onOpenClientDocumentation={handleOpenClientDocumentation}
+        />
       ),
-    isEditorFileMaximized,
-    onToggleEditorFileMaximized: () =>
-      setIsEditorFileMaximized((prev: boolean) => !prev),
-    editorFilePath: activeEditorFilePath,
-    editorNavigationTarget,
-    editorHighlightTarget,
-    openEditorTabs: openFileTabs,
-    onActivateEditorTab: handleActivateWorkspaceFileTab,
-    onCloseEditorTab: handleCloseWorkspaceFileTab,
-    onCloseAllEditorTabs: handleCloseAllWorkspaceFileTabs,
-    onActiveEditorLineRangeChange: setActiveEditorLineRange,
-    onOpenFile: handleOpenWorkspaceFile,
-    externalChangeMonitoringEnabled: enableMainFileExternalChangeMonitoring,
-    externalChangeTransportMode: mainFileExternalChangeTransportMode,
-    externalChangeApplyMode: liveEditPreviewEnabled ? "auto" : "manual",
-    externalChangeAutoApplyDebounceMs: liveEditPreviewEnabled ? 700 : 0,
-    onExitEditor: handleExitWorkspaceEditor,
-    onExitDiff: () => {
-      setCenterMode("chat");
-      handleSelectDiffForPanel(null);
+      filePanelMode,
+      onFilePanelModeChange: setFilePanelMode,
+      liveEditPreviewEnabled,
+      onToggleLiveEditPreview: () => {
+        setLiveEditPreviewEnabled((current: boolean) => !current);
+      },
+      fileTreeLoading: isFilesLoading,
+      fileTreeLoadError,
+      onRefreshFiles: refreshFiles,
+      onOpenDetachedFileExplorer: handleOpenDetachedFileExplorer,
+      onToggleRuntimeConsole: handleToggleRuntimeConsole,
+      runtimeConsoleVisible: runtimeRunState.runtimeConsoleVisible,
+      browserDockOpen,
+      onCloseBrowserDock: handleCloseBrowserDock,
     },
-    activeTab,
-    onSelectTab: setActiveTab,
-    tabletNavTab: tabletTab,
-    gitPanelMode,
-    onGitPanelModeChange: handleGitPanelModeChange,
-    onOpenGitHistoryPanel: () => {
-      setAppMode((current: string) =>
-        current === "gitHistory" ? "chat" : "gitHistory",
-      );
+    editor: {
+      centerMode,
+      setCenterMode,
+      editorSplitCompanion,
+      setEditorSplitCompanion,
+      editorSplitLayout,
+      onToggleEditorSplitLayout: () =>
+        setEditorSplitLayout((prev: "vertical" | "horizontal") =>
+          prev === "vertical" ? "horizontal" : "vertical",
+        ),
+      isEditorFileMaximized,
+      onToggleEditorFileMaximized: () =>
+        setIsEditorFileMaximized((prev: boolean) => !prev),
+      editorFilePath: activeEditorFilePath,
+      editorNavigationTarget,
+      editorHighlightTarget,
+      openEditorTabs: openFileTabs,
+      onActivateEditorTab: handleActivateWorkspaceFileTab,
+      onCloseEditorTab: handleCloseWorkspaceFileTab,
+      onCloseAllEditorTabs: handleCloseAllWorkspaceFileTabs,
+      onActiveEditorLineRangeChange: setActiveEditorLineRange,
+      onOpenFile: handleOpenWorkspaceFile,
+      externalChangeMonitoringEnabled: enableMainFileExternalChangeMonitoring,
+      externalChangeTransportMode: mainFileExternalChangeTransportMode,
+      externalChangeApplyMode: liveEditPreviewEnabled ? "auto" : "manual",
+      externalChangeAutoApplyDebounceMs: liveEditPreviewEnabled ? 700 : 0,
+      onExitEditor: handleExitWorkspaceEditor,
+      onExitDiff: () => {
+        setCenterMode("chat");
+        handleSelectDiffForPanel(null);
+      },
+      activeTab,
+      onSelectTab: setActiveTab,
+      tabletNavTab: tabletTab,
+      gitPanelMode,
+      onGitPanelModeChange: handleGitPanelModeChange,
+      onOpenGitHistoryPanel: () => {
+        setAppMode((current: string) =>
+          current === "gitHistory" ? "chat" : "gitHistory",
+        );
+      },
+      onOpenProjectMap: () => {
+        closeSettings();
+        collapseSidebar();
+        setAppMode("chat");
+        setCenterMode("projectMap");
+        expandRightPanel();
+      },
+      gitDiffViewStyle,
+      gitDiffListView,
+      onGitDiffListViewChange: setGitDiffListView,
+      worktreeApplyLabel: t("git.applyWorktreeChangesAction"),
+      worktreeApplyTitle: activeParentWorkspace?.name
+        ? t("git.applyWorktreeChanges") + ` ${activeParentWorkspace.name}`
+        : t("git.applyWorktreeChanges"),
+      worktreeApplyLoading: isWorktreeWorkspace ? worktreeApplyLoading : false,
+      worktreeApplyError: isWorktreeWorkspace ? worktreeApplyError : null,
+      worktreeApplySuccess: isWorktreeWorkspace ? worktreeApplySuccess : false,
+      onApplyWorktreeChanges: isWorktreeWorkspace
+        ? handleApplyWorktreeChanges
+        : undefined,
     },
-    onOpenProjectMap: () => {
-      closeSettings();
-      collapseSidebar();
-      setAppMode("chat");
-      setCenterMode("projectMap");
-      expandRightPanel();
+    git: {
+      gitStatus,
+      fileStatus,
+      selectedDiffPath,
+      diffScrollRequestId,
+      onSelectDiff: handleSelectDiffForPanel,
+      gitLogEntries,
+      gitLogTotal,
+      gitLogAhead,
+      gitLogBehind,
+      gitLogAheadEntries,
+      gitLogBehindEntries,
+      gitLogUpstream,
+      gitLogError,
+      gitLogLoading,
+      selectedCommitSha,
+      gitIssues,
+      gitIssuesTotal,
+      gitIssuesLoading,
+      gitIssuesError,
+      gitPullRequests,
+      gitPullRequestsTotal,
+      gitPullRequestsLoading,
+      gitPullRequestsError,
+      selectedPullRequestNumber: selectedPullRequest?.number ?? null,
+      selectedPullRequest: diffSource === "pr" ? selectedPullRequest : null,
+      selectedPullRequestComments:
+        diffSource === "pr" ? gitPullRequestComments : [],
+      selectedPullRequestCommentsLoading: gitPullRequestCommentsLoading,
+      selectedPullRequestCommentsError: gitPullRequestCommentsError,
+      onSelectPullRequest: (pullRequest) => {
+        setSelectedCommitSha(null);
+        handleSelectPullRequest(pullRequest);
+      },
+      onSelectCommit: (entry) => {
+        handleSelectCommit(entry.sha);
+      },
+      gitRemoteUrl,
+      gitRoot: activeGitRoot,
+      gitRootCandidates,
+      gitRootScanDepth,
+      gitRootScanLoading,
+      gitRootScanError,
+      gitRootScanHasScanned,
+      onGitRootScanDepthChange: setGitRootScanDepth,
+      onScanGitRoots: scanGitRoots,
+      onSelectGitRoot: (path) => {
+        void handleSetGitRoot(path);
+      },
+      onClearGitRoot: () => {
+        void handleSetGitRoot(null);
+      },
+      onPickGitRoot: handlePickGitRoot,
+      onStageGitAll: handleStageGitAll,
+      onStageGitFile: handleStageGitFile,
+      onUnstageGitFile: handleUnstageGitFile,
+      onRevertGitFile: handleRevertGitFile,
+      onRevertAllGitChanges: handleRevertAllGitChanges,
+      gitDiffs: activeDiffs,
+      gitDiffLoading: activeDiffLoading,
+      gitDiffError: activeDiffError,
+      refreshGitDiffs,
+      queueGitStatusRefresh,
+      onDiffActivePathChange: handleActiveDiffPath,
+      onGitDiffViewStyleChange: setGitDiffViewStyle,
+      commitMessage,
+      commitMessageLoading,
+      commitMessageError,
+      onCommitMessageChange: handleCommitMessageChange,
+      onGenerateCommitMessage: handleGenerateCommitMessage,
+      onCommit: handleCommit,
+      onCommitAndPush: handleCommitAndPush,
+      onCommitAndSync: handleCommitAndSync,
+      onPush: handlePush,
+      onSync: handleSync,
+      commitLoading,
+      pushLoading,
+      syncLoading,
+      commitError,
+      pushError,
+      syncError,
+      commitsAhead: gitLogAhead,
     },
-    gitDiffViewStyle,
-    gitDiffListView,
-    onGitDiffListViewChange: setGitDiffListView,
-    worktreeApplyLabel: t("git.applyWorktreeChangesAction"),
-    worktreeApplyTitle: activeParentWorkspace?.name
-      ? t("git.applyWorktreeChanges") + ` ${activeParentWorkspace.name}`
-      : t("git.applyWorktreeChanges"),
-    worktreeApplyLoading: isWorktreeWorkspace ? worktreeApplyLoading : false,
-    worktreeApplyError: isWorktreeWorkspace ? worktreeApplyError : null,
-    worktreeApplySuccess: isWorktreeWorkspace ? worktreeApplySuccess : false,
-    onApplyWorktreeChanges: isWorktreeWorkspace
-      ? handleApplyWorktreeChanges
-      : undefined,
-    gitStatus,
-    fileStatus,
-    selectedDiffPath,
-    diffScrollRequestId,
-    onSelectDiff: handleSelectDiffForPanel,
-    gitLogEntries,
-    gitLogTotal,
-    gitLogAhead,
-    gitLogBehind,
-    gitLogAheadEntries,
-    gitLogBehindEntries,
-    gitLogUpstream,
-    gitLogError,
-    gitLogLoading,
-    selectedCommitSha,
-    gitIssues,
-    gitIssuesTotal,
-    gitIssuesLoading,
-    gitIssuesError,
-    gitPullRequests,
-    gitPullRequestsTotal,
-    gitPullRequestsLoading,
-    gitPullRequestsError,
-    selectedPullRequestNumber: selectedPullRequest?.number ?? null,
-    selectedPullRequest: diffSource === "pr" ? selectedPullRequest : null,
-    selectedPullRequestComments:
-      diffSource === "pr" ? gitPullRequestComments : [],
-    selectedPullRequestCommentsLoading: gitPullRequestCommentsLoading,
-    selectedPullRequestCommentsError: gitPullRequestCommentsError,
-    onSelectPullRequest: (pullRequest) => {
-      setSelectedCommitSha(null);
-      handleSelectPullRequest(pullRequest);
-    },
-    onSelectCommit: (entry) => {
-      handleSelectCommit(entry.sha);
-    },
-    gitRemoteUrl,
-    gitRoot: activeGitRoot,
-    gitRootCandidates,
-    gitRootScanDepth,
-    gitRootScanLoading,
-    gitRootScanError,
-    gitRootScanHasScanned,
-    onGitRootScanDepthChange: setGitRootScanDepth,
-    onScanGitRoots: scanGitRoots,
-    onSelectGitRoot: (path) => {
-      void handleSetGitRoot(path);
-    },
-    onClearGitRoot: () => {
-      void handleSetGitRoot(null);
-    },
-    onPickGitRoot: handlePickGitRoot,
-    onStageGitAll: handleStageGitAll,
-    onStageGitFile: handleStageGitFile,
-    onUnstageGitFile: handleUnstageGitFile,
-    onRevertGitFile: handleRevertGitFile,
-    onRevertAllGitChanges: handleRevertAllGitChanges,
-    gitDiffs: activeDiffs,
-    gitDiffLoading: activeDiffLoading,
-    gitDiffError: activeDiffError,
-    refreshGitDiffs,
-    queueGitStatusRefresh,
-    onDiffActivePathChange: handleActiveDiffPath,
-    onGitDiffViewStyleChange: setGitDiffViewStyle,
-    commitMessage,
-    commitMessageLoading,
-    commitMessageError,
-    onCommitMessageChange: handleCommitMessageChange,
-    onGenerateCommitMessage: handleGenerateCommitMessage,
-    onCommit: handleCommit,
-    onCommitAndPush: handleCommitAndPush,
-    onCommitAndSync: handleCommitAndSync,
-    onPush: handlePush,
-    onSync: handleSync,
-    commitLoading,
-    pushLoading,
-    syncLoading,
-    commitError,
-    pushError,
-    syncError,
-    commitsAhead: gitLogAhead,
-    onSendPrompt: handleSendPrompt,
-    onSendPromptToNewAgent: handleSendPromptToNewAgent,
-    onCreatePrompt: handleCreatePrompt,
-    onUpdatePrompt: handleUpdatePrompt,
-    onDeletePrompt: handleDeletePrompt,
-    onMovePrompt: handleMovePrompt,
-    onRevealWorkspacePrompts: handleRevealWorkspacePrompts,
-    onRevealGeneralPrompts: handleRevealGeneralPrompts,
-    canRevealGeneralPrompts: Boolean(activeWorkspace),
-    onSend: handleComposerSendWithIntentCanvas,
-    onQueue: handleComposerQueueWithIntentCanvas,
-    onRequestContextCompaction: () => startCompact("/compact"),
-    onStop: interruptTurn,
-    completionEmailSelected: Boolean(
-      activeThreadId && completionEmailIntentByThread?.[activeThreadId],
-    ),
-    completionEmailDisabled: !activeThreadId,
-    onToggleCompletionEmail: () => {
-      if (activeThreadId) {
-        toggleCompletionEmailIntent(activeThreadId);
-      }
-    },
-    onRewind: handleRewindFromMessage,
-    onForkFromMessage: async (messageId, options) => {
-      if (!activeWorkspace || !activeThreadId) {
-        return;
-      }
-      const forkedThreadId = await forkSessionFromMessageForWorkspace(
-        activeWorkspace.id,
-        activeThreadId,
-        messageId,
-        {
-          activate: true,
-          mode: "messages-only",
-          providerProfileId: options?.providerProfileId ?? null,
-          providerProfile: options?.providerProfile ?? null,
-        },
-      );
-      if (!forkedThreadId) {
-        throw new Error("Fork did not return a child conversation.");
-      }
-      if (forkedThreadId && forkedThreadId !== activeThreadId) {
-        if (typeof updateThreadParent === "function") {
-          updateThreadParent(activeThreadId, [forkedThreadId]);
+    composer: {
+      onSendPrompt: handleSendPrompt,
+      onSendPromptToNewAgent: handleSendPromptToNewAgent,
+      onCreatePrompt: handleCreatePrompt,
+      onUpdatePrompt: handleUpdatePrompt,
+      onDeletePrompt: handleDeletePrompt,
+      onMovePrompt: handleMovePrompt,
+      onRevealWorkspacePrompts: handleRevealWorkspacePrompts,
+      onRevealGeneralPrompts: handleRevealGeneralPrompts,
+      canRevealGeneralPrompts: Boolean(activeWorkspace),
+      onSend: handleComposerSendWithIntentCanvas,
+      onQueue: handleComposerQueueWithIntentCanvas,
+      onRequestContextCompaction: () => startCompact("/compact"),
+      onStop: interruptTurn,
+      completionEmailSelected: Boolean(
+        activeThreadId && completionEmailIntentByThread?.[activeThreadId],
+      ),
+      completionEmailDisabled: !activeThreadId,
+      onToggleCompletionEmail: () => {
+        if (activeThreadId) {
+          toggleCompletionEmailIntent(activeThreadId);
         }
-      }
+      },
+      onRewind: handleRewindFromMessage,
+      onForkFromMessage: async (messageId, options) => {
+        if (!activeWorkspace || !activeThreadId) {
+          return;
+        }
+        const forkedThreadId = await forkSessionFromMessageForWorkspace(
+          activeWorkspace.id,
+          activeThreadId,
+          messageId,
+          {
+            activate: true,
+            mode: "messages-only",
+            providerProfileId: options?.providerProfileId ?? null,
+            providerProfile: options?.providerProfile ?? null,
+          },
+        );
+        if (!forkedThreadId) {
+          throw new Error("Fork did not return a child conversation.");
+        }
+        if (forkedThreadId && forkedThreadId !== activeThreadId) {
+          if (typeof updateThreadParent === "function") {
+            updateThreadParent(activeThreadId, [forkedThreadId]);
+          }
+        }
+      },
+      canStop: canInterrupt,
+      isReviewing,
+      isProcessing,
+      steerEnabled: appSettings.experimentalSteerEnabled,
+      reviewPrompt,
+      onReviewPromptClose: closeReviewPrompt,
+      onReviewPromptShowPreset: showPresetStep,
+      onReviewPromptChoosePreset: choosePreset,
+      highlightedPresetIndex,
+      onReviewPromptHighlightPreset: setHighlightedPresetIndex,
+      highlightedBranchIndex,
+      onReviewPromptHighlightBranch: setHighlightedBranchIndex,
+      highlightedCommitIndex,
+      onReviewPromptHighlightCommit: setHighlightedCommitIndex,
+      onReviewPromptKeyDown: handleReviewPromptKeyDown,
+      onReviewPromptSelectBranch: selectBranch,
+      onReviewPromptSelectBranchAtIndex: selectBranchAtIndex,
+      onReviewPromptConfirmBranch: confirmBranch,
+      onReviewPromptSelectCommit: selectCommit,
+      onReviewPromptSelectCommitAtIndex: selectCommitAtIndex,
+      onReviewPromptConfirmCommit: confirmCommit,
+      onReviewPromptUpdateCustomInstructions: updateCustomInstructions,
+      onReviewPromptConfirmCustom: confirmCustom,
+      activeTokenUsage,
+      contextDualViewEnabled: activeEngine === "codex",
+      codexAutoCompactionEnabled: appSettings.codexAutoCompactionEnabled,
+      codexAutoCompactionThresholdPercent:
+        appSettings.codexAutoCompactionThresholdPercent,
+      onCodexAutoCompactionSettingsChange: async (patch) => {
+        await queueSaveSettings({
+          ...appSettings,
+          codexAutoCompactionEnabled:
+            patch.enabled ?? appSettings.codexAutoCompactionEnabled,
+          codexAutoCompactionThresholdPercent:
+            patch.thresholdPercent ??
+            appSettings.codexAutoCompactionThresholdPercent,
+        });
+      },
+      activeQueue,
+      draftText: activeDraft,
+      onDraftChange: handleDraftChange,
+      activeImages,
+      onPickImages: pickImages,
+      onAttachImages: attachImages,
+      onRemoveImage: removeImage,
+      prefillDraft,
+      onPrefillHandled: (id) => {
+        if (prefillDraft?.id === id) {
+          setPrefillDraft(null);
+        }
+      },
+      insertText: composerInsert,
+      onInsertHandled: (id) => {
+        if (composerInsert?.id === id) {
+          setComposerInsert(null);
+        }
+      },
+      onEditQueued: handleEditQueued,
+      onDeleteQueued: handleDeleteQueued,
+      onFuseQueued: handleFuseQueued,
+      canFuseActiveQueue,
+      activeFusingMessageId,
+      collaborationModes,
+      collaborationModesEnabled,
+      selectedCollaborationModeId,
+      onSelectCollaborationMode: applySelectedCollaborationMode,
+      engines: availableEngines,
+      selectedEngine: activeEngine,
+      usePresentationProfile: appSettings.chatCanvasUsePresentationProfile,
+      onSelectEngine: handleSelectConversationEngine,
+      models: effectiveModels,
+      selectedModelId: effectiveSelectedModelId,
+      projectMapDatasetController,
+      onSelectModel: handleSelectModel,
+      onDispatchOrchestrationTask: handleDispatchOrchestrationTask,
+      intentCanvasOpenRequest,
+      onOpenIntentCanvas: handleOpenIntentCanvas,
+      onIntentCanvasOpenRequestConsumed: handleIntentCanvasOpenRequestConsumed,
+      onAttachIntentCanvasToThread: handleAttachIntentCanvasToThread,
+      pendingIntentCanvasDocuments,
+      onRemovePendingIntentCanvas: handleRemovePendingIntentCanvas,
+      reasoningOptions,
+      selectedEffort,
+      onSelectEffort: setSelectedEffort,
+      claudeThinkingVisible,
+      onResolvedClaudeThinkingVisibleChange:
+        handleResolvedClaudeThinkingVisibleChange,
+      reasoningSupported: effectiveReasoningSupported,
+      opencodeAgents: openCodeAgents,
+      selectedOpenCodeAgent,
+      onSelectOpenCodeAgent: handleSelectOpenCodeAgent,
+      selectedAgent,
+      onSelectAgent: handleSelectAgent,
+      opencodeVariantOptions: OPENCODE_VARIANT_OPTIONS,
+      selectedOpenCodeVariant,
+      onSelectOpenCodeVariant: handleSelectOpenCodeVariant,
+      accessMode,
+      onSelectAccessMode: handleSetAccessMode,
+      skills,
+      customSkillDirectories: appSettings.customSkillDirectories ?? [],
+      prompts,
+      commands,
+      files,
+      directories,
+      directoryMetadata,
+      fileTreeSourceVersion,
+      gitignoredFiles,
+      gitignoredDirectories,
+      onInsertComposerText: handleInsertComposerText,
+      textareaRef: composerInputRef,
+      composerEditorSettings,
+      composerSendShortcut: appSettings.composerSendShortcut,
+      textareaHeight,
+      onTextareaHeightChange,
+      dictationEnabled: appSettings.dictationEnabled && dictationReady,
+      dictationState,
+      dictationLevel,
+      onToggleDictation: handleToggleDictation,
+      dictationTranscript,
+      onDictationTranscriptHandled: (id) => {
+        clearDictationTranscript(id);
+      },
+      dictationError,
+      onDismissDictationError: clearDictationError,
+      dictationHint,
+      onDismissDictationHint: clearDictationHint,
+      onOpenExperimentalSettings: () =>
+        openSettings("experimental", "experimental-collaboration-modes"),
+      composerSendLabel,
+      composerLinkedKanbanPanels,
+      selectedComposerKanbanPanelId,
+      composerKanbanContextMode,
+      onSelectComposerKanbanPanel: setSelectedComposerKanbanPanelId,
+      onComposerKanbanContextModeChange: setComposerKanbanContextMode,
+      onOpenComposerKanbanPanel: handleOpenComposerKanbanPanel,
+      activeComposerFilePath: activeEditorFilePath,
+      activeComposerFileLineRange: activeEditorLineRange,
+      activeCodeSelectionAnchor: activeIntentCanvasCodeSelectionAnchor,
+      onActiveCodeSelectionAnchorChange:
+        setActiveIntentCanvasCodeSelectionAnchor,
+      fileReferenceMode,
+      onFileReferenceModeChange: setFileReferenceMode,
     },
-    canStop: canInterrupt,
-    isReviewing,
-    isProcessing,
-    steerEnabled: appSettings.experimentalSteerEnabled,
-    reviewPrompt,
-    onReviewPromptClose: closeReviewPrompt,
-    onReviewPromptShowPreset: showPresetStep,
-    onReviewPromptChoosePreset: choosePreset,
-    highlightedPresetIndex,
-    onReviewPromptHighlightPreset: setHighlightedPresetIndex,
-    highlightedBranchIndex,
-    onReviewPromptHighlightBranch: setHighlightedBranchIndex,
-    highlightedCommitIndex,
-    onReviewPromptHighlightCommit: setHighlightedCommitIndex,
-    onReviewPromptKeyDown: handleReviewPromptKeyDown,
-    onReviewPromptSelectBranch: selectBranch,
-    onReviewPromptSelectBranchAtIndex: selectBranchAtIndex,
-    onReviewPromptConfirmBranch: confirmBranch,
-    onReviewPromptSelectCommit: selectCommit,
-    onReviewPromptSelectCommitAtIndex: selectCommitAtIndex,
-    onReviewPromptConfirmCommit: confirmCommit,
-    onReviewPromptUpdateCustomInstructions: updateCustomInstructions,
-    onReviewPromptConfirmCustom: confirmCustom,
-    activeTokenUsage,
-    contextDualViewEnabled: activeEngine === "codex",
-    codexAutoCompactionEnabled: appSettings.codexAutoCompactionEnabled,
-    codexAutoCompactionThresholdPercent:
-      appSettings.codexAutoCompactionThresholdPercent,
-    onCodexAutoCompactionSettingsChange: async (patch) => {
-      await queueSaveSettings({
-        ...appSettings,
-        codexAutoCompactionEnabled:
-          patch.enabled ?? appSettings.codexAutoCompactionEnabled,
-        codexAutoCompactionThresholdPercent:
-          patch.thresholdPercent ??
-          appSettings.codexAutoCompactionThresholdPercent,
-      });
+    panels: {
+      showComposer,
+      plan: activePlan,
+      isPlanMode,
+      onOpenPlanPanel: openPlanPanel,
+      onClosePlanPanel: closePlanPanel,
+      bottomStatusPanelExpanded: !isPlanPanelDismissed,
+      agentTaskScrollRequest,
+      onSelectSubagent: handleSelectStatusPanelSubagent,
+      debugEntries,
+      debugOpen,
+      terminalOpen,
+      terminalTabs,
+      activeTerminalId,
+      onSelectTerminal,
+      onNewTerminal,
+      onCloseTerminal,
+      terminalState,
+      onClearDebug: clearDebugEntries,
+      onCopyDebug: handleCopyDebug,
+      onResizeDebug: onDebugPanelResizeStart,
+      onResizeTerminal: onTerminalPanelResizeStart,
+      onBackFromDiff: () => {
+        setSelectedDiffPath(null);
+        setCenterMode("chat");
+      },
+      onGoProjects: () => setActiveTab("projects"),
+      workspaceDropTargetRef,
+      isWorkspaceDropActive: dropOverlayActive,
+      workspaceDropText: dropOverlayText,
+      onWorkspaceDragOver: handleWorkspaceDragOver,
+      onWorkspaceDragEnter: handleWorkspaceDragEnter,
+      onWorkspaceDragLeave: handleWorkspaceDragLeave,
+      onWorkspaceDrop: handleWorkspaceDrop,
+      appMode,
+      onAppModeChange: handleAppModeChange,
+      onOpenHomeChat: handleOpenHomeChat,
+      onOpenMemory: () => {
+        setFocusedProjectMemoryId(null);
+        setFocusedWorkspaceNoteId(null);
+        closeSettings();
+        setAppMode("chat");
+        setCenterMode("memory");
+      },
+      onOpenProjectMemory: () => {
+        setFocusedProjectMemoryId(null);
+        setFocusedWorkspaceNoteId(null);
+        closeSettings();
+        setAppMode("chat");
+        setCenterMode("chat");
+        setFilePanelMode("memory");
+        expandRightPanel();
+        if (isCompact) {
+          setActiveTab("git");
+        }
+      },
+      onOpenContextLedgerMemory: (memoryId) => {
+        setFocusedWorkspaceNoteId(null);
+        setFocusedProjectMemoryId(memoryId);
+        setFocusedProjectMemoryRequestKey((value) => value + 1);
+        closeSettings();
+        setAppMode("chat");
+        setCenterMode("chat");
+        setFilePanelMode("memory");
+        expandRightPanel();
+        if (isCompact) {
+          setActiveTab("git");
+        }
+      },
+      onOpenContextLedgerNote: (noteId) => {
+        setFocusedProjectMemoryId(null);
+        setFocusedWorkspaceNoteId(noteId);
+        setFocusedWorkspaceNoteRequestKey((value) => value + 1);
+        closeSettings();
+        setAppMode("chat");
+        setCenterMode("chat");
+        setFilePanelMode("notes");
+        expandRightPanel();
+        if (isCompact) {
+          setActiveTab("git");
+        }
+      },
+      onOpenReleaseNotes: () => {
+        void openReleaseNotes();
+      },
+      focusedProjectMemoryId,
+      focusedProjectMemoryRequestKey,
+      focusedWorkspaceNoteId,
+      focusedWorkspaceNoteRequestKey,
+      onOpenGlobalSearch: handleOpenSearchPalette,
+      globalSearchShortcut: appSettings.toggleGlobalSearchShortcut,
+      openChatShortcut: appSettings.openChatShortcut,
+      openKanbanShortcut: appSettings.openKanbanShortcut,
+      cycleOpenSessionPrevShortcut: appSettings.cycleOpenSessionPrevShortcut,
+      cycleOpenSessionNextShortcut: appSettings.cycleOpenSessionNextShortcut,
+      closeCurrentSessionShortcut: appSettings.closeCurrentSessionShortcut,
+      saveFileShortcut: appSettings.saveFileShortcut,
+      findInFileShortcut: appSettings.findInFileShortcut,
+      toggleGitDiffListViewShortcut: appSettings.toggleGitDiffListViewShortcut,
+      onOpenWorkspaceHome: handleOpenWorkspaceHome,
     },
-    activeQueue,
-    draftText: activeDraft,
-    onDraftChange: handleDraftChange,
-    activeImages,
-    onPickImages: pickImages,
-    onAttachImages: attachImages,
-    onRemoveImage: removeImage,
-    prefillDraft,
-    onPrefillHandled: (id) => {
-      if (prefillDraft?.id === id) {
-        setPrefillDraft(null);
-      }
-    },
-    insertText: composerInsert,
-    onInsertHandled: (id) => {
-      if (composerInsert?.id === id) {
-        setComposerInsert(null);
-      }
-    },
-    onEditQueued: handleEditQueued,
-    onDeleteQueued: handleDeleteQueued,
-    onFuseQueued: handleFuseQueued,
-    canFuseActiveQueue,
-    activeFusingMessageId,
-    collaborationModes,
-    collaborationModesEnabled,
-    selectedCollaborationModeId,
-    onSelectCollaborationMode: applySelectedCollaborationMode,
-    engines: availableEngines,
-    selectedEngine: activeEngine,
-    usePresentationProfile: appSettings.chatCanvasUsePresentationProfile,
-    onSelectEngine: handleSelectConversationEngine,
-    models: effectiveModels,
-    selectedModelId: effectiveSelectedModelId,
-    projectMapDatasetController,
-    onSelectModel: handleSelectModel,
-    onDispatchOrchestrationTask: handleDispatchOrchestrationTask,
-    intentCanvasOpenRequest,
-    onOpenIntentCanvas: handleOpenIntentCanvas,
-    onIntentCanvasOpenRequestConsumed: handleIntentCanvasOpenRequestConsumed,
-    onAttachIntentCanvasToThread: handleAttachIntentCanvasToThread,
-    pendingIntentCanvasDocuments,
-    onRemovePendingIntentCanvas: handleRemovePendingIntentCanvas,
-    reasoningOptions,
-    selectedEffort,
-    onSelectEffort: setSelectedEffort,
-    claudeThinkingVisible,
-    onResolvedClaudeThinkingVisibleChange:
-      handleResolvedClaudeThinkingVisibleChange,
-    reasoningSupported: effectiveReasoningSupported,
-    opencodeAgents: openCodeAgents,
-    selectedOpenCodeAgent,
-    onSelectOpenCodeAgent: handleSelectOpenCodeAgent,
-    selectedAgent,
-    onSelectAgent: handleSelectAgent,
-    opencodeVariantOptions: OPENCODE_VARIANT_OPTIONS,
-    selectedOpenCodeVariant,
-    onSelectOpenCodeVariant: handleSelectOpenCodeVariant,
-    accessMode,
-    onSelectAccessMode: handleSetAccessMode,
-    skills,
-    customSkillDirectories: appSettings.customSkillDirectories ?? [],
-    prompts,
-    commands,
-    files,
-    directories,
-    directoryMetadata,
-    fileTreeSourceVersion,
-    gitignoredFiles,
-    gitignoredDirectories,
-    onInsertComposerText: handleInsertComposerText,
-    textareaRef: composerInputRef,
-    composerEditorSettings,
-    composerSendShortcut: appSettings.composerSendShortcut,
-    textareaHeight,
-    onTextareaHeightChange,
-    dictationEnabled: appSettings.dictationEnabled && dictationReady,
-    dictationState,
-    dictationLevel,
-    onToggleDictation: handleToggleDictation,
-    dictationTranscript,
-    onDictationTranscriptHandled: (id) => {
-      clearDictationTranscript(id);
-    },
-    dictationError,
-    onDismissDictationError: clearDictationError,
-    dictationHint,
-    onDismissDictationHint: clearDictationHint,
-    onOpenExperimentalSettings: () =>
-      openSettings("experimental", "experimental-collaboration-modes"),
-    composerSendLabel,
-    composerLinkedKanbanPanels,
-    selectedComposerKanbanPanelId,
-    composerKanbanContextMode,
-    onSelectComposerKanbanPanel: setSelectedComposerKanbanPanelId,
-    onComposerKanbanContextModeChange: setComposerKanbanContextMode,
-    onOpenComposerKanbanPanel: handleOpenComposerKanbanPanel,
-    activeComposerFilePath: activeEditorFilePath,
-    activeComposerFileLineRange: activeEditorLineRange,
-    activeCodeSelectionAnchor: activeIntentCanvasCodeSelectionAnchor,
-    onActiveCodeSelectionAnchorChange: setActiveIntentCanvasCodeSelectionAnchor,
-    fileReferenceMode,
-    onFileReferenceModeChange: setFileReferenceMode,
-    showComposer,
-    plan: activePlan,
-    isPlanMode,
-    onOpenPlanPanel: openPlanPanel,
-    onClosePlanPanel: closePlanPanel,
-    bottomStatusPanelExpanded: !isPlanPanelDismissed,
-    agentTaskScrollRequest,
-    onSelectSubagent: handleSelectStatusPanelSubagent,
-    debugEntries,
-    debugOpen,
-    terminalOpen,
-    terminalTabs,
-    activeTerminalId,
-    onSelectTerminal,
-    onNewTerminal,
-    onCloseTerminal,
-    terminalState,
-    onClearDebug: clearDebugEntries,
-    onCopyDebug: handleCopyDebug,
-    onResizeDebug: onDebugPanelResizeStart,
-    onResizeTerminal: onTerminalPanelResizeStart,
-    onBackFromDiff: () => {
-      setSelectedDiffPath(null);
-      setCenterMode("chat");
-    },
-    onGoProjects: () => setActiveTab("projects"),
-    workspaceDropTargetRef,
-    isWorkspaceDropActive: dropOverlayActive,
-    workspaceDropText: dropOverlayText,
-    onWorkspaceDragOver: handleWorkspaceDragOver,
-    onWorkspaceDragEnter: handleWorkspaceDragEnter,
-    onWorkspaceDragLeave: handleWorkspaceDragLeave,
-    onWorkspaceDrop: handleWorkspaceDrop,
-    appMode,
-    onAppModeChange: handleAppModeChange,
-    onOpenHomeChat: handleOpenHomeChat,
-    onOpenMemory: () => {
-      setFocusedProjectMemoryId(null);
-      setFocusedWorkspaceNoteId(null);
-      closeSettings();
-      setAppMode("chat");
-      setCenterMode("memory");
-    },
-    onOpenProjectMemory: () => {
-      setFocusedProjectMemoryId(null);
-      setFocusedWorkspaceNoteId(null);
-      closeSettings();
-      setAppMode("chat");
-      setCenterMode("chat");
-      setFilePanelMode("memory");
-      expandRightPanel();
-      if (isCompact) {
-        setActiveTab("git");
-      }
-    },
-    onOpenContextLedgerMemory: (memoryId) => {
-      setFocusedWorkspaceNoteId(null);
-      setFocusedProjectMemoryId(memoryId);
-      setFocusedProjectMemoryRequestKey((value) => value + 1);
-      closeSettings();
-      setAppMode("chat");
-      setCenterMode("chat");
-      setFilePanelMode("memory");
-      expandRightPanel();
-      if (isCompact) {
-        setActiveTab("git");
-      }
-    },
-    onOpenContextLedgerNote: (noteId) => {
-      setFocusedProjectMemoryId(null);
-      setFocusedWorkspaceNoteId(noteId);
-      setFocusedWorkspaceNoteRequestKey((value) => value + 1);
-      closeSettings();
-      setAppMode("chat");
-      setCenterMode("chat");
-      setFilePanelMode("notes");
-      expandRightPanel();
-      if (isCompact) {
-        setActiveTab("git");
-      }
-    },
-    onOpenReleaseNotes: () => {
-      void openReleaseNotes();
-    },
-    focusedProjectMemoryId,
-    focusedProjectMemoryRequestKey,
-    focusedWorkspaceNoteId,
-    focusedWorkspaceNoteRequestKey,
-    onOpenGlobalSearch: handleOpenSearchPalette,
-    globalSearchShortcut: appSettings.toggleGlobalSearchShortcut,
-    openChatShortcut: appSettings.openChatShortcut,
-    openKanbanShortcut: appSettings.openKanbanShortcut,
-    cycleOpenSessionPrevShortcut: appSettings.cycleOpenSessionPrevShortcut,
-    cycleOpenSessionNextShortcut: appSettings.cycleOpenSessionNextShortcut,
-    closeCurrentSessionShortcut: appSettings.closeCurrentSessionShortcut,
-    saveFileShortcut: appSettings.saveFileShortcut,
-    findInFileShortcut: appSettings.findInFileShortcut,
-    toggleGitDiffListViewShortcut: appSettings.toggleGitDiffListViewShortcut,
-    onOpenWorkspaceHome: handleOpenWorkspaceHome,
   });
 
   return {

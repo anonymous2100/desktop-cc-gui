@@ -43,8 +43,9 @@
 
 ### §3 App shell domain context 拆分(后续 session)
 
-- [ ] 把 `appShellContext` 的 200+ key 按 6 域分组,移到 `appShellDomainContexts.ts`
+- [x] 把 `appShellContext` 的 200+ key 按 6 域分组,移到 `appShellDomainContexts.ts`
   - 已完成生产侧第一步：`app-shell.tsx` 拆为 6 个 `rawAppShellDomainContexts` domain object，并通过 `reuseStableAppShellDomainContexts()` 稳定引用；后续仍需把 section hook 输入类型迁移到 domain 类型。
+  - 已完成收尾：`useAppShellLayoutNodesSection` 传给 `useLayoutNodes` 的入口改为 `workspace` / `runtime` / `chrome` / `editor` / `git` / `composer` / `panels` grouped options，`useLayoutNodes` 内部用临时 flat adapter 兼容旧渲染体。
 - [x] 4 个 section hook 改输入类型,只收相关 domain
   - `useAppShellSearchAndComposerSection` 改为接收相关 domain subset；`useAppShellSections` / `useAppShellLayoutNodesSection` 改为 structured input，不再从 `app-shell.tsx` 接收 flat context spread；`useAppShellKanbanComposerSection` / `useAppShellKanbanExecutionSection` 输入从裸 `any` 收为 `UseAppShellSectionsContext`。
 - [x] `renderAppShell` 改输入,只收 6 域 + section 返回
@@ -87,6 +88,7 @@
 - [x] `npm run check:runtime-evidence-gates`
 - [x] §1/§2 新增 Vitest 全绿
 - [ ] 手动:开 2 个 codex session 跑 5 分钟无可见卡顿
+  - 2026-06-12 收口观察：卡顿有减轻但仍存在；本 change 不归档，作为后续新提案继续处理的输入证据。
 
 ## Rollback / 回滚
 
