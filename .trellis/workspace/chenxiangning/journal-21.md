@@ -1606,3 +1606,36 @@ During verification, `TaskCreateModal.test.tsx` exposed an async state assertion
 ### Next Steps
 
 - None - task complete
+
+
+## Session 819: 添加 Git 状态手动刷新入口
+
+**Date**: 2026-06-13
+**Task**: 添加 Git 状态手动刷新入口
+**Branch**: `feature/v0.5.9`
+
+### Summary
+
+在 Git Diff panel 仓库摘要行新增 icon-only refresh affordance，点击后复用现有 Git status refresh 链路并播放旋转反馈；补齐 OpenSpec artifact、i18n、样式和组件测试，验证 lint、typecheck、focused test、OpenSpec strict validation 均通过。
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `0c66668e` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
