@@ -1365,3 +1365,53 @@ During verification, `TaskCreateModal.test.tsx` exposed an async state assertion
 ### Next Steps
 
 - None - task complete
+
+
+## Session 813: 收口文件编辑交互卡顿隔离
+
+**Date**: 2026-06-13
+**Task**: 收口文件编辑交互卡顿隔离
+**Branch**: `feature/v0.5.9`
+
+### Summary
+
+(Add summary)
+
+### Main Changes
+
+| 项目 | 内容 |
+|------|------|
+| OpenSpec | `file-editor-io-render-isolation-2026-06` |
+| 目标 | 收口打开文件、Tab 切换、编辑输入、随机点击切行的卡顿问题。 |
+| 核心修复 | 将 CodeMirror 输入热路径从 React per-keystroke state update 中拆出；line range / active code anchor 改为 latest-only debounce；文件 session 缓存 clean snapshot 与 dirty draft；git marker / preview side channel 增加 render token 防 stale 写回。 |
+| 证据 | 用户复测反馈“有重大改善”；OpenSpec tasks 24/24；暂不新开 Rust/Tauri IO cache 提案。 |
+| 验证 | `openspec validate file-editor-io-render-isolation-2026-06 --strict --no-interactive`；`npm run check:file-interaction-evidence`；focused Vitest 6 files / 102 tests；`npm exec tsc -- --noEmit --pretty false`；`npm run lint`。 |
+
+**主要文件**:
+- `src/features/files/components/FileViewBody.tsx`
+- `src/features/files/components/FileViewPanel.tsx`
+- `src/features/files/components/FileCodeMirrorEditorImpl.tsx`
+- `src/features/files/hooks/useFileDocumentState.ts`
+- `src/features/files/utils/fileEditorTypingDiagnostics.ts`
+- `src/features/files/contracts/fileInteractionEvidenceGate.test.ts`
+- `src/features/files/contracts/fileSurfaceRuntimeBoundaryGuard.test.ts`
+- `openspec/changes/file-editor-io-render-isolation-2026-06/**`
+
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `87e6e53f` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
