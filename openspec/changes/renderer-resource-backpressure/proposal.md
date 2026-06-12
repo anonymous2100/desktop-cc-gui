@@ -2,12 +2,14 @@
 
 ## Why
 
-roadmap `P1-11 Terminal / Runtime 输出背压`、`P1-12 Listener / Polling / Timer 预算审计`、`P1-09 图片与 Deferred Media 内存管理` 都属于 renderer resource pressure：事件输入、长期订阅、timer/polling 和 media buffers 如果没有 owner 和 budget，会在多 workspace、多 panel、长 session 下持续消耗 CPU/内存。当前仓库已经有 `src/services/events.ts`、`rendererDiagnostics.ts`、terminal/runtime subscriptions、`useWorkspaceRefreshOnFocus`、大量 panel-level effects，以及 existing realtime perf gates。本 change 目标是建立 backpressure 与 lifecycle owner 的真实可执行边界，而不是全仓一次性消灭所有 listener。
+roadmap `P1-11 Terminal / Runtime 输出背压`、`P1-12 Listener / Polling / Timer 预算审计`、`P1-09 图片与 Deferred Media 内存管理` 都属于 renderer resource pressure：事件输入、长期订阅、timer/polling 和 media buffers 如果没有 owner 和 budget，会在多 workspace、多 panel、长 session 下持续消耗 CPU/内存。当前仓库已经有 `src/services/events.ts`、`rendererDiagnostics.ts`、terminal/runtime subscriptions、`useWorkspaceRefreshOnFocus`、大量 panel-level effects，以及 existing realtime perf gates。代码回滚后的事实是：`eventBackpressure` 与 listener owner registry 尚未落地；本 change 是 P1 串行链真正的 renderer resource substrate，不是普通面板优化。
 
 ## Code Facts / 现状事实
 
 - `src/services/events.ts` 暴露 `subscribeTerminalOutput`、`subscribeRuntimeLogLine`、`subscribeRuntimeLogStatus`、`subscribeRuntimeLogExited` 等高频入口。
+- `src/services/events.ts` 当前仍是基于 `Set<Listener<T>>` 的裸 event hub；没有 event kind criticality、flush cap、queue depth 或 owner metadata。
 - `src/services/rendererDiagnostics.ts` 已注册 heartbeat、blank-screen watchdog、focus/blur/visibility/page/error listeners，且已有测试覆盖“只安装一次”等行为。
+- `src/features/workspaces/hooks/useWorkspaceRefreshOnFocus.ts` 已有 cooldown / pending refresh guard，但还不是可复用的 `useFocusRefresh` / focus wave 公共契约。
 - `rg "addEventListener|setInterval|setTimeout|listen\(" src` 显示 listener/timer 广泛分布在 app shell、git history、settings、session activity、file tree、terminal、kanban 等面板。
 - `npm run perf:realtime:boundary-guard` 与 `npm run perf:realtime:extended-baseline` 已存在，可作为 realtime proxy/regression gate。
 
@@ -39,10 +41,11 @@ roadmap `P1-11 Terminal / Runtime 输出背压`、`P1-12 Listener / Polling / Ti
 ## Delivery Boundaries / 交付边界
 
 1. **Backpressure core**：先在 terminal/runtime output path 引入 `eventBackpressure`，保持 raw export 可取回完整输出。
-2. **Diagnostics**：记录 queue depth、flush duration、dropped/coalesced counts，保证 diagnostics aggregate 而非逐事件爆炸。
-3. **Lifecycle owner pilot**：对 app shell、rendererDiagnostics、terminal/runtime、workspace focus refresh、1-2 个高风险 panel 先落 owner registry/check。
-4. **Focus wave**：统一 focus/visibility refresh scheduling，legacy hooks 逐步迁移。
-5. **Media release**：优先治理 object URL / decoded buffer owner，不把普通 `<img src>` 全部强制改写。
+2. **Public substrate first**：先提交 `eventBackpressure` API、listener owner taxonomy、`useFocusRefresh` 契约和 diagnostics 字段命名；下游 Step 3/4 只依赖这些公共抽象。
+3. **Diagnostics**：记录 queue depth、flush duration、dropped/coalesced counts，保证 diagnostics aggregate 而非逐事件爆炸。
+4. **Lifecycle owner pilot**：对 app shell、rendererDiagnostics、terminal/runtime、workspace focus refresh、1-2 个高风险 panel 先落 owner registry/check。
+5. **Focus wave**：统一 focus/visibility refresh scheduling，legacy hooks 逐步迁移。
+6. **Media release**：优先治理 object URL / decoded buffer owner，不把普通 `<img src>` 全部强制改写。
 
 ## Initial Budgets / 初始预算
 
@@ -96,4 +99,4 @@ roadmap `P1-11 Terminal / Runtime 输出背压`、`P1-12 Listener / Polling / Ti
   3. `eventBackpressure` 抽象公共 API（`{ subscribe, push, flush, queueDepth, droppedCount }`）—— Step 3 / 4 复用。
   4. `useFocusRefresh` hook 公共契约 —— 后续 change 改 focus 触发的刷新统一走这条路径。
 - **Cross-Change Constraint**: `services/rendererDiagnostics.ts` 与 `services/events.ts` 字段命名必须与 Step 1 / 3 预先对齐（建议在 Step 1 落地时同步在本仓 issue 或 `.trellis/spec/` 留 schema 占位）。
-- **Blocking Rule**: listener owner registry 协议未就绪前，Step 3 / 4 涉及 shell 改动的部分不应启动。
+- **Blocking Rule**: `eventBackpressure` API、listener owner registry 协议、`useFocusRefresh` 契约和 diagnostics 字段命名未就绪前，Step 3 / 4 不应启动任何复用这些抽象的实现；允许 Step 3 做 backend inventory，但不得写 frontend bridge integration。

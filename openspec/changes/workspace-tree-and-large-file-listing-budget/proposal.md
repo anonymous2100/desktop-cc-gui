@@ -2,11 +2,12 @@
 
 ## Why
 
-roadmap `P1-13 Workspace 文件树与打开路径性能` 指出打开大 workspace 时 file tree 不应一次性把全树和全部 metadata 传给 renderer。当前仓库已经有 `src-tauri/src/workspaces/files.rs` 的 `limit_hit` / `scan_state` / partial response 语义、`useWorkspaceFiles` 的 snapshot cache、`FileTreePanel` 的 virtual rows 和 lazy directory children hook 入口，也有 `npm run perf:long-list:*` 作为长列表 proxy baseline。本 change 的目标不是从零重写 file tree，而是把现有 partial 能力升级为明确的 listing budget、subtree on-demand contract、shared index 与 evidence gate。
+roadmap `P1-13 Workspace 文件树与打开路径性能` 指出打开大 workspace 时 file tree 不应一次性把全树和全部 metadata 传给 renderer。当前仓库已经有 `src-tauri/src/workspaces/files.rs` 的 `limit_hit` / `scan_state` / partial response 语义、`useWorkspaceFiles` 的 snapshot cache、`FileTreePanel` 的 virtual rows 和 lazy directory children hook 入口，也有 `npm run perf:long-list:*` 作为长列表 proxy baseline。本 change 的目标不是从零重写 file tree，而是把现有 partial 能力升级为明确的 listing budget、subtree on-demand contract、shared index 与 evidence gate。本 change 严格依赖 Step 3 先落地 `ScanCache`、blocking helper 与 `payloadBudget`；这些 substrate 不存在时不得动 `workspaces/files.rs` 实质逻辑。
 
 ## Code Facts / 现状事实
 
 - `src-tauri/src/workspaces/files.rs` 已有 `MAX_WORKSPACE_FILE_ENTRIES`、`limit_hit`、`scan_state: partial|complete` 和多组 Rust tests。
+- 当前没有已落地 `ScanCache` / `payloadBudget` 公共抽象；本 change 不负责发明这些底座，只消费 Step 3 暴露的实现。
 - `src/features/workspaces/hooks/useWorkspaceFiles.ts` 已缓存 workspace file snapshot，并维护 `scanState` / `limitHit` / `directoryMetadata`。
 - `src/features/files/components/FileTreePanel.tsx` 已使用 virtualizer、expanded folder state 和 `loadLazyDirectoryChildren`，但 listing budget 仍未成为跨前后端契约。
 - `search-index-and-bounded-hydration` 是独立 active change，本 change 只能定义与它共享 per-workspace file index 的 contract，不能假装其未完成部分已经存在。
@@ -37,10 +38,11 @@ roadmap `P1-13 Workspace 文件树与打开路径性能` 指出打开大 workspa
 ## Delivery Boundaries / 交付边界
 
 1. **Contract audit**：盘点当前 `list_workspace_files`、directory children、`useWorkspaceFiles` snapshot cache 和 FileTreePanel partial UI。
-2. **Budget metadata**：先给现有 response 增加 budget / sourceVersion / payload metrics，保持 backward-compatible。
-3. **Subtree loading**：把 expand directory contract 固化为 requested subtree only，并添加 stale guard。
-4. **Shared index bridge**：定义并接入 file tree/search 共用 index 的最小字段；若 search change 未完成，则以 adapter + feature flag 连接。
-5. **Evidence gate**：将 duration、item-count、payloadBytes、partial/full、cacheState 输出到 runtime evidence。
+2. **Preflight gate**：确认 Step 3 的 `ScanCache`、cache key signature、blocking helper、`payloadBudget` metadata 已合入；未合入则只允许继续审计和契约文档，不落业务代码。
+3. **Budget metadata**：给现有 response 增加 budget / sourceVersion / payload metrics，保持 backward-compatible。
+4. **Subtree loading**：把 expand directory contract 固化为 requested subtree only，并添加 stale guard。
+5. **Shared index bridge**：定义并接入 file tree/search 共用 index 的最小字段；若 search change 未完成，则以 adapter + feature flag 连接。
+6. **Evidence gate**：将 duration、item-count、payloadBytes、partial/full、cacheState 输出到 runtime evidence。
 
 ## Initial Budgets / 初始预算
 
@@ -98,4 +100,4 @@ roadmap `P1-13 Workspace 文件树与打开路径性能` 指出打开大 workspa
   2. `list_workspace_files` 分页 / 子树 on-demand 契约（depth / offset / limit）。
   3. `runtime-performance-evidence-gates` 新增 `workspaces.file.listing.*` 字段。
 - **Cross-Change Constraint**: `workspaces/files.rs` 的修改需与 Step 3 的 ScanCache 接入 commit 严格分离（先 Step 3 commit，再本 change commit），避免物理文件 `workspaces/files.rs` 的同一段被两次串行改动交叉 review。
-- **Blocking Rule**: Step 3 `ScanCache` 抽象未落地，本 change 不应启动 `workspaces/files.rs` 任何实质改动。
+- **Blocking Rule**: Step 3 `ScanCache` 抽象、统一 cache key signature、blocking helper 与 `payloadBudget` metadata 未落地，本 change 不应启动 `workspaces/files.rs`、`src/services/tauri.ts` 或 `useWorkspaceFiles` 的任何实质改动；只允许审计与契约补充。

@@ -6,6 +6,8 @@ import type {
 } from "../types";
 import type { CliInstallProgressEvent } from "../types";
 import type { RuntimeLogSessionSnapshot } from "./tauri";
+import { createEventBackpressure } from "./eventBackpressure";
+import { appendEventBackpressureDiagnostic } from "./rendererDiagnostics";
 
 export type Unsubscribe = () => void;
 export const WEB_SERVICE_RECONNECTED_EVENT =
@@ -37,23 +39,42 @@ type SubscriptionOptions = {
 
 type Listener<T> = (payload: T) => void;
 
-function createEventHub<T>(eventName: string) {
+type EventHubOptions<T> = {
+  backpressure?: ReturnType<typeof createEventBackpressure<T>>;
+};
+
+function deliverEvent<T>(
+  eventName: string,
+  listeners: Set<Listener<T>>,
+  payload: T,
+) {
+  for (const listener of listeners) {
+    try {
+      listener(payload);
+    } catch (error) {
+      console.error(`[events] ${eventName} listener failed`, error);
+    }
+  }
+}
+
+function createEventHub<T>(eventName: string, hubOptions: EventHubOptions<T> = {}) {
   const listeners = new Set<Listener<T>>();
   let unlisten: Unsubscribe | null = null;
   let listenPromise: Promise<Unsubscribe> | null = null;
+  const backpressureUnsubscribe = hubOptions.backpressure?.subscribe((payload) => {
+    deliverEvent(eventName, listeners, payload);
+  });
 
   const start = (options?: SubscriptionOptions) => {
     if (unlisten || listenPromise) {
       return;
     }
     listenPromise = listen<T>(eventName, (event) => {
-      for (const listener of listeners) {
-        try {
-          listener(event.payload);
-        } catch (error) {
-          console.error(`[events] ${eventName} listener failed`, error);
-        }
+      if (hubOptions.backpressure) {
+        hubOptions.backpressure.push(event.payload);
+        return;
       }
+      deliverEvent(eventName, listeners, event.payload);
     });
     listenPromise
       .then((handler) => {
@@ -95,20 +116,67 @@ function createEventHub<T>(eventName: string) {
     };
   };
 
-  return { subscribe };
+  return { subscribe, disposeBackpressure: backpressureUnsubscribe };
 }
+
+function terminalOutputBytes(event: TerminalOutputEvent) {
+  return event.data.length;
+}
+
+function runtimeStatusCoalesceKey(event: RuntimeLogSessionSnapshot) {
+  return [
+    event.workspaceId,
+    event.terminalId,
+    event.status,
+    event.exitCode ?? "none",
+    Boolean(event.error),
+  ].join(":");
+}
+
+function runtimeStatusCriticality(event: RuntimeLogSessionSnapshot) {
+  return event.status === "failed" || event.status === "stopped"
+    ? "critical"
+    : "non-critical";
+}
+
+const terminalOutputBackpressure = createEventBackpressure<TerminalOutputEvent>({
+  surfaceId: "terminal-output",
+  eventKind: "terminal-output",
+  estimateBytes: terminalOutputBytes,
+  onStats: appendEventBackpressureDiagnostic,
+});
+
+const runtimeLogLineBackpressure = createEventBackpressure<RuntimeLogLineEvent>({
+  surfaceId: "runtime-log-line",
+  eventKind: "runtime-log-line",
+  estimateBytes: terminalOutputBytes,
+  onStats: appendEventBackpressureDiagnostic,
+});
+
+const runtimeLogStatusBackpressure =
+  createEventBackpressure<RuntimeLogSessionSnapshot>({
+    surfaceId: "runtime-log-status",
+    eventKind: "runtime-log-status",
+    classify: runtimeStatusCriticality,
+    coalesceKey: runtimeStatusCoalesceKey,
+    onStats: appendEventBackpressureDiagnostic,
+  });
 
 const appServerHub = createEventHub<AppServerEvent>("app-server-event");
 const dictationDownloadHub =
   createEventHub<DictationModelStatus>("dictation-download");
 const dictationEventHub = createEventHub<DictationEvent>("dictation-event");
 const terminalOutputHub =
-  createEventHub<TerminalOutputEvent>("terminal-output");
+  createEventHub<TerminalOutputEvent>("terminal-output", {
+    backpressure: terminalOutputBackpressure,
+  });
 const runtimeLogLineHub = createEventHub<RuntimeLogLineEvent>(
   "runtime-log:line-appended",
+  { backpressure: runtimeLogLineBackpressure },
 );
 const runtimeLogStatusHub = createEventHub<RuntimeLogSessionSnapshot>(
   "runtime-log:status-changed",
+  { backpressure: runtimeLogStatusBackpressure },
 );
 const runtimeLogExitedHub = createEventHub<RuntimeLogSessionSnapshot>(
   "runtime-log:session-exited",

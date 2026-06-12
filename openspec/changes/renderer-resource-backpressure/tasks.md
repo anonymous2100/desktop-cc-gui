@@ -9,43 +9,45 @@
 
 ## Inventory / 盘点
 
-- [ ] Audit `services/events.ts` terminal/runtime subscriptions and current consumers.
-- [ ] Audit `rendererDiagnostics.ts` heartbeat/watchdog/listener ownership and caps.
-- [ ] Run listener/timer inventory for high-risk surfaces: app shell、terminal/runtime、workspace focus refresh、git/history panel、session activity、file tree。
-- [ ] Identify deferred media/object URL creation sites before introducing release hooks.
+- [x] Audit `services/events.ts` terminal/runtime subscriptions and current consumers.
+- [x] Audit `rendererDiagnostics.ts` heartbeat/watchdog/listener ownership and caps.
+- [x] Run listener/timer inventory for high-risk surfaces: app shell、terminal/runtime、workspace focus refresh、git/history panel、session activity、file tree。
+- [x] Identify deferred media/object URL creation sites before introducing release hooks.
 
 ## Contract / 契约设计
 
-- [ ] Define `eventBackpressure` contract: event kind, criticality, max events/frame, max bytes/flush, queue depth, dropped/coalesced counts.
-- [ ] Define critical event bypass list and tests.
-- [ ] Define lifecycle owner taxonomy and pilot enforcement surface.
-- [ ] Define focus/visibility coalesced wave contract.
-- [ ] Define media owner collection diagnostics: active count, revoked count, retained byte estimate when available.
+- [x] 先定义公共 substrate 边界：`eventBackpressure` API、listener owner registry、`useFocusRefresh` 契约、diagnostics 字段命名；下游 change 只能复用这些公开契约。
+- [x] Define `eventBackpressure` contract: event kind, criticality, max events/frame, max bytes/flush, queue depth, dropped/coalesced counts.
+- [x] Define critical event bypass list and tests.
+- [x] Define lifecycle owner taxonomy and pilot enforcement surface.
+- [x] Define focus/visibility coalesced wave contract.
+- [x] Define media owner collection diagnostics: active count, revoked count, retained byte estimate when available.
 
 ## Implementation / 实施
 
-- [ ] Introduce bounded backpressure path for terminal/runtime non-critical output.
-- [ ] Preserve raw export/source path for complete terminal/runtime output where available.
-- [ ] Coalesce duplicate status events by kind + stable payload hash within a bounded window.
-- [ ] Add renderer diagnostics for backpressure queue depth, flush duration, dropped/coalesced counts.
-- [ ] Add owner declarations/cleanup tests for pilot listener/timer surfaces.
-- [ ] Migrate selected focus/visibility refresh sources into one coalesced wave.
-- [ ] Add media owner collection / hook for object URL users and release on unmount/replacement.
-- [ ] Extend `runtime-performance-evidence-gates` with backpressure/listener/media fields.
+- [x] 先落公共 substrate skeleton 和 tests，不迁移业务 consumer；确认 Step 3 / Step 4 可按 stable API 复用。
+- [x] Introduce bounded backpressure path for terminal/runtime non-critical output.
+- [x] Preserve raw export/source path for complete terminal/runtime output where available.
+- [x] Coalesce duplicate status events by kind + stable payload hash within a bounded window.
+- [x] Add renderer diagnostics for backpressure queue depth, flush duration, dropped/coalesced counts.
+- [x] Add owner declarations/cleanup tests for pilot listener/timer surfaces.
+- [x] Migrate selected focus/visibility refresh sources into one coalesced wave.
+- [x] Add media owner collection / hook for object URL users and release on unmount/replacement.
+- [x] Extend `runtime-performance-evidence-gates` with backpressure/listener/media fields.
 
 ## Validation / 验证
 
-- [ ] Backpressure flush cap tests.
-- [ ] Critical event bypass tests.
-- [ ] Duplicate status coalescing tests.
-- [ ] Ring buffer eviction + raw export compatibility tests.
-- [ ] Listener owner cleanup tests for migrated pilot surfaces.
-- [ ] Focus wave coalescing tests.
-- [ ] Object URL release tests.
-- [ ] Diagnostics overhead/content-safety tests.
-- [ ] `npm run perf:realtime:boundary-guard`
-- [ ] `npm run perf:realtime:extended-baseline`
-- [ ] `npm run check:runtime-evidence-gates`
-- [ ] `npm run typecheck`
-- [ ] `npm run lint`
-- [ ] `openspec validate renderer-resource-backpressure --strict --no-interactive`
+- [x] Backpressure flush cap tests.
+- [x] Critical event bypass tests.
+- [x] Duplicate status coalescing tests.
+- [x] Ring buffer eviction + raw export compatibility tests.
+- [x] Listener owner cleanup tests for migrated pilot surfaces.
+- [x] Focus wave coalescing tests.
+- [x] Object URL release tests.
+- [x] Diagnostics overhead/content-safety tests.
+- [x] `npm run perf:realtime:boundary-guard`
+- [x] `npm run perf:realtime:extended-baseline`
+- [x] `npm run check:runtime-evidence-gates`
+- [x] `npm run typecheck`
+- [x] `npm run lint`
+- [x] `openspec validate renderer-resource-backpressure --strict --no-interactive`

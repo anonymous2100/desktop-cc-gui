@@ -1,6 +1,6 @@
 # Runtime Evidence Gates
 
-Generated at: 2026-06-11T14:21:26.591Z
+Generated at: 2026-06-12T05:34:49.658Z
 
 ## Performance Evidence
 
@@ -34,6 +34,12 @@ Generated at: 2026-06-11T14:21:26.591Z
 | docs/perf/baseline.json | S-CS-COLD | bundleSizeVendor | 741552 | bytes | measured | 680000 | 760000 | subset-shared.chunk-BukY6QKG.js | Track for regression. |
 | docs/perf/baseline.json | S-CS-COLD | firstPaintMs | unsupported | ms | unsupported |  |  | Tauri webview headless cold-start timing is not available in this script; bundle baseline is recorded. | Collect real Tauri webview cold-start timing on a supported runner. |
 | docs/perf/baseline.json | S-CS-COLD | firstInteractiveMs | unsupported | ms | unsupported |  |  | Tauri webview headless cold-start timing is not available in this script; bundle baseline is recorded. | Collect real Tauri webview cold-start timing on a supported runner. |
+| docs/perf/composer-baseline.json | S-CI-50 | keystrokeToCommitP95 | 0.08 | ms | proxy |  |  | Fixture or replay evidence; useful for regression comparison, not release-grade runtime proof. | Keep as regression baseline and add runtime/browser evidence before release-grade closure. |
+| docs/perf/composer-baseline.json | S-CI-50 | inputEventLossCount | 0 | count | proxy |  |  | Fixture or replay evidence; useful for regression comparison, not release-grade runtime proof. | Keep as regression baseline and add runtime/browser evidence before release-grade closure. |
+| docs/perf/composer-baseline.json | S-CI-50 | compositionToCommit | 0 | ms | proxy |  |  | Fixture or replay evidence; useful for regression comparison, not release-grade runtime proof. | Keep as regression baseline and add runtime/browser evidence before release-grade closure. |
+| docs/perf/composer-baseline.json | S-CI-100-IME | keystrokeToCommitP95 | 0.03 | ms | proxy |  |  | Fixture or replay evidence; useful for regression comparison, not release-grade runtime proof. | Keep as regression baseline and add runtime/browser evidence before release-grade closure. |
+| docs/perf/composer-baseline.json | S-CI-100-IME | inputEventLossCount | 0 | count | proxy |  |  | Fixture or replay evidence; useful for regression comparison, not release-grade runtime proof. | Keep as regression baseline and add runtime/browser evidence before release-grade closure. |
+| docs/perf/composer-baseline.json | S-CI-100-IME | compositionToCommit | 0.12 | ms | proxy |  |  | Fixture or replay evidence; useful for regression comparison, not release-grade runtime proof. | Keep as regression baseline and add runtime/browser evidence before release-grade closure. |
 | docs/perf/long-list-browser-scroll.json | S-LL-1000 | browserScrollFrameDropPct | 0 | % | measured |  |  | browser=/Applications/Google Chrome.app/Contents/MacOS/Google Chrome | Track for regression. |
 
 ## Realtime Correlation
@@ -48,6 +54,40 @@ Generated at: 2026-06-11T14:21:26.591Z
 - Terminal pressure: not-directly-measured
 - Turn trace evidence class: proxy (source: docs/perf/realtime-turn-trace.json)
 - Next action: Add runtime trace that correlates ingress cadence, batch flush, render-visible cadence, and terminal settlement.
+
+## Renderer Resource Pressure
+
+- Backpressure flush cap: 200 events / 131072 bytes
+- Backpressure evidence: proxy
+- Listener owner pilot surfaces: events.terminal-output, events.runtime-log-line, events.runtime-log-status, focus-refresh-wave
+- Media owner pilot surfaces: message-image-grid, message-deferred-image
+- Residual listener risk: Full-app listener inventory remains manual; pilot surfaces are tracked first.
+
+## Backend IO / Bridge Payload
+
+- Scan cache substrate: ScanCache<K,V>.get_or_compute/invalidate/invalidate_matching
+- JSONL states: append-only, full-rescan, corrupt-fallback
+- Bridge pilot command: get_git_log
+- Bridge payload target: 1048576 bytes / 2000 items
+- Bridge residual risk: session catalog, local usage, Claude history, workspace files, project map relations
+
+## Workspace File Listing
+
+- Diagnostics label: workspaces.file.listing-budget
+- Initial listing target: 1048576 bytes / 2000 entries
+- Subtree target entries: 500
+- Shared index fields: pathTokens, directoryTokens, sourceVersion, freshness, invalidatedPaths
+- Long-list commit P95: 18.03 ms
+- Browser scroll drop: 0%
+- Content safety: Diagnostics store hashes, counts, sourceVersion, and payload sizes; file contents and raw paths are excluded.
+
+## Markdown Precompute
+
+- Diagnostics label: perf.messages.markdown.precompute
+- Threshold: 10000 chars or fenced-code, math, table, raw-html
+- Modes: worker-precompute, main, cache-hit, fallback
+- Unsafe HTML boundary: Worker output is not trusted DOM; rich React render and sanitization remain on the main renderer path.
+- Content safety: Diagnostics store source length/hash and structural counts; raw Markdown, prompt text, assistant body, tool output, and file content are excluded.
 
 ## Cold Start
 

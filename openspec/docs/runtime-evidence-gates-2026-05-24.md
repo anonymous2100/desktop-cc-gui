@@ -1,14 +1,16 @@
 # Runtime Evidence Gate Governance Report
 
-Generated at: 2026-06-11T14:21:26.591Z
+Generated at: 2026-06-12T05:34:49.658Z
 
 ## Archive Readiness
 
 | Change | Tasks | Recommendation | Qualifier |
 |---|---:|---|---|
-| realtime-trace-correlation-gate | 15/15 | archive-candidate-after-qualifier-review | Review validation and platform qualifiers before archive. |
-| search-index-and-bounded-hydration | 16/16 | archive-candidate-after-qualifier-review | Review validation and platform qualifiers before archive. |
-| lazy-file-preview-dependencies | 17/17 | archive-candidate-after-qualifier-review | Review validation and platform qualifiers before archive. |
+| workspace-tree-and-large-file-listing-budget | 26/26 | archive-candidate-after-qualifier-review | Review validation and platform qualifiers before archive. |
+| markdown-off-main-thread-pipeline | 27/27 | archive-candidate-after-qualifier-review | Review validation and platform qualifiers before archive. |
+| backend-io-cache-and-bridge-payload-budget | 27/27 | archive-candidate-after-qualifier-review | Review validation and platform qualifiers before archive. |
+| renderer-resource-backpressure | 33/33 | archive-candidate-after-qualifier-review | Review validation and platform qualifiers before archive. |
+| composer-and-message-row-render-budget | 20/20 | archive-candidate-after-qualifier-review | Review validation and platform qualifiers before archive. |
 
 ## In Progress
 
@@ -29,11 +31,11 @@ Source: .artifacts/large-files-near-threshold.json
 
 | Path | Priority | Lines | Headroom | Facade / Boundary |
 |---|---|---:|---:|---|
+| src/services/tauri.ts | P0 | 2514 | 86 | Preserve service exports, payload mapping, and web/Tauri fallback semantics. |
 | src-tauri/src/engine/claude_history.rs | P0 | 2505 | 95 | Preserve command registration, Rust module facade, payload shape, and cross-platform paths. |
-| src/services/tauri.ts | P0 | 2490 | 110 | Preserve service exports, payload mapping, and web/Tauri fallback semantics. |
 | src-tauri/src/codex/mod.rs | P0 | 2484 | 116 | Preserve command registration, Rust module facade, payload shape, and cross-platform paths. |
+| src-tauri/src/git/mod.rs | P0 | 2379 | 221 | Preserve command registration, Rust module facade, payload shape, and cross-platform paths. |
 | src-tauri/src/runtime/mod.rs | P0 | 2371 | 229 | Preserve command registration, Rust module facade, payload shape, and cross-platform paths. |
-| src-tauri/src/git/mod.rs | P0 | 2332 | 268 | Preserve command registration, Rust module facade, payload shape, and cross-platform paths. |
 | src-tauri/src/engine/commands.rs | P0 | 2286 | 314 | Preserve command registration, Rust module facade, payload shape, and cross-platform paths. |
 | src-tauri/src/engine/claude.rs | P0 | 2272 | 328 | Preserve command registration, Rust module facade, payload shape, and cross-platform paths. |
 | src-tauri/src/session_management.rs | P1 | 2976 | 24 | Preserve command registration, Rust module facade, payload shape, and cross-platform paths. |

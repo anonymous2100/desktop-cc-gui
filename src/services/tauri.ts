@@ -25,6 +25,7 @@ import type {
   EngineType,
   EngineModelInfo,
   CustomPromptOption,
+  BridgePayloadBudgetMetadata,
 } from "../types";
 import type {
   GitFileDiff,
@@ -1500,9 +1501,32 @@ export type WorkspaceFilesResponse = {
   scan_state?: WorkspaceFileScanState;
   limit_hit?: boolean;
   directory_entries?: WorkspaceDirectoryEntry[];
+  listingBudget?: WorkspaceFileListingBudgetMetadata | null;
+  sourceVersion?: string | null;
+  payloadBudget?: BridgePayloadBudgetMetadata | null;
 };
 
 export type WorkspaceFileScanState = "complete" | "partial";
+
+export type WorkspaceFileListingCacheState =
+  | "hit"
+  | "miss"
+  | "invalidated"
+  | "unsupported";
+
+export type WorkspaceFileListingBudgetMetadata = {
+  depth?: number | null;
+  maxEntries: number;
+  returnedEntries: number;
+  payloadBytes: number;
+  sourceVersion: string;
+  scanState: WorkspaceFileScanState;
+  limitHit: boolean;
+  cacheState: WorkspaceFileListingCacheState;
+  requestedPath?: string | null;
+  partial: boolean;
+  pageCursor?: string | null;
+};
 
 export type WorkspaceDirectoryChildState =
   | "unknown"

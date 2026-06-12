@@ -1,4 +1,4 @@
-import { cleanup, configure } from "@testing-library/react";
+import { act, cleanup, configure } from "@testing-library/react";
 import { afterEach, vi } from "vitest";
 
 // Note: prewarmKatexAssets is intentionally NOT awaited in this global
@@ -14,8 +14,18 @@ import { afterEach, vi } from "vitest";
 // resolve well under 1s.
 configure({ asyncUtilTimeout: 5000 });
 
-afterEach(() => {
+async function flushReactSuspenseMicrotasks() {
+  await act(async () => {
+    await Promise.resolve();
+    await Promise.resolve();
+    await Promise.resolve();
+  });
+}
+
+afterEach(async () => {
+  await flushReactSuspenseMicrotasks();
   cleanup();
+  await flushReactSuspenseMicrotasks();
 });
 
 if (typeof Element !== "undefined" && !Element.prototype.getAnimations) {

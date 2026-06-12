@@ -111,6 +111,7 @@ type UseAppShellSearchRadarSectionOptions = {
   completionTrackerReadyRef: MutableRefObject<boolean>;
   directories: string[];
   filePanelMode: FilePanelMode;
+  fileTreeSourceVersion?: string | null;
   files: string[];
   globalSearchFilesByWorkspace: Record<string, string[]>;
   handleDraftChange: (next: string) => void;
@@ -155,6 +156,7 @@ export function useAppShellSearchRadarSection({
   completionTrackerReadyRef,
   directories,
   filePanelMode,
+  fileTreeSourceVersion = null,
   files,
   globalSearchFilesByWorkspace,
   handleDraftChange,
@@ -476,6 +478,7 @@ export function useAppShellSearchRadarSection({
         workspaceId: activeWorkspaceId,
         workspaceName: activeWorkspace.name,
         files,
+        sourceVersion: fileTreeSourceVersion,
         threads: activeWorkspaceThreads,
       },
     ];
@@ -484,6 +487,7 @@ export function useAppShellSearchRadarSection({
     activeWorkspaceId,
     activeWorkspaceThreads,
     files,
+    fileTreeSourceVersion,
     globalSearchFilesByWorkspace,
     searchScope,
     threadsByWorkspace,

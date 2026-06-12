@@ -1328,6 +1328,7 @@ export function useLayoutNodes(options: LayoutNodesOptions): LayoutNodesResult {
         files={options.files}
         directories={options.directories}
         directoryMetadata={options.directoryMetadata}
+        sourceVersion={options.fileTreeSourceVersion}
         isLoading={options.fileTreeLoading}
         loadError={options.fileTreeLoadError}
         filePanelMode={options.filePanelMode}

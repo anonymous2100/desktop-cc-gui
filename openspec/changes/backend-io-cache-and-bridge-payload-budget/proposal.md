@@ -2,12 +2,13 @@
 
 ## Why
 
-roadmap `P1-06`、`P1-07`、`P1-08`、`P1-14` 都落在同一条 backend-to-renderer pressure chain：session catalog / usage / Claude history / workspace files / git / project map 会做 filesystem scan、JSONL parsing、libgit2 或 large DTO serialization，最后通过 Tauri invoke 把大 payload 交给 renderer。当前代码已经有部分 timeout、scan limit、source status、large payload tests 和 workspace file partial state，但缺统一的 cache key、payload budget metadata、bridge evidence 和分阶段 rollout。
+roadmap `P1-06`、`P1-07`、`P1-08`、`P1-14` 都落在同一条 backend-to-renderer pressure chain：session catalog / usage / Claude history / workspace files / git / project map 会做 filesystem scan、JSONL parsing、libgit2 或 large DTO serialization，最后通过 Tauri invoke 把大 payload 交给 renderer。当前代码已经有部分 timeout、scan limit、source status、large payload tests 和 workspace file partial state，但缺统一的 cache key、payload budget metadata、bridge evidence 和分阶段 rollout。代码回滚后的事实是：`ScanCache` / `payloadBudget` 还不存在；本 change 必须先提供后端公共 substrate，再做单一路径 pilot。
 
 ## Code Facts / 现状事实
 
 - `src-tauri/src/session_management.rs`、`src-tauri/src/local_usage.rs`、`src-tauri/src/engine/claude_history.rs` 都包含 session/catalog/history scan 逻辑；`claude_history.rs` 已有 scan diagnostic、timeout、candidate cap 和 source fact cache 迹象。
 - `src-tauri/src/workspaces/files.rs` 已有 listing limit / partial response，但尚未形成通用 bridge payload budget。
+- `rg "ScanCache|payloadBudget"` 当前未发现已落地公共抽象；Step 4 依赖的缓存与 payload 注解必须由本 change 提供。
 - `src-tauri/src/git/commands.rs` 与 frontend git hooks 真实存在；git history/diff/status 优化需要保留当前 command compatibility。
 - `scripts/generate-runtime-evidence-report.mjs` 与 `runtime-performance-evidence-gates` 已支持 structured budget fields，可扩展 backend / bridge metrics。
 
@@ -39,9 +40,10 @@ roadmap `P1-06`、`P1-07`、`P1-08`、`P1-14` 都落在同一条 backend-to-rend
 
 1. **Inventory first**：列出 high-volume commands 和 scan paths，标记 owner、input、output size、current timeout/limit。
 2. **Diagnostics first**：为 scan / invoke 增加 content-safe timing、cacheState、payload size estimate；没有 cache 的路径标 `cacheState=unsupported`。
-3. **Cache adapters**：优先接入重复 scan 高的 session/catalog/history/workspace listing path；每个 adapter 有独立 invalidation tests。
-4. **Pagination/truncation**：对 git diff/log、project map relations、large file/session listing 逐项加 pagination 或 summary-first，不做破坏性全量替换。
-5. **Gate integration**：runtime evidence 可以 fail payload regression，但 proxy/unsupported 不得宣称 release-grade measured。
+3. **Public substrate first**：先落 `ScanCache<K,V>`、统一 cache key signature、blocking helper、`payloadBudget` metadata contract 和 tests。
+4. **Cache adapters**：优先接入一个重复 scan pilot；每个 adapter 有独立 invalidation tests。`workspaces/files.rs` 只允许接入公共 substrate，不在本 change 做物理分页 / subtree on-demand。
+5. **Pagination/truncation**：对 git diff/log 或等价 high-volume command 做一个 backwards-compatible pilot，不做破坏性全量替换。
+6. **Gate integration**：runtime evidence 可以 fail payload regression，但 proxy/unsupported 不得宣称 release-grade measured。
 
 ## Initial Budgets / 初始预算
 
@@ -93,5 +95,5 @@ roadmap `P1-06`、`P1-07`、`P1-08`、`P1-14` 都落在同一条 backend-to-rend
   4. **Tauri invoke `payloadBudget` 注解格式**（DTO 字段注释 + dev/perf 日志协议）—— Step 4 改 `list_workspace_files` 时直接套用。
   5. **后端 timing 透出到 frontend perf report 协议**（`durationMs` / `cacheHit` / `partial` 字段）—— Step 4 的 `FileTreePanel` 复用。
   6. `runtime-performance-evidence-gates` 新增 `backend.*` / `bridge.*` 字段占位。
-- **Cross-Change Constraint**: 本 change 改 `workspaces/files.rs` 时**只动 ScanCache 接入与 spawn_blocking 一致性**（不动物理分页契约），Step 4 才动 `list_workspace_files` 的分页 / 子树 on-demand 契约。两者必须分两次 commit，避免契约与缓存层同时改动增加回滚成本。
+- **Cross-Change Constraint**: 本 change 改 `workspaces/files.rs` 时**只动 ScanCache 接入、payloadBudget 注解与 spawn_blocking 一致性**（不动物理分页契约），Step 4 才动 `list_workspace_files` 的分页 / 子树 on-demand 契约。两者必须分两次 commit，避免契约与缓存层同时改动增加回滚成本。
 - **Blocking Rule**: `ScanCache` 抽象未落地、`payloadBudget` 协议未确定前，Step 4 不应启动。

@@ -1,8 +1,9 @@
 {
   "schemaVersion": "1.0",
-  "generatedAt": "2026-06-11T14:21:26.591Z",
+  "generatedAt": "2026-06-12T05:34:49.658Z",
   "sources": {
     "perfBaseline": "docs/perf/baseline.json",
+    "composerBaseline": "docs/perf/composer-baseline.json",
     "browserScroll": "docs/perf/long-list-browser-scroll.json",
     "realtimeTurnTrace": "docs/perf/realtime-turn-trace.json",
     "largeFileWatchlist": ".artifacts/large-files-near-threshold.json",
@@ -386,6 +387,72 @@
       "nextAction": "Collect real Tauri webview cold-start timing on a supported runner."
     },
     {
+      "source": "docs/perf/composer-baseline.json",
+      "scenario": "S-CI-50",
+      "metric": "keystrokeToCommitP95",
+      "value": 0.08,
+      "unit": "ms",
+      "evidenceClass": "proxy",
+      "budget": null,
+      "reason": "Fixture or replay evidence; useful for regression comparison, not release-grade runtime proof.",
+      "nextAction": "Keep as regression baseline and add runtime/browser evidence before release-grade closure."
+    },
+    {
+      "source": "docs/perf/composer-baseline.json",
+      "scenario": "S-CI-50",
+      "metric": "inputEventLossCount",
+      "value": 0,
+      "unit": "count",
+      "evidenceClass": "proxy",
+      "budget": null,
+      "reason": "Fixture or replay evidence; useful for regression comparison, not release-grade runtime proof.",
+      "nextAction": "Keep as regression baseline and add runtime/browser evidence before release-grade closure."
+    },
+    {
+      "source": "docs/perf/composer-baseline.json",
+      "scenario": "S-CI-50",
+      "metric": "compositionToCommit",
+      "value": 0,
+      "unit": "ms",
+      "evidenceClass": "proxy",
+      "budget": null,
+      "reason": "Fixture or replay evidence; useful for regression comparison, not release-grade runtime proof.",
+      "nextAction": "Keep as regression baseline and add runtime/browser evidence before release-grade closure."
+    },
+    {
+      "source": "docs/perf/composer-baseline.json",
+      "scenario": "S-CI-100-IME",
+      "metric": "keystrokeToCommitP95",
+      "value": 0.03,
+      "unit": "ms",
+      "evidenceClass": "proxy",
+      "budget": null,
+      "reason": "Fixture or replay evidence; useful for regression comparison, not release-grade runtime proof.",
+      "nextAction": "Keep as regression baseline and add runtime/browser evidence before release-grade closure."
+    },
+    {
+      "source": "docs/perf/composer-baseline.json",
+      "scenario": "S-CI-100-IME",
+      "metric": "inputEventLossCount",
+      "value": 0,
+      "unit": "count",
+      "evidenceClass": "proxy",
+      "budget": null,
+      "reason": "Fixture or replay evidence; useful for regression comparison, not release-grade runtime proof.",
+      "nextAction": "Keep as regression baseline and add runtime/browser evidence before release-grade closure."
+    },
+    {
+      "source": "docs/perf/composer-baseline.json",
+      "scenario": "S-CI-100-IME",
+      "metric": "compositionToCommit",
+      "value": 0.12,
+      "unit": "ms",
+      "evidenceClass": "proxy",
+      "budget": null,
+      "reason": "Fixture or replay evidence; useful for regression comparison, not release-grade runtime proof.",
+      "nextAction": "Keep as regression baseline and add runtime/browser evidence before release-grade closure."
+    },
+    {
       "source": "docs/perf/long-list-browser-scroll.json",
       "scenario": "S-LL-1000",
       "metric": "browserScrollFrameDropPct",
@@ -411,6 +478,181 @@
     "turnTraceEvidenceClass": "proxy",
     "turnTraceSource": "docs/perf/realtime-turn-trace.json",
     "nextAction": "Add runtime trace that correlates ingress cadence, batch flush, render-visible cadence, and terminal settlement."
+  },
+  "rendererResourceSummary": {
+    "backpressure": {
+      "source": "docs/perf/realtime-extended-baseline.json",
+      "eventFlushCap": 200,
+      "byteFlushCap": 131072,
+      "evidenceClass": "proxy",
+      "queueDepth": null,
+      "droppedCount": null,
+      "coalescedCount": null,
+      "reason": "Replay-derived batch flush duration P95; replay group window is the surrogate."
+    },
+    "listenerOwners": {
+      "ownerTaxonomy": [
+        "bootstrap",
+        "shell",
+        "workspace",
+        "panel",
+        "modal"
+      ],
+      "migratedPilotSurfaces": [
+        "events.terminal-output",
+        "events.runtime-log-line",
+        "events.runtime-log-status",
+        "focus-refresh-wave"
+      ],
+      "evidenceClass": "proxy",
+      "residualRisk": "Full-app listener inventory remains manual; pilot surfaces are tracked first."
+    },
+    "mediaOwners": {
+      "migratedPilotSurfaces": [
+        "message-image-grid",
+        "message-deferred-image"
+      ],
+      "activeCount": null,
+      "revokedCount": null,
+      "retainedBytes": null,
+      "evidenceClass": "proxy",
+      "unsupportedReason": "Retained bytes are reported when Blob sizes are available in renderer diagnostics."
+    },
+    "criticalPath": {
+      "terminalSettlementP95Ms": 60,
+      "evidenceClass": "proxy"
+    }
+  },
+  "backendBridgeSummary": {
+    "substrate": {
+      "scanCache": {
+        "api": "ScanCache<K,V>.get_or_compute/invalidate/invalidate_matching",
+        "evidenceClass": "proxy"
+      },
+      "jsonlAppendOnly": {
+        "states": [
+          "append-only",
+          "full-rescan",
+          "corrupt-fallback"
+        ],
+        "evidenceClass": "proxy"
+      },
+      "blockingPolicy": {
+        "timeoutFallback": "TimeoutPartial",
+        "evidenceClass": "proxy"
+      }
+    },
+    "bridgePayload": {
+      "pilotCommand": "get_git_log",
+      "surfaceId": "git-history-log",
+      "targetBytes": 1048576,
+      "hardFailBytes": 4194304,
+      "targetItems": 2000,
+      "hardFailItems": 5000,
+      "metadataFields": [
+        "command",
+        "surfaceId",
+        "itemCount",
+        "estimatedBytes",
+        "partial",
+        "truncated",
+        "cacheState",
+        "evidenceClass"
+      ],
+      "evidenceClass": "proxy",
+      "contentSafety": "Metadata intentionally excludes absolute paths, prompts, assistant bodies, and tool output."
+    },
+    "residualRisk": [
+      "session catalog",
+      "local usage",
+      "Claude history",
+      "workspace files",
+      "project map relations"
+    ]
+  },
+  "workspaceFileListingSummary": {
+    "diagnosticsLabel": "workspaces.file.listing-budget",
+    "metadataFields": [
+      "surfaceId",
+      "workspaceId",
+      "durationMs",
+      "returnedEntries",
+      "payloadBytes",
+      "cacheState",
+      "scanState",
+      "partial",
+      "limitHit",
+      "sourceVersion",
+      "requestedPathHash",
+      "evidenceClass"
+    ],
+    "initialListing": {
+      "surfaceId": "workspaces.file.initial-listing",
+      "depth": 2,
+      "targetEntries": 2000,
+      "hardFailEntries": 5000,
+      "targetPayloadBytes": 1048576,
+      "hardFailPayloadBytes": 4194304,
+      "evidenceClass": "proxy"
+    },
+    "subtreeListing": {
+      "surfaceId": "workspaces.file.subtree-listing",
+      "depth": 1,
+      "targetEntries": 500,
+      "fallback": "full listing fallback is recorded as fallback-full-listing",
+      "evidenceClass": "proxy"
+    },
+    "sharedIndex": {
+      "contract": [
+        "pathTokens",
+        "directoryTokens",
+        "sourceVersion",
+        "freshness",
+        "invalidatedPaths"
+      ],
+      "fallbackClass": "unsupported",
+      "evidenceClass": "proxy"
+    },
+    "longListProxy": {
+      "commitDurationP95Ms": 18.03,
+      "browserScrollFrameDropPct": 0,
+      "evidenceClass": "measured"
+    },
+    "contentSafety": "Diagnostics store hashes, counts, sourceVersion, and payload sizes; file contents and raw paths are excluded."
+  },
+  "markdownPrecomputeSummary": {
+    "diagnosticsLabel": "perf.messages.markdown.precompute",
+    "threshold": {
+      "minLengthChars": 10000,
+      "complexitySignals": [
+        "fenced-code",
+        "math",
+        "table",
+        "raw-html"
+      ]
+    },
+    "modes": [
+      "worker-precompute",
+      "main",
+      "cache-hit",
+      "fallback"
+    ],
+    "metadataFields": [
+      "mode",
+      "durationMs",
+      "contentLength",
+      "contentHash",
+      "thresholdReason",
+      "cacheState",
+      "fallbackReason",
+      "evidenceClass",
+      "totalHeadings",
+      "totalHeavyBlocks",
+      "totalSourceLines"
+    ],
+    "unsafeHtmlBoundary": "Worker output is not trusted DOM; rich React render and sanitization remain on the main renderer path.",
+    "evidenceClass": "proxy",
+    "contentSafety": "Diagnostics store source length/hash and structural counts; raw Markdown, prompt text, assistant body, tool output, and file content are excluded."
   },
   "realtimeTraceBudgets": [
     {
@@ -790,6 +1032,72 @@
       "nextAction": "Collect real Tauri webview cold-start timing on a supported runner."
     },
     {
+      "source": "docs/perf/composer-baseline.json",
+      "scenario": "S-CI-50",
+      "metric": "keystrokeToCommitP95",
+      "value": 0.08,
+      "unit": "ms",
+      "evidenceClass": "proxy",
+      "budget": null,
+      "reason": "Fixture or replay evidence; useful for regression comparison, not release-grade runtime proof.",
+      "nextAction": "Keep as regression baseline and add runtime/browser evidence before release-grade closure."
+    },
+    {
+      "source": "docs/perf/composer-baseline.json",
+      "scenario": "S-CI-50",
+      "metric": "inputEventLossCount",
+      "value": 0,
+      "unit": "count",
+      "evidenceClass": "proxy",
+      "budget": null,
+      "reason": "Fixture or replay evidence; useful for regression comparison, not release-grade runtime proof.",
+      "nextAction": "Keep as regression baseline and add runtime/browser evidence before release-grade closure."
+    },
+    {
+      "source": "docs/perf/composer-baseline.json",
+      "scenario": "S-CI-50",
+      "metric": "compositionToCommit",
+      "value": 0,
+      "unit": "ms",
+      "evidenceClass": "proxy",
+      "budget": null,
+      "reason": "Fixture or replay evidence; useful for regression comparison, not release-grade runtime proof.",
+      "nextAction": "Keep as regression baseline and add runtime/browser evidence before release-grade closure."
+    },
+    {
+      "source": "docs/perf/composer-baseline.json",
+      "scenario": "S-CI-100-IME",
+      "metric": "keystrokeToCommitP95",
+      "value": 0.03,
+      "unit": "ms",
+      "evidenceClass": "proxy",
+      "budget": null,
+      "reason": "Fixture or replay evidence; useful for regression comparison, not release-grade runtime proof.",
+      "nextAction": "Keep as regression baseline and add runtime/browser evidence before release-grade closure."
+    },
+    {
+      "source": "docs/perf/composer-baseline.json",
+      "scenario": "S-CI-100-IME",
+      "metric": "inputEventLossCount",
+      "value": 0,
+      "unit": "count",
+      "evidenceClass": "proxy",
+      "budget": null,
+      "reason": "Fixture or replay evidence; useful for regression comparison, not release-grade runtime proof.",
+      "nextAction": "Keep as regression baseline and add runtime/browser evidence before release-grade closure."
+    },
+    {
+      "source": "docs/perf/composer-baseline.json",
+      "scenario": "S-CI-100-IME",
+      "metric": "compositionToCommit",
+      "value": 0.12,
+      "unit": "ms",
+      "evidenceClass": "proxy",
+      "budget": null,
+      "reason": "Fixture or replay evidence; useful for regression comparison, not release-grade runtime proof.",
+      "nextAction": "Keep as regression baseline and add runtime/browser evidence before release-grade closure."
+    },
+    {
       "source": "docs/perf/long-list-browser-scroll.json",
       "scenario": "S-LL-1000",
       "metric": "browserScrollFrameDropPct",
@@ -811,20 +1119,32 @@
     "source": "openspec list --json",
     "completed": [
       {
-        "name": "realtime-trace-correlation-gate",
-        "tasks": "15/15",
+        "name": "workspace-tree-and-large-file-listing-budget",
+        "tasks": "26/26",
         "recommendation": "archive-candidate-after-qualifier-review",
         "qualifier": "Review validation and platform qualifiers before archive."
       },
       {
-        "name": "search-index-and-bounded-hydration",
-        "tasks": "16/16",
+        "name": "markdown-off-main-thread-pipeline",
+        "tasks": "27/27",
         "recommendation": "archive-candidate-after-qualifier-review",
         "qualifier": "Review validation and platform qualifiers before archive."
       },
       {
-        "name": "lazy-file-preview-dependencies",
-        "tasks": "17/17",
+        "name": "backend-io-cache-and-bridge-payload-budget",
+        "tasks": "27/27",
+        "recommendation": "archive-candidate-after-qualifier-review",
+        "qualifier": "Review validation and platform qualifiers before archive."
+      },
+      {
+        "name": "renderer-resource-backpressure",
+        "tasks": "33/33",
+        "recommendation": "archive-candidate-after-qualifier-review",
+        "qualifier": "Review validation and platform qualifiers before archive."
+      },
+      {
+        "name": "composer-and-message-row-render-budget",
+        "tasks": "20/20",
         "recommendation": "archive-candidate-after-qualifier-review",
         "qualifier": "Review validation and platform qualifiers before archive."
       }
@@ -860,9 +1180,17 @@
   ],
   "largeFileSummary": {
     "source": ".artifacts/large-files-near-threshold.json",
-    "generatedAt": "2026-06-11T09:36:18.636Z",
+    "generatedAt": "2026-06-11T19:58:47.168Z",
     "status": "warn",
     "candidates": [
+      {
+        "path": "src/services/tauri.ts",
+        "lines": 2514,
+        "priority": "P0",
+        "policyId": "bridge-runtime-critical",
+        "headroom": 86,
+        "facade": "Preserve service exports, payload mapping, and web/Tauri fallback semantics."
+      },
       {
         "path": "src-tauri/src/engine/claude_history.rs",
         "lines": 2505,
@@ -870,14 +1198,6 @@
         "policyId": "bridge-runtime-critical",
         "headroom": 95,
         "facade": "Preserve command registration, Rust module facade, payload shape, and cross-platform paths."
-      },
-      {
-        "path": "src/services/tauri.ts",
-        "lines": 2490,
-        "priority": "P0",
-        "policyId": "bridge-runtime-critical",
-        "headroom": 110,
-        "facade": "Preserve service exports, payload mapping, and web/Tauri fallback semantics."
       },
       {
         "path": "src-tauri/src/codex/mod.rs",
@@ -888,19 +1208,19 @@
         "facade": "Preserve command registration, Rust module facade, payload shape, and cross-platform paths."
       },
       {
+        "path": "src-tauri/src/git/mod.rs",
+        "lines": 2379,
+        "priority": "P0",
+        "policyId": "bridge-runtime-critical",
+        "headroom": 221,
+        "facade": "Preserve command registration, Rust module facade, payload shape, and cross-platform paths."
+      },
+      {
         "path": "src-tauri/src/runtime/mod.rs",
         "lines": 2371,
         "priority": "P0",
         "policyId": "bridge-runtime-critical",
         "headroom": 229,
-        "facade": "Preserve command registration, Rust module facade, payload shape, and cross-platform paths."
-      },
-      {
-        "path": "src-tauri/src/git/mod.rs",
-        "lines": 2332,
-        "priority": "P0",
-        "policyId": "bridge-runtime-critical",
-        "headroom": 268,
         "facade": "Preserve command registration, Rust module facade, payload shape, and cross-platform paths."
       },
       {

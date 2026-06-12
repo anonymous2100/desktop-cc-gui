@@ -38,6 +38,7 @@ type WorkspaceSearchSource = {
   workspaceId: string;
   workspaceName: string;
   files: string[];
+  sourceVersion?: string | null;
   threads: ThreadSummary[];
 };
 
@@ -226,7 +227,7 @@ export function computeUnifiedSearchResults({
         "files",
         source.files.length,
         Math.max(8, Math.floor(SEARCH_PROVIDER_LIMITS.files / Math.max(workspaceSources.length, 1))),
-        () => searchFiles(normalizedQuery, source.files, source.workspaceId),
+        () => searchFiles(normalizedQuery, source.files, source.workspaceId, source.sourceVersion),
       );
     }
     if (shouldIncludeSection(contentFilters, "threads")) {

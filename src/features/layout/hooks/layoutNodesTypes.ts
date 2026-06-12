@@ -600,6 +600,7 @@ export type LayoutNodesOptions = {
   files: string[];
   directories: string[];
   directoryMetadata: WorkspaceDirectoryEntry[];
+  fileTreeSourceVersion?: string | null;
   gitignoredFiles: Set<string>;
   gitignoredDirectories: Set<string>;
   onInsertComposerText: (text: string) => void;

@@ -48,6 +48,13 @@ import {
 import { highlightLine } from "../../../utils/syntax";
 import { detectCodexLeadMarker, type CodexLeadMarkerConfig } from "../constants/codexLeadMarkers";
 import { parseToolCallBlocks, type Block } from "../utils/toolCallBlocks";
+import {
+  createMessageMarkdownOptionsHash,
+  createMessageMarkdownPrecomputeRequest,
+  isStaleMessageMarkdownPrecomputeResult,
+  runMessageMarkdownPrecompute,
+} from "../../markdown/messageMarkdownPrecompute";
+import { appendMarkdownPrecomputeDiagnostic } from "../../../services/rendererDiagnostics";
 
 type MarkdownProps = {
   value: string;
@@ -1861,6 +1868,63 @@ export const Markdown = memo(function Markdown({
   ]);
 
   const hasMathContent = useMemo(() => detectMathContent(value), [value]);
+  const markdownPrecomputeOptionsHash = useMemo(() => createMessageMarkdownOptionsHash({
+    codexLeadEnhanced: enableCodexLeadEnhancement,
+    codeBlockStyle,
+    hasFileLinkHandlers: Boolean(onOpenFileLink || onOpenFileLinkMenu),
+    hasMathContent,
+    preserveFormatting,
+    softBreaks,
+  }), [
+    codeBlockStyle,
+    enableCodexLeadEnhancement,
+    hasMathContent,
+    onOpenFileLink,
+    onOpenFileLinkMenu,
+    preserveFormatting,
+    softBreaks,
+  ]);
+  useEffect(() => {
+    if (liveRenderMode === "lightweight" || codeBlock) {
+      return undefined;
+    }
+    const request = createMessageMarkdownPrecomputeRequest({
+      messageId: workspaceId ? `workspace:${workspaceId}` : "message:unknown",
+      source: content,
+      optionsHash: markdownPrecomputeOptionsHash,
+    });
+    let cancelled = false;
+    void runMessageMarkdownPrecompute(request).then((result) => {
+      if (cancelled) {
+        return;
+      }
+      if (isStaleMessageMarkdownPrecomputeResult(result, request)) {
+        return;
+      }
+      appendMarkdownPrecomputeDiagnostic({
+        mode: result.mode,
+        durationMs: result.durationMs,
+        contentLength: result.sourceLength,
+        contentHash: result.contentHash,
+        thresholdReason: result.thresholdReason,
+        cacheState: result.cacheState,
+        fallbackReason: result.fallbackReason,
+        evidenceClass: result.evidenceClass,
+        totalHeadings: result.precomputeResult?.totalHeadings,
+        totalHeavyBlocks: result.precomputeResult?.totalHeavyBlocks,
+        totalSourceLines: result.precomputeResult?.totalSourceLines,
+      });
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    codeBlock,
+    content,
+    liveRenderMode,
+    markdownPrecomputeOptionsHash,
+    workspaceId,
+  ]);
   const [katexReady, setKatexReady] = useState(
     () => areKatexAssetsReady(),
   );

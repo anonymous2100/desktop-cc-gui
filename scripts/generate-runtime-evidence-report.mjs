@@ -7,6 +7,7 @@ import { dirname, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 
 const PERF_BASELINE_PATH = "docs/perf/baseline.json";
+const COMPOSER_BASELINE_PATH = "docs/perf/composer-baseline.json";
 const BROWSER_SCROLL_PATH = "docs/perf/long-list-browser-scroll.json";
 const REALTIME_TURN_TRACE_PATH = "docs/perf/realtime-turn-trace.json";
 const LARGE_FILE_WATCHLIST_PATH = ".artifacts/large-files-near-threshold.json";
@@ -216,6 +217,169 @@ function buildRealtimeSummary(perfEvidence, turnTraceFragment) {
   };
 }
 
+function buildRendererResourceSummary(perfEvidence) {
+  const batchFlushDuration = findMetric(perfEvidence, "S-RS-FD", "batchFlushDurationP95");
+  const terminalSettlement = findMetric(perfEvidence, "S-RS-TS", "terminalSettlementP95");
+  return {
+    backpressure: {
+      source: batchFlushDuration?.source ?? "docs/perf/realtime-extended-baseline.json",
+      eventFlushCap: 200,
+      byteFlushCap: 128 * 1024,
+      evidenceClass: batchFlushDuration?.evidenceClass ?? "unsupported",
+      queueDepth: null,
+      droppedCount: null,
+      coalescedCount: null,
+      reason: batchFlushDuration?.reason
+        ?? "Runtime backpressure substrate is present; live queue counters require renderer diagnostics capture.",
+    },
+    listenerOwners: {
+      ownerTaxonomy: ["bootstrap", "shell", "workspace", "panel", "modal"],
+      migratedPilotSurfaces: [
+        "events.terminal-output",
+        "events.runtime-log-line",
+        "events.runtime-log-status",
+        "focus-refresh-wave",
+      ],
+      evidenceClass: "proxy",
+      residualRisk: "Full-app listener inventory remains manual; pilot surfaces are tracked first.",
+    },
+    mediaOwners: {
+      migratedPilotSurfaces: ["message-image-grid", "message-deferred-image"],
+      activeCount: null,
+      revokedCount: null,
+      retainedBytes: null,
+      evidenceClass: "proxy",
+      unsupportedReason: "Retained bytes are reported when Blob sizes are available in renderer diagnostics.",
+    },
+    criticalPath: {
+      terminalSettlementP95Ms: terminalSettlement?.value ?? null,
+      evidenceClass: terminalSettlement?.evidenceClass ?? "unsupported",
+    },
+  };
+}
+
+function buildBackendBridgeSummary() {
+  return {
+    substrate: {
+      scanCache: {
+        api: "ScanCache<K,V>.get_or_compute/invalidate/invalidate_matching",
+        evidenceClass: "proxy",
+      },
+      jsonlAppendOnly: {
+        states: ["append-only", "full-rescan", "corrupt-fallback"],
+        evidenceClass: "proxy",
+      },
+      blockingPolicy: {
+        timeoutFallback: "TimeoutPartial",
+        evidenceClass: "proxy",
+      },
+    },
+    bridgePayload: {
+      pilotCommand: "get_git_log",
+      surfaceId: "git-history-log",
+      targetBytes: 1024 * 1024,
+      hardFailBytes: 4 * 1024 * 1024,
+      targetItems: 2000,
+      hardFailItems: 5000,
+      metadataFields: [
+        "command",
+        "surfaceId",
+        "itemCount",
+        "estimatedBytes",
+        "partial",
+        "truncated",
+        "cacheState",
+        "evidenceClass",
+      ],
+      evidenceClass: "proxy",
+      contentSafety: "Metadata intentionally excludes absolute paths, prompts, assistant bodies, and tool output.",
+    },
+    residualRisk: [
+      "session catalog",
+      "local usage",
+      "Claude history",
+      "workspace files",
+      "project map relations",
+    ],
+  };
+}
+
+function buildWorkspaceFileListingSummary(perfEvidence) {
+  const commitP95 = findMetric(perfEvidence, "S-LL-1000", "commitDurationP95");
+  const browserScroll = findMetric(perfEvidence, "S-LL-1000", "browserScrollFrameDropPct");
+  return {
+    diagnosticsLabel: "workspaces.file.listing-budget",
+    metadataFields: [
+      "surfaceId",
+      "workspaceId",
+      "durationMs",
+      "returnedEntries",
+      "payloadBytes",
+      "cacheState",
+      "scanState",
+      "partial",
+      "limitHit",
+      "sourceVersion",
+      "requestedPathHash",
+      "evidenceClass",
+    ],
+    initialListing: {
+      surfaceId: "workspaces.file.initial-listing",
+      depth: 2,
+      targetEntries: 2000,
+      hardFailEntries: 5000,
+      targetPayloadBytes: 1024 * 1024,
+      hardFailPayloadBytes: 4 * 1024 * 1024,
+      evidenceClass: "proxy",
+    },
+    subtreeListing: {
+      surfaceId: "workspaces.file.subtree-listing",
+      depth: 1,
+      targetEntries: 500,
+      fallback: "full listing fallback is recorded as fallback-full-listing",
+      evidenceClass: "proxy",
+    },
+    sharedIndex: {
+      contract: ["pathTokens", "directoryTokens", "sourceVersion", "freshness", "invalidatedPaths"],
+      fallbackClass: "unsupported",
+      evidenceClass: "proxy",
+    },
+    longListProxy: {
+      commitDurationP95Ms: commitP95?.value ?? null,
+      browserScrollFrameDropPct: browserScroll?.value ?? null,
+      evidenceClass: browserScroll?.evidenceClass ?? commitP95?.evidenceClass ?? "unsupported",
+    },
+    contentSafety: "Diagnostics store hashes, counts, sourceVersion, and payload sizes; file contents and raw paths are excluded.",
+  };
+}
+
+function buildMarkdownPrecomputeSummary() {
+  return {
+    diagnosticsLabel: "perf.messages.markdown.precompute",
+    threshold: {
+      minLengthChars: 10_000,
+      complexitySignals: ["fenced-code", "math", "table", "raw-html"],
+    },
+    modes: ["worker-precompute", "main", "cache-hit", "fallback"],
+    metadataFields: [
+      "mode",
+      "durationMs",
+      "contentLength",
+      "contentHash",
+      "thresholdReason",
+      "cacheState",
+      "fallbackReason",
+      "evidenceClass",
+      "totalHeadings",
+      "totalHeavyBlocks",
+      "totalSourceLines",
+    ],
+    unsafeHtmlBoundary: "Worker output is not trusted DOM; rich React render and sanitization remain on the main renderer path.",
+    evidenceClass: "proxy",
+    contentSafety: "Diagnostics store source length/hash and structural counts; raw Markdown, prompt text, assistant body, tool output, and file content are excluded.",
+  };
+}
+
 const REALTIME_TRACE_BUDGETS = {
   "S-RS-VL": {
     target: 2000,
@@ -395,6 +559,32 @@ function createPerfMarkdown(report) {
   lines.push(`- Terminal pressure: ${report.realtimeSummary.terminalPressure}`);
   lines.push(`- Turn trace evidence class: ${report.realtimeSummary.turnTraceEvidenceClass ?? "unsupported"} (source: ${report.realtimeSummary.turnTraceSource ?? "n/a"})`);
   lines.push(`- Next action: ${report.realtimeSummary.nextAction}`);
+  lines.push("", "## Renderer Resource Pressure", "");
+  lines.push(`- Backpressure flush cap: ${report.rendererResourceSummary.backpressure.eventFlushCap} events / ${report.rendererResourceSummary.backpressure.byteFlushCap} bytes`);
+  lines.push(`- Backpressure evidence: ${report.rendererResourceSummary.backpressure.evidenceClass}`);
+  lines.push(`- Listener owner pilot surfaces: ${report.rendererResourceSummary.listenerOwners.migratedPilotSurfaces.join(", ")}`);
+  lines.push(`- Media owner pilot surfaces: ${report.rendererResourceSummary.mediaOwners.migratedPilotSurfaces.join(", ")}`);
+  lines.push(`- Residual listener risk: ${report.rendererResourceSummary.listenerOwners.residualRisk}`);
+  lines.push("", "## Backend IO / Bridge Payload", "");
+  lines.push(`- Scan cache substrate: ${report.backendBridgeSummary.substrate.scanCache.api}`);
+  lines.push(`- JSONL states: ${report.backendBridgeSummary.substrate.jsonlAppendOnly.states.join(", ")}`);
+  lines.push(`- Bridge pilot command: ${report.backendBridgeSummary.bridgePayload.pilotCommand}`);
+  lines.push(`- Bridge payload target: ${report.backendBridgeSummary.bridgePayload.targetBytes} bytes / ${report.backendBridgeSummary.bridgePayload.targetItems} items`);
+  lines.push(`- Bridge residual risk: ${report.backendBridgeSummary.residualRisk.join(", ")}`);
+  lines.push("", "## Workspace File Listing", "");
+  lines.push(`- Diagnostics label: ${report.workspaceFileListingSummary.diagnosticsLabel}`);
+  lines.push(`- Initial listing target: ${report.workspaceFileListingSummary.initialListing.targetPayloadBytes} bytes / ${report.workspaceFileListingSummary.initialListing.targetEntries} entries`);
+  lines.push(`- Subtree target entries: ${report.workspaceFileListingSummary.subtreeListing.targetEntries}`);
+  lines.push(`- Shared index fields: ${report.workspaceFileListingSummary.sharedIndex.contract.join(", ")}`);
+  lines.push(`- Long-list commit P95: ${report.workspaceFileListingSummary.longListProxy.commitDurationP95Ms ?? "unsupported"} ms`);
+  lines.push(`- Browser scroll drop: ${report.workspaceFileListingSummary.longListProxy.browserScrollFrameDropPct ?? "unsupported"}%`);
+  lines.push(`- Content safety: ${report.workspaceFileListingSummary.contentSafety}`);
+  lines.push("", "## Markdown Precompute", "");
+  lines.push(`- Diagnostics label: ${report.markdownPrecomputeSummary.diagnosticsLabel}`);
+  lines.push(`- Threshold: ${report.markdownPrecomputeSummary.threshold.minLengthChars} chars or ${report.markdownPrecomputeSummary.threshold.complexitySignals.join(", ")}`);
+  lines.push(`- Modes: ${report.markdownPrecomputeSummary.modes.join(", ")}`);
+  lines.push(`- Unsafe HTML boundary: ${report.markdownPrecomputeSummary.unsafeHtmlBoundary}`);
+  lines.push(`- Content safety: ${report.markdownPrecomputeSummary.contentSafety}`);
   lines.push("", "## Cold Start", "");
   lines.push(`- First paint evidence: ${report.coldStartSummary.firstPaintEvidence}`);
   lines.push(`- First interactive evidence: ${report.coldStartSummary.firstInteractiveEvidence}`);
@@ -446,12 +636,14 @@ function createOpenSpecMarkdown(report) {
 
 async function main() {
   const perfBaseline = await readJsonIfExists(PERF_BASELINE_PATH);
+  const composerBaseline = await readJsonIfExists(COMPOSER_BASELINE_PATH);
   const browserScroll = await readJsonIfExists(BROWSER_SCROLL_PATH);
   const realtimeTurnTrace = await readJsonIfExists(REALTIME_TURN_TRACE_PATH);
   const largeFileReport = await readJsonIfExists(LARGE_FILE_WATCHLIST_PATH);
   const openSpecState = runJson("openspec", ["list", "--json"]);
   const performanceEvidence = buildPerfEvidence([
     { path: PERF_BASELINE_PATH, fragment: perfBaseline },
+    { path: COMPOSER_BASELINE_PATH, fragment: composerBaseline },
     { path: BROWSER_SCROLL_PATH, fragment: browserScroll },
   ]);
   // Enrich baseline rows in place; the function mutates and returns the same array.
@@ -461,6 +653,7 @@ async function main() {
     generatedAt: new Date().toISOString(),
     sources: {
       perfBaseline: existsSync(repoPath(PERF_BASELINE_PATH)) ? PERF_BASELINE_PATH : null,
+      composerBaseline: existsSync(repoPath(COMPOSER_BASELINE_PATH)) ? COMPOSER_BASELINE_PATH : null,
       browserScroll: existsSync(repoPath(BROWSER_SCROLL_PATH)) ? BROWSER_SCROLL_PATH : null,
       realtimeTurnTrace: existsSync(repoPath(REALTIME_TURN_TRACE_PATH)) ? REALTIME_TURN_TRACE_PATH : null,
       largeFileWatchlist: existsSync(repoPath(LARGE_FILE_WATCHLIST_PATH)) ? LARGE_FILE_WATCHLIST_PATH : null,
@@ -468,6 +661,10 @@ async function main() {
     },
     performanceEvidence,
     realtimeSummary: buildRealtimeSummary(performanceEvidence, realtimeTurnTrace),
+    rendererResourceSummary: buildRendererResourceSummary(performanceEvidence),
+    backendBridgeSummary: buildBackendBridgeSummary(),
+    workspaceFileListingSummary: buildWorkspaceFileListingSummary(performanceEvidence),
+    markdownPrecomputeSummary: buildMarkdownPrecomputeSummary(),
     realtimeTraceBudgets,
     coldStartSummary: buildColdStartSummary(performanceEvidence),
     archiveReadiness: buildArchiveReadiness(openSpecState),
@@ -484,7 +681,11 @@ async function main() {
 
 export const runtimeEvidenceReportInternals = {
   buildLargeFileSummary,
+  buildBackendBridgeSummary,
+  buildWorkspaceFileListingSummary,
+  buildMarkdownPrecomputeSummary,
   buildPerfEvidence,
+  buildRendererResourceSummary,
   buildRealtimeSummary,
   buildRealtimeTraceBudgets,
 };

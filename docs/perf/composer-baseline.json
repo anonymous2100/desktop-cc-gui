@@ -1,12 +1,12 @@
 {
   "schemaVersion": "1.0",
-  "generatedAt": "2026-06-11T06:15:22.006Z",
+  "generatedAt": "2026-06-11T18:33:50.345Z",
   "source": "composer-input",
   "metrics": [
     {
       "scenario": "S-CI-50",
       "metric": "keystrokeToCommitP95",
-      "value": 0.09,
+      "value": 0.08,
       "unit": "ms"
     },
     {
@@ -36,7 +36,7 @@
     {
       "scenario": "S-CI-100-IME",
       "metric": "compositionToCommit",
-      "value": 0.13,
+      "value": 0.12,
       "unit": "ms"
     }
   ]

@@ -2,7 +2,7 @@
 
 ## Why
 
-roadmap `P1-04 大 Markdown 离主线程解析` 的真实背景是：P0 `lazy-markdown-runtime` 已经把 `react-markdown` / remark / rehype full runtime 放到 lazy boundary，live streaming 也已有 lightweight path，但 final rich Markdown 仍可能在主线程执行高成本 segmentation、math detection、tool-call parsing、rich runtime render scheduling。仓库同时已经存在 `src/features/markdown/fastMarkdownRenderer/fastMarkdown.worker.ts`、`workerAdapter.ts`、`FileMarkdownFastPreview` 和 `FullMarkdownRuntime.tsx`。因此本 change 不应从零造 worker，也不应承诺在 worker 里执行 ReactMarkdown/DOM 渲染；合理目标是把可 worker 化的 heavy precompute/fast compile 移出主线程，并为 rich render 建立 threshold、cache、stale guard、fallback 和 evidence。
+roadmap `P1-04 大 Markdown 离主线程解析` 的真实背景是：P0 `lazy-markdown-runtime` 已经把 `react-markdown` / remark / rehype full runtime 放到 lazy boundary，live streaming 也已有 lightweight path，但 final rich Markdown 仍可能在主线程执行高成本 segmentation、math detection、tool-call parsing、rich runtime render scheduling。仓库同时已经存在 `src/features/markdown/fastMarkdownRenderer/fastMarkdown.worker.ts`、`workerAdapter.ts`、`FileMarkdownFastPreview` 和 `FullMarkdownRuntime.tsx`。因此本 change 不应从零造 worker，也不应承诺在 worker 里执行 ReactMarkdown/DOM 渲染；合理目标是复用现有 worker substrate，把可 worker 化的 heavy precompute/fast compile 移出主线程，并为 rich render 建立 threshold、cache、stale guard、fallback 和 evidence。代码实现可提前研究，但 evidence gate 字段必须等 Step 1-4 的字段命名稳定后再落。
 
 ## Code Facts / 现状事实
 
@@ -40,7 +40,7 @@ roadmap `P1-04 大 Markdown 离主线程解析` 的真实背景是：P0 `lazy-ma
 2. **Protocol reuse**：扩展或复用 fast markdown worker message protocol，只传 serializable inputs/outputs。
 3. **Threshold/cache/stale guard**：大 final message 才走 worker precompute；小消息保持 main path，避免 worker startup overhead。
 4. **Rich render fallback**：worker unsupported/timeout/error 时回到 existing main-thread render，并记录 fallback evidence。
-5. **Evidence gate**：输出 `mode=worker-precompute|main|cache-hit|fallback`、duration、threshold reason、content-safe ids。
+5. **Evidence gate hold**：代码可以先接 worker/cache/stale guard；`runtime-performance-evidence-gates` 字段必须等 Step 1-4 合入后一次性追加，避免字段命名漂移和文档冲突。
 
 ## Initial Budgets / 初始预算
 
@@ -91,8 +91,8 @@ roadmap `P1-04 大 Markdown 离主线程解析` 的真实背景是：P0 `lazy-ma
   2. `eventBackpressure` 抽象 —— worker 启动失败 / stale / cancellation 通知复用（如果本 change 决定走 `eventBackpressure`）。
   3. `runtime-performance-evidence-gates` 已有字段的命名风格 —— 新增 `markdown.parse.*` 字段保持一致。
 - **Required Public Artifacts / 本 change 必须对外暴露**:
-  1. **`markdownParseWorker` 协议**（`{ messageId, contentHash, source, options }` → `{ ast, tokens, durationMs, parseMode, evidence }`）—— 独立可复用，无下游消费方。
-  2. **`markdownParseCache` 抽象**（`{ get, set, invalidate }`，键 = `messageId + contentHash`）—— 独立可复用。
+  1. **`markdownParseWorker` 协议**（`{ messageId, contentHash, source, options }` → serializable precompute result + `{ durationMs, parseMode, evidence }`）—— 复用或扩展现有 `fastMarkdownRenderer` worker substrate，不另造平行 worker。
+  2. **`markdownParseCache` 抽象**（`{ get, set, invalidate }`，键 = `rendererProfile + messageId + contentHash + optionsHash + schemaVersion`）—— 独立可复用。
   3. `runtime-performance-evidence-gates` 新增 `markdown.parse.*` 字段。
 - **Cross-Change Constraint**: 本 change 是串行链终点，启动时间可早于 Step 4，但任何对 `runtime-performance-evidence-gates.json` / `runtime-performance-evidence-gates.md` 的写入必须**等 Step 1-4 全部合并后再批量追加**，避免 gate 文档被两个分支同时改。
 - **Parallelism Note**: 本 change 的代码实现（worker / cache / fallback）可与 Step 3 / Step 4 并行开发在独立 worktree；只需在最后合并 evidence gate 文档时串行落盘。

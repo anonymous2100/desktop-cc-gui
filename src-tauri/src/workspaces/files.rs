@@ -10,6 +10,9 @@ use ignore::WalkBuilder;
 use regex::{Regex, RegexBuilder};
 use serde::{Deserialize, Serialize};
 
+use crate::backend_budget::{
+    estimate_json_payload_bytes, stable_hash, PayloadBudgetMetadata, ScanCacheState,
+};
 use crate::text_encoding::decode_text_bytes;
 use crate::utils::normalize_git_path;
 
@@ -279,6 +282,40 @@ pub(crate) struct WorkspaceFilesResponse {
     pub(crate) limit_hit: bool,
     #[serde(default)]
     pub(crate) directory_entries: Vec<WorkspaceDirectoryEntry>,
+    #[serde(
+        default,
+        rename = "listingBudget",
+        skip_serializing_if = "Option::is_none"
+    )]
+    pub(crate) listing_budget: Option<WorkspaceFileListingBudgetMetadata>,
+    #[serde(
+        default,
+        rename = "sourceVersion",
+        skip_serializing_if = "Option::is_none"
+    )]
+    pub(crate) source_version: Option<String>,
+    #[serde(
+        default,
+        rename = "payloadBudget",
+        skip_serializing_if = "Option::is_none"
+    )]
+    pub(crate) payload_budget: Option<PayloadBudgetMetadata>,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct WorkspaceFileListingBudgetMetadata {
+    pub(crate) depth: Option<usize>,
+    pub(crate) max_entries: usize,
+    pub(crate) returned_entries: usize,
+    pub(crate) payload_bytes: usize,
+    pub(crate) source_version: String,
+    pub(crate) scan_state: WorkspaceScanState,
+    pub(crate) limit_hit: bool,
+    pub(crate) cache_state: ScanCacheState,
+    pub(crate) requested_path: Option<String>,
+    pub(crate) partial: bool,
+    pub(crate) page_cursor: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Copy, Debug, PartialEq, Eq)]
@@ -332,6 +369,12 @@ fn default_workspace_scan_state() -> WorkspaceScanState {
 }
 
 fn workspace_files_response(
+    command: &str,
+    surface_id: &str,
+    requested_path: Option<&str>,
+    depth: Option<usize>,
+    max_entries: usize,
+    cache_state: ScanCacheState,
     files: Vec<String>,
     directories: Vec<String>,
     gitignored_files: Vec<String>,
@@ -340,7 +383,7 @@ fn workspace_files_response(
     limit_hit: bool,
     directory_entries: Vec<WorkspaceDirectoryEntry>,
 ) -> WorkspaceFilesResponse {
-    WorkspaceFilesResponse {
+    let mut response = WorkspaceFilesResponse {
         files,
         directories,
         gitignored_files,
@@ -348,7 +391,56 @@ fn workspace_files_response(
         scan_state,
         limit_hit,
         directory_entries,
-    }
+        listing_budget: None,
+        source_version: None,
+        payload_budget: None,
+    };
+    let source_version = build_workspace_listing_source_version(&response);
+    response.source_version = Some(source_version.clone());
+    let payload_bytes = estimate_json_payload_bytes(&response);
+    let returned_entries = response.files.len()
+        + response.directories.len()
+        + response.gitignored_files.len()
+        + response.gitignored_directories.len()
+        + response.directory_entries.len();
+    let partial = scan_state == WorkspaceScanState::Partial || limit_hit;
+    response.listing_budget = Some(WorkspaceFileListingBudgetMetadata {
+        depth,
+        max_entries,
+        returned_entries,
+        payload_bytes,
+        source_version: source_version.clone(),
+        scan_state,
+        limit_hit,
+        cache_state: cache_state.clone(),
+        requested_path: requested_path.map(str::to_string),
+        partial,
+        page_cursor: None,
+    });
+    response.payload_budget = Some(PayloadBudgetMetadata {
+        command: command.to_string(),
+        surface_id: surface_id.to_string(),
+        item_count: returned_entries,
+        estimated_bytes: payload_bytes,
+        partial,
+        truncated: limit_hit,
+        cache_state,
+        evidence_class: "measured".to_string(),
+    });
+    response
+}
+
+fn build_workspace_listing_source_version(response: &WorkspaceFilesResponse) -> String {
+    let serialized = serde_json::json!({
+        "files": &response.files,
+        "directories": &response.directories,
+        "gitignoredFiles": &response.gitignored_files,
+        "gitignoredDirectories": &response.gitignored_directories,
+        "scanState": response.scan_state,
+        "limitHit": response.limit_hit,
+        "directoryEntries": &response.directory_entries,
+    });
+    stable_hash(&serialized.to_string())
 }
 
 fn special_directory_kind(path: &str) -> Option<WorkspaceDirectorySpecialKind> {
@@ -796,6 +888,12 @@ pub(crate) fn list_workspace_files_inner(
                     let directory_entries =
                         build_initial_directory_entries(&files, &directories, scan_state);
                     return workspace_files_response(
+                        "list_workspace_files",
+                        "workspaces.file.initial-listing",
+                        None,
+                        Some(2),
+                        max_files,
+                        ScanCacheState::Unsupported,
                         files,
                         directories,
                         gitignored_files,
@@ -912,6 +1010,12 @@ pub(crate) fn list_workspace_files_inner(
     };
     let directory_entries = build_initial_directory_entries(&files, &directories, scan_state);
     workspace_files_response(
+        "list_workspace_files",
+        "workspaces.file.initial-listing",
+        None,
+        Some(2),
+        max_files,
+        ScanCacheState::Unsupported,
         files,
         directories,
         gitignored_files,
@@ -1043,6 +1147,12 @@ pub(crate) fn list_workspace_directory_children_inner(
     let directory_entries =
         build_directory_child_entries(&normalized_path, &files, &directories, scan_state);
     Ok(workspace_files_response(
+        "list_workspace_directory_children",
+        "workspaces.file.subtree-listing",
+        Some(&normalized_path),
+        Some(1),
+        max_entries,
+        ScanCacheState::Unsupported,
         files,
         directories,
         gitignored_files,
@@ -1128,6 +1238,12 @@ pub(crate) fn list_external_absolute_directory_children_inner(
         WorkspaceScanState::Complete
     };
     Ok(workspace_files_response(
+        "list_external_absolute_directory_children",
+        "workspaces.file.external-subtree-listing",
+        Some(absolute_directory_path),
+        Some(1),
+        max_entries,
+        ScanCacheState::Unsupported,
         files,
         directories,
         Vec::new(),
@@ -1271,6 +1387,12 @@ pub(crate) fn list_external_spec_tree_inner(
         let directory_entries =
             build_initial_directory_entries(&files, &directories, WorkspaceScanState::Complete);
         return Ok(workspace_files_response(
+            "list_external_spec_tree",
+            "workspaces.file.external-spec-listing",
+            None,
+            Some(2),
+            effective_max_files,
+            ScanCacheState::Unsupported,
             files,
             directories,
             Vec::new(),
@@ -1344,6 +1466,12 @@ pub(crate) fn list_external_spec_tree_inner(
     };
     let directory_entries = build_initial_directory_entries(&files, &directories, scan_state);
     Ok(workspace_files_response(
+        "list_external_spec_tree",
+        "workspaces.file.external-spec-listing",
+        None,
+        Some(2),
+        effective_max_files,
+        ScanCacheState::Unsupported,
         files,
         directories,
         Vec::new(),
@@ -2297,6 +2425,41 @@ mod tests {
     }
 
     #[test]
+    fn list_workspace_files_includes_budget_source_and_payload_metadata() {
+        let root = std::env::temp_dir().join(format!("mossx-files-budget-{}", Uuid::new_v4()));
+        std::fs::create_dir_all(root.join("src")).expect("create src dir");
+        std::fs::write(root.join("src/app.ts"), "app\n").expect("write app");
+
+        let response = list_workspace_files_inner(&root, 20);
+        let listing_budget = response
+            .listing_budget
+            .as_ref()
+            .expect("listing budget metadata");
+        let payload_budget = response
+            .payload_budget
+            .as_ref()
+            .expect("payload budget metadata");
+
+        assert_eq!(
+            response.source_version.as_deref(),
+            Some(listing_budget.source_version.as_str())
+        );
+        assert_eq!(listing_budget.depth, Some(2));
+        assert_eq!(listing_budget.max_entries, 20);
+        assert_eq!(listing_budget.scan_state, response.scan_state);
+        assert_eq!(listing_budget.limit_hit, response.limit_hit);
+        assert!(
+            listing_budget.returned_entries >= response.files.len() + response.directories.len()
+        );
+        assert!(listing_budget.payload_bytes > 0);
+        assert_eq!(payload_budget.command, "list_workspace_files");
+        assert_eq!(payload_budget.surface_id, "workspaces.file.initial-listing");
+        assert_eq!(payload_budget.item_count, listing_budget.returned_entries);
+
+        std::fs::remove_dir_all(&root).expect("cleanup root");
+    }
+
+    #[test]
     fn sort_and_truncate_named_entries_sorts_before_truncating() {
         let mut entries = vec![
             ("z-item".to_string(), 1usize),
@@ -2330,6 +2493,34 @@ mod tests {
                 "bucket/z.ts".to_string()
             ]
         );
+
+        std::fs::remove_dir_all(&root).expect("cleanup root");
+    }
+
+    #[test]
+    fn list_workspace_directory_children_includes_subtree_budget_contract() {
+        let root =
+            std::env::temp_dir().join(format!("mossx-dir-children-budget-{}", Uuid::new_v4()));
+        std::fs::create_dir_all(root.join("bucket")).expect("create bucket dir");
+        std::fs::write(root.join("bucket/a.ts"), "a\n").expect("write a");
+
+        let response =
+            list_workspace_directory_children_inner(&root, "bucket", 10).expect("list children");
+        let listing_budget = response
+            .listing_budget
+            .as_ref()
+            .expect("listing budget metadata");
+        let payload_budget = response
+            .payload_budget
+            .as_ref()
+            .expect("payload budget metadata");
+
+        assert_eq!(listing_budget.requested_path.as_deref(), Some("bucket"));
+        assert_eq!(listing_budget.depth, Some(1));
+        assert_eq!(listing_budget.max_entries, 10);
+        assert_eq!(payload_budget.command, "list_workspace_directory_children");
+        assert_eq!(payload_budget.surface_id, "workspaces.file.subtree-listing");
+        assert_eq!(payload_budget.estimated_bytes, listing_budget.payload_bytes);
 
         std::fs::remove_dir_all(&root).expect("cleanup root");
     }

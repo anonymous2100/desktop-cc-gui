@@ -1,7 +1,7 @@
 # Project Context
 
 - Type: OpenSpec Workspace
-- Updated At: 2026-06-11T00:44:00+08:00
+- Updated At: 2026-06-12T00:00:00+08:00
 - Scope: governance snapshot for the current `mossx` repository workspace
 - Product version fact: `ccgui@0.5.9` from `package.json` and `src-tauri/tauri.conf.json`
 
@@ -20,7 +20,7 @@ The product in this repository is `ccgui`: a Tauri 2 desktop AI engineering work
 - Change workflow artifacts: `openspec/changes/<change-id>/{proposal,design,tasks,verification}.md`
 - Archive: `openspec/changes/archive/*`
 - Implementation rules: `.trellis/spec/**`
-- Current workspace state: tracked active changes = `3`, archive changes = `469`, main specs = `328`
+- Current workspace state: tracked active changes = `5`, archive changes = `472`, main specs = `328`
 
 ## Entry Surfaces
 
@@ -54,38 +54,53 @@ The product in this repository is `ccgui`: a Tauri 2 desktop AI engineering work
 
 ## Current Inventory
 
-- Active changes: `3`
-- Archive changes: `469`
+- Active changes: `5`
+- Archive changes: `472`
 - Main specs: `328`
 - Completed task sets still active: `0`
-- In-progress task sets: `2`
+- Ready-for-implementation task sets: `5`
 
 ## Active Changes
 
-### `lazy-file-preview-dependencies`
+### `composer-and-message-row-render-budget`
 
-- Task state: completed (`17/17`) and archive-candidate after qualifier review.
-- Current artifact fact: file preview dependency inventory is complete; `FileViewPanel` and `FileViewBody` no longer runtime-import CodeMirror. `FileCodeMirrorEditorImpl-*` is a lazy editor chunk that synchronously owns `@uiw/react-codemirror`, CodeMirror state/view/search commands, git line markers, and annotation widgets. CodeMirror language packages load through async per-language cache with stale request guards, and PDF preview remains behind a React lazy boundary with focused tests. Latest baseline-mode production build keeps `vendor-codemirror-*` out of `dist/index.html` modulepreload and pulls it through the lazy editor edge only.
-- Action: archive after final qualifier review and any required main-spec sync.
+- Step: 1 of 5 in the P1 performance chain.
+- Current artifact fact: proposal/design/spec/tasks are complete and recalibrated after rollback. `useComposerEditorState` is documented as textarea-height state only, so implementation must focus on evidence-driven ChatInputBox value-path isolation, IME stability, input history stale-drop, and `MessagesRows` row identity/render diagnostics.
+- Action: implement first; downstream changes must not start shared renderer-chain edits until this change lands its diagnostics schema and local Composer/message-row guardrails.
 
-### `search-index-and-bounded-hydration`
+### `renderer-resource-backpressure`
 
-- Task state: in progress (`9/16`).
-- Current artifact fact: unified search providers and hydration path are inventoried; recency map is cached outside query compute, global workspace file hydration is active-workspace-first with bounded concurrency, and `reportSearchMetrics` records provider-level timing/candidate/result metadata. Normalized indexes and incremental rebuild are still open.
-- Action: keep active until normalized indexes, invalidation rules, stale async provider guard, and representative query evidence are complete.
+- Step: 2 of 5 in the P1 performance chain.
+- Current artifact fact: proposal/design/spec/tasks are complete and recalibrated as the renderer resource substrate. Current code still uses a bare `Set` event hub in `src/services/events.ts`; `eventBackpressure`, listener owner registry, `useFocusRefresh`, and diagnostics field naming must be introduced before backend/workspace changes reuse them.
+- Action: implement public substrate first, then migrate terminal/runtime, focus wave, listener owner pilots, and deferred media/object URL ownership.
 
-### `realtime-trace-correlation-gate`
+### `backend-io-cache-and-bridge-payload-budget`
 
-- Task state: in progress (`0/15`).
-- Current artifact fact: proposal/design/spec/tasks exist, but current code evidence does not yet show correlated realtime trace propagation from ingress to visible render.
-- Action: keep active as P0 implementation backlog.
+- Step: 3 of 5 in the P1 performance chain.
+- Current artifact fact: proposal/design/spec/tasks are complete and recalibrated as the backend substrate. Current code does not yet provide `ScanCache` / `payloadBudget`; this change must land `ScanCache<K,V>`, cache key signature, blocking helper, Tauri invoke payload metadata, and one pilot path without taking over Step 4 pagination/subtree work.
+- Action: implement after Step 2 public renderer substrate; Step 4 is blocked until this change exposes reusable backend cache and payload budget artifacts.
 
-## P0 Performance Reconciliation Order
+### `workspace-tree-and-large-file-listing-budget`
 
-1. Archive candidate: `lazy-file-preview-dependencies`.
-2. Continue implementation backlog: `search-index-and-bounded-hydration`, `realtime-trace-correlation-gate`.
+- Step: 4 of 5 in the P1 performance chain.
+- Current artifact fact: proposal/design/spec/tasks are complete and now explicitly gated on Step 3. Existing `workspaces/files.rs` has `limit_hit` / `scan_state` / partial response semantics, but this change must not modify file listing behavior until `ScanCache`, cache key signature, blocking helper, and `payloadBudget` metadata are available.
+- Action: implement only after Step 3; consume the backend substrate to add listing budget metadata, subtree on-demand, stale sourceVersion guards, partial UI clarity, and shared file index bridge.
 
-Detailed attribution note: `openspec/docs/p0-performance-workspace-reconciliation-2026-06-10.md`.
+### `markdown-off-main-thread-pipeline`
+
+- Step: 5 of 5 in the P1 performance chain.
+- Current artifact fact: proposal/design/spec/tasks are complete and recalibrated to reuse existing `fastMarkdownRenderer` worker substrate. Code work may be researched independently, but `runtime-performance-evidence-gates` fields must be appended only after Step 1-4 field naming is stable.
+- Action: implement last for evidence-gate writes; reuse/extend the existing worker/cache path for serializable precompute and keep React/DOM rich rendering on the main React path where required.
+
+## P1 Performance Execution Order
+
+1. Implement `composer-and-message-row-render-budget`.
+2. Implement `renderer-resource-backpressure` public substrate and pilot migrations.
+3. Implement `backend-io-cache-and-bridge-payload-budget` public substrate and one pilot scan/path.
+4. Implement `workspace-tree-and-large-file-listing-budget` using Step 3 substrate.
+5. Implement `markdown-off-main-thread-pipeline`; defer evidence gate field writes until Step 1-4 are merged.
+
+Detailed rollback recalibration note: this snapshot is based on active `openspec/changes/*` directories and current code anchors after rollback, not the stale 2026-06-11 project snapshot.
 
 ## Recent Archive / Sync Snapshot
 
@@ -195,6 +210,7 @@ npm run check:large-files
 
 ## Update History
 
+- 2026-06-12: Reconciled active OpenSpec workspace after code rollback. Active changes are the five P1 performance chain changes: `composer-and-message-row-render-budget`, `renderer-resource-backpressure`, `backend-io-cache-and-bridge-payload-budget`, `workspace-tree-and-large-file-listing-budget`, and `markdown-off-main-thread-pipeline`. Current tracked counts are active=5, archive=472, specs=328. Each active change validates individually under strict mode.
 - 2026-06-11: Archived `lazy-markdown-runtime` after moving full Markdown parser dependencies behind `FullMarkdownRuntime`, preserving focused Markdown behavior tests, and syncing message markdown streaming compatibility deltas. Current tracked counts are active=3, archive=469, specs=328. Spec-only strict validation passed.
 - 2026-06-11: Archived `split-app-shell-performance-boundaries` after removing AppShell `@ts-nocheck`, deferring release notes changelog data into a lazy chunk, and syncing app-shell runtime boundary deltas. Current tracked counts are active=4, archive=468, specs=328. Spec-only strict validation passed.
 - 2026-06-10: Archived 2 additional startup P0 performance changes after user-run manual QA and synced their deltas into main specs. Current tracked counts are active=5, archive=467, specs=328. Spec-only strict validation passed.

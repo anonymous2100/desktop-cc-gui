@@ -4,9 +4,13 @@ import assert from "node:assert/strict";
 import { runtimeEvidenceReportInternals } from "./generate-runtime-evidence-report.mjs";
 
 const {
+  buildBackendBridgeSummary,
   buildLargeFileSummary,
   buildPerfEvidence,
+  buildRendererResourceSummary,
   buildRealtimeSummary,
+  buildMarkdownPrecomputeSummary,
+  buildWorkspaceFileListingSummary,
 } = runtimeEvidenceReportInternals;
 
 test("buildPerfEvidence emits unsupported evidence when browser source is missing", () => {
@@ -72,6 +76,29 @@ test("buildPerfEvidence preserves structured budget metadata", () => {
   assert.equal(evidence[0]?.budget?.hardFail, 1500);
 });
 
+test("buildPerfEvidence classifies composer input fixture evidence as proxy", () => {
+  const evidence = buildPerfEvidence([
+    {
+      path: "docs/perf/composer-baseline.json",
+      fragment: {
+        metrics: [
+          {
+            scenario: "S-CI-50",
+            metric: "keystrokeToCommitP95",
+            value: 12,
+            unit: "ms",
+          },
+        ],
+      },
+    },
+  ]);
+
+  assert.equal(evidence[0]?.source, "docs/perf/composer-baseline.json");
+  assert.equal(evidence[0]?.scenario, "S-CI-50");
+  assert.equal(evidence[0]?.evidenceClass, "proxy");
+  assert.match(evidence[0]?.reason ?? "", /Fixture/);
+});
+
 test("buildRealtimeSummary keeps malformed proxy values from looking bounded", () => {
   const summary = buildRealtimeSummary([
     {
@@ -84,6 +111,65 @@ test("buildRealtimeSummary keeps malformed proxy values from looking bounded", (
 
   assert.equal(summary.visibleLagRisk, "unsupported");
   assert.equal(summary.evidenceClass, "unsupported");
+});
+
+test("buildRendererResourceSummary exposes backpressure listener and media fields", () => {
+  const summary = buildRendererResourceSummary([
+    {
+      source: "docs/perf/realtime-extended-baseline.json",
+      scenario: "S-RS-FD",
+      metric: "batchFlushDurationP95",
+      value: 8,
+      evidenceClass: "proxy",
+      reason: "fixture",
+    },
+  ]);
+
+  assert.equal(summary.backpressure.eventFlushCap, 200);
+  assert.equal(summary.backpressure.byteFlushCap, 128 * 1024);
+  assert.equal(summary.backpressure.evidenceClass, "proxy");
+  assert.ok(summary.listenerOwners.ownerTaxonomy.includes("workspace"));
+  assert.ok(summary.mediaOwners.migratedPilotSurfaces.includes("message-image-grid"));
+});
+
+test("buildBackendBridgeSummary exposes substrate and payload budget fields", () => {
+  const summary = buildBackendBridgeSummary();
+
+  assert.equal(summary.bridgePayload.pilotCommand, "get_git_log");
+  assert.equal(summary.bridgePayload.targetBytes, 1024 * 1024);
+  assert.ok(summary.bridgePayload.metadataFields.includes("estimatedBytes"));
+  assert.match(summary.bridgePayload.contentSafety, /excludes absolute paths/);
+  assert.ok(summary.residualRisk.includes("workspace files"));
+});
+
+test("buildWorkspaceFileListingSummary exposes listing budget and shared index contract", () => {
+  const summary = buildWorkspaceFileListingSummary([
+    {
+      source: "docs/perf/long-list-baseline.json",
+      scenario: "S-LL-1000",
+      metric: "commitDurationP95",
+      value: 14,
+      evidenceClass: "proxy",
+    },
+  ]);
+
+  assert.equal(summary.diagnosticsLabel, "workspaces.file.listing-budget");
+  assert.equal(summary.initialListing.targetPayloadBytes, 1024 * 1024);
+  assert.equal(summary.subtreeListing.targetEntries, 500);
+  assert.ok(summary.metadataFields.includes("payloadBytes"));
+  assert.ok(summary.sharedIndex.contract.includes("sourceVersion"));
+  assert.match(summary.contentSafety, /raw paths are excluded/);
+});
+
+test("buildMarkdownPrecomputeSummary exposes modes threshold and safety boundary", () => {
+  const summary = buildMarkdownPrecomputeSummary();
+
+  assert.equal(summary.diagnosticsLabel, "perf.messages.markdown.precompute");
+  assert.equal(summary.threshold.minLengthChars, 10_000);
+  assert.ok(summary.modes.includes("worker-precompute"));
+  assert.ok(summary.metadataFields.includes("fallbackReason"));
+  assert.match(summary.unsafeHtmlBoundary, /not trusted DOM/);
+  assert.match(summary.contentSafety, /raw Markdown/);
 });
 
 test("buildLargeFileSummary tolerates older reports without fail thresholds", () => {
