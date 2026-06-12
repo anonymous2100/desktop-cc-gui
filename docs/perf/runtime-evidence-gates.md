@@ -1,6 +1,6 @@
 # Runtime Evidence Gates
 
-Generated at: 2026-06-12T14:51:41.875Z
+Generated at: 2026-06-12T16:51:24.241Z
 
 ## Performance Evidence
 

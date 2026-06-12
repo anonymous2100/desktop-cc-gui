@@ -1,6 +1,6 @@
 {
   "schemaVersion": "1.0",
-  "generatedAt": "2026-06-12T14:51:41.875Z",
+  "generatedAt": "2026-06-12T16:51:24.241Z",
   "sources": {
     "perfBaseline": "docs/perf/baseline.json",
     "composerBaseline": "docs/perf/composer-baseline.json",
@@ -1255,6 +1255,24 @@
     "source": "openspec list --json",
     "completed": [
       {
+        "name": "realtime-input-and-io-isolation-2026-06",
+        "tasks": "68/68",
+        "recommendation": "archive-candidate-after-qualifier-review",
+        "qualifier": "Review validation and platform qualifiers before archive."
+      },
+      {
+        "name": "frontend-prop-chain-stability-2026-06",
+        "tasks": "45/45",
+        "recommendation": "archive-candidate-after-qualifier-review",
+        "qualifier": "Review validation and platform qualifiers before archive."
+      },
+      {
+        "name": "file-editor-io-render-isolation-2026-06",
+        "tasks": "24/24",
+        "recommendation": "archive-candidate-after-qualifier-review",
+        "qualifier": "Review validation and platform qualifiers before archive."
+      },
+      {
         "name": "workspace-tree-and-large-file-listing-budget",
         "tasks": "26/26",
         "recommendation": "archive-candidate-after-qualifier-review",
@@ -1285,18 +1303,7 @@
         "qualifier": "Review validation and platform qualifiers before archive."
       }
     ],
-    "inProgress": [
-      {
-        "name": "frontend-prop-chain-stability-2026-06",
-        "tasks": "44/45",
-        "recommendation": "not-archive-ready"
-      },
-      {
-        "name": "realtime-input-and-io-isolation-2026-06",
-        "tasks": "66/68",
-        "recommendation": "not-archive-ready"
-      }
-    ],
+    "inProgress": [],
     "error": null
   },
   "compatibilityPaths": [

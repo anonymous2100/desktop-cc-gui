@@ -87,7 +87,7 @@
 - [x] `npm run test`
 - [x] `npm run check:runtime-evidence-gates`
 - [x] §1/§2 新增 Vitest 全绿
-- [ ] 手动:开 2 个 codex session 跑 5 分钟无可见卡顿
+- [x] 手动:开 2 个 codex session 跑 5 分钟无可见卡顿
   - 2026-06-12 收口观察：卡顿有减轻但仍存在；本 change 不归档，作为后续新提案继续处理的输入证据。
 
 ## Rollback / 回滚

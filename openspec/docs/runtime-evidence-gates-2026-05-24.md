@@ -1,11 +1,14 @@
 # Runtime Evidence Gate Governance Report
 
-Generated at: 2026-06-12T14:51:41.875Z
+Generated at: 2026-06-12T16:51:24.241Z
 
 ## Archive Readiness
 
 | Change | Tasks | Recommendation | Qualifier |
 |---|---:|---|---|
+| realtime-input-and-io-isolation-2026-06 | 68/68 | archive-candidate-after-qualifier-review | Review validation and platform qualifiers before archive. |
+| frontend-prop-chain-stability-2026-06 | 45/45 | archive-candidate-after-qualifier-review | Review validation and platform qualifiers before archive. |
+| file-editor-io-render-isolation-2026-06 | 24/24 | archive-candidate-after-qualifier-review | Review validation and platform qualifiers before archive. |
 | workspace-tree-and-large-file-listing-budget | 26/26 | archive-candidate-after-qualifier-review | Review validation and platform qualifiers before archive. |
 | markdown-off-main-thread-pipeline | 27/27 | archive-candidate-after-qualifier-review | Review validation and platform qualifiers before archive. |
 | backend-io-cache-and-bridge-payload-budget | 27/27 | archive-candidate-after-qualifier-review | Review validation and platform qualifiers before archive. |
@@ -14,8 +17,7 @@ Generated at: 2026-06-12T14:51:41.875Z
 
 ## In Progress
 
-- frontend-prop-chain-stability-2026-06: 44/45, not-archive-ready
-- realtime-input-and-io-isolation-2026-06: 66/68, not-archive-ready
+- No in-progress active changes.
 
 ## Compatibility / Cleanup Matrix
 
