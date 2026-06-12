@@ -1672,3 +1672,63 @@ During verification, `TaskCreateModal.test.tsx` exposed an async state assertion
 ### Next Steps
 
 - None - task complete
+
+
+## Session 821: 收口性能归档就绪提案
+
+**Date**: 2026-06-13
+**Task**: 收口性能归档就绪提案
+**Branch**: `feature/v0.5.9`
+
+### Summary
+
+(Add summary)
+
+### Main Changes
+
+| 项目 | 内容 |
+|------|------|
+| OpenSpec change | `close-performance-iteration-2026-06` |
+| Code commit | `3e5b00b2 chore(perf): 收口性能归档就绪提案` |
+| Summary | 收口 performance archive-readiness 提案，补齐 readiness gate、证据文件和 OpenSpec closure 口径。 |
+
+**完成内容**:
+- 新增 `scripts/perf-archive-readiness.mjs` 与 `npm run perf:archive-readiness`。
+- 修复 readiness gate 扫描范围：同时覆盖 `docs/perf/baseline.json`、`docs/perf/runtime-evidence-gates.json` 的 `performanceEvidence` 与 `realtimeTraceBudgets`。
+- 保持 `budget-missing` 为 warn/residual，不伪造预算块。
+- 将 runtime bundle size observed unit 对齐为 `bytes-gzip`。
+- 让 unsupported residual 正确报告为 9 条 runtime evidence records。
+- 为 realtime proxy hardFail thresholds 补齐 `budget.rollout: advisory-until-runtime-trace`，保留阈值可见性。
+- 更新 OpenSpec proposal / design / tasks / spec delta，明确 closure 接受 exit 2 的条件：hard failures 为 0，residual 显式记录。
+
+**验证**:
+- `npm run perf:archive-readiness` -> exit 2；`hardFailures: 0`，`budget-missing: 21`，`unsupported: 9`。
+- `node scripts/perf-archive-readiness.mjs --json` -> 可解析 JSON，结果同上。
+- `openspec validate close-performance-iteration-2026-06 --strict --no-interactive` -> pass。
+- `npm run typecheck` -> pass。
+- `npm run lint` -> pass。
+- `npm run check:large-files` -> pass。
+- `git diff --stat -- 'src/**' 'src-tauri/**'` -> no runtime source diff。
+
+**Notes**:
+- 本 change 是 metadata / evidence governance closure，不优化 runtime performance，不把 unsupported/proxy evidence 升级为 measured。
+- §7 follow-up 仍是后续 work registry，不属于本次 closure implementation。
+
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `3e5b00b2` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
