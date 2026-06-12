@@ -20,6 +20,7 @@ import HardDrive from "lucide-react/dist/esm/icons/hard-drive";
 import History from "lucide-react/dist/esm/icons/history";
 import LayoutGrid from "lucide-react/dist/esm/icons/layout-grid";
 import MessageSquareWarning from "lucide-react/dist/esm/icons/message-square-warning";
+import RefreshCw from "lucide-react/dist/esm/icons/refresh-cw";
 import Search from "lucide-react/dist/esm/icons/search";
 import Upload from "lucide-react/dist/esm/icons/upload";
 import { useMemo, useState, useCallback, useEffect, useRef, type CSSProperties } from "react";
@@ -149,6 +150,7 @@ type DiffTreeSectionProps = DiffSectionProps & {
   collapsedFolders: Set<string>;
   onToggleFolder: (key: string) => void;
   rootFolderName: string;
+  rootTrailingAction?: ReactNode;
   leadingMeta?: ReactNode;
   compactHeader?: boolean;
 };
@@ -177,6 +179,7 @@ function DiffTreeSection({
   collapsedFolders,
   onToggleFolder,
   rootFolderName,
+  rootTrailingAction,
   leadingMeta,
   compactHeader = false,
 }: DiffTreeSectionProps) {
@@ -485,32 +488,40 @@ function DiffTreeSection({
         }`}
       >
         {useCompactHeader ? (
-          <button
-            type="button"
-            className="diff-tree-summary-root"
-            aria-label={rootFolderName}
-            aria-expanded={hasTreeNodes ? !rootCollapsed : undefined}
-            onClick={() => {
-              if (hasTreeNodes) {
-                onToggleFolder(rootFolderKey);
-              }
-            }}
-          >
-            <span className="diff-tree-summary-root-toggle" aria-hidden>
-              {hasTreeNodes ? (
-                rootCollapsed ? <ChevronRight size={12} /> : <ChevronDown size={12} />
-              ) : (
-                <span className="diff-tree-folder-spacer" />
-              )}
-            </span>
-            <FileIcon
-              filePath={rootFolderName}
-              isFolder
-              isOpen={!rootCollapsed}
-              className="diff-tree-summary-root-icon"
-            />
-            <span className="diff-tree-summary-root-name">{rootFolderName}</span>
-          </button>
+          <span className="diff-tree-summary-root-group">
+            <button
+              type="button"
+              className="diff-tree-summary-root"
+              aria-label={rootFolderName}
+              aria-expanded={hasTreeNodes ? !rootCollapsed : undefined}
+              onClick={() => {
+                if (hasTreeNodes) {
+                  onToggleFolder(rootFolderKey);
+                }
+              }}
+            >
+              <span className="diff-tree-summary-root-toggle" aria-hidden>
+                {hasTreeNodes ? (
+                  rootCollapsed ? <ChevronRight size={12} /> : <ChevronDown size={12} />
+                ) : (
+                  <span className="diff-tree-folder-spacer" />
+                )}
+              </span>
+              <FileIcon
+                filePath={rootFolderName}
+                isFolder
+                isOpen={!rootCollapsed}
+                className="diff-tree-summary-root-icon"
+              />
+              <span className="diff-tree-summary-root-name">{rootFolderName}</span>
+            </button>
+            {rootTrailingAction ? (
+              <span className="diff-tree-summary-root-action">{rootTrailingAction}</span>
+            ) : null}
+          </span>
+        ) : null}
+        {!useCompactHeader && rootTrailingAction ? (
+          <span className="diff-tree-summary-root-action">{rootTrailingAction}</span>
         ) : null}
         <span className="diff-tree-summary-section-label">
           {renderSectionIndicator(section, files.length, t)}
@@ -867,7 +878,10 @@ export function GitDiffPanel({
   const [gitContextMenu, setGitContextMenu] =
     useState<RendererContextMenuState | null>(null);
   const deferredCommitLanguageMenuTimerRef = useRef<number | null>(null);
+  const gitStatusRefreshSpinTimerRef = useRef<number | null>(null);
+  const gitStatusRefreshSpinRafRef = useRef<number | null>(null);
   const [isCommitSectionCollapsed, setIsCommitSectionCollapsed] = useState(true);
+  const [isGitStatusRefreshing, setIsGitStatusRefreshing] = useState(false);
   const [previewFile, setPreviewFile] = useState<(DiffFile & { section: "staged" | "unstaged" }) | null>(
     null,
   );
@@ -1022,8 +1036,39 @@ export function GitDiffPanel({
         window.clearTimeout(deferredCommitLanguageMenuTimerRef.current);
         deferredCommitLanguageMenuTimerRef.current = null;
       }
+      if (gitStatusRefreshSpinTimerRef.current !== null) {
+        window.clearTimeout(gitStatusRefreshSpinTimerRef.current);
+        gitStatusRefreshSpinTimerRef.current = null;
+      }
+      if (gitStatusRefreshSpinRafRef.current !== null) {
+        window.cancelAnimationFrame(gitStatusRefreshSpinRafRef.current);
+        gitStatusRefreshSpinRafRef.current = null;
+      }
     };
   }, []);
+
+  const handleRefreshGitStatusClick = useCallback(() => {
+    if (gitStatusRefreshSpinTimerRef.current !== null) {
+      window.clearTimeout(gitStatusRefreshSpinTimerRef.current);
+      gitStatusRefreshSpinTimerRef.current = null;
+    }
+    if (gitStatusRefreshSpinRafRef.current !== null) {
+      window.cancelAnimationFrame(gitStatusRefreshSpinRafRef.current);
+      gitStatusRefreshSpinRafRef.current = null;
+    }
+
+    setIsGitStatusRefreshing(false);
+    gitStatusRefreshSpinRafRef.current = window.requestAnimationFrame(() => {
+      gitStatusRefreshSpinRafRef.current = null;
+      setIsGitStatusRefreshing(true);
+      gitStatusRefreshSpinTimerRef.current = window.setTimeout(() => {
+        setIsGitStatusRefreshing(false);
+        gitStatusRefreshSpinTimerRef.current = null;
+      }, 520);
+    });
+
+    onRefreshGitStatus?.();
+  }, [onRefreshGitStatus]);
 
   const handleFileClick = useCallback(
     (
@@ -1543,6 +1588,21 @@ export function GitDiffPanel({
       ? `${logSyncLabel} · ${fileStatus}`
       : fileStatus;
   const compactTreeMetaNode = hasDiffTotals ? diffTotalsNode : <span>{fileStatus}</span>;
+  const gitStatusRefreshButton =
+    mode === "diff" && (stagedFiles.length > 0 || unstagedFiles.length > 0) ? (
+      <button
+        type="button"
+        className={`git-status-refresh-button${isGitStatusRefreshing ? " is-spinning" : ""}`}
+        onClick={(event) => {
+          event.stopPropagation();
+          handleRefreshGitStatusClick();
+        }}
+        aria-label={t("git.refreshStatus")}
+        title={t("git.refreshStatus")}
+      >
+        <RefreshCw className="git-status-refresh-icon" size={13} aria-hidden />
+      </button>
+    ) : null;
   const hasGitRoot = Boolean(gitRoot && gitRoot.trim());
   const activeRootPath = (gitRoot ?? "").trim() || (workspacePath ?? "").trim() || (workspaceId ?? "").trim();
   const activeRootPathDisplay = activeRootPath || t("git.unknown");
@@ -2064,6 +2124,7 @@ export function GitDiffPanel({
                     excludedPaths={excludedCommitPaths}
                     partialPaths={partialCommitPaths}
                     rootFolderName={repositoryRootName}
+                    rootTrailingAction={gitStatusRefreshButton}
                     leadingMeta={primaryTreeSection === "staged" ? compactTreeMetaNode : undefined}
                     compactHeader={useCompactTreeSectionHeaders}
                     selectedFiles={selectedFiles}
@@ -2090,6 +2151,7 @@ export function GitDiffPanel({
                     excludedPaths={excludedCommitPaths}
                     partialPaths={partialCommitPaths}
                     rootFolderName={repositoryRootName}
+                    rootTrailingAction={gitStatusRefreshButton}
                     leadingMeta={primaryTreeSection === "staged" ? compactTreeMetaNode : undefined}
                     compactHeader={primaryTreeSection === "staged"}
                     selectedFiles={selectedFiles}
@@ -2116,6 +2178,7 @@ export function GitDiffPanel({
                     excludedPaths={excludedCommitPaths}
                     partialPaths={partialCommitPaths}
                     rootFolderName={repositoryRootName}
+                    rootTrailingAction={gitStatusRefreshButton}
                     leadingMeta={primaryTreeSection === "unstaged" ? compactTreeMetaNode : undefined}
                     compactHeader={useCompactTreeSectionHeaders}
                     selectedFiles={selectedFiles}
@@ -2143,6 +2206,7 @@ export function GitDiffPanel({
                     excludedPaths={excludedCommitPaths}
                     partialPaths={partialCommitPaths}
                     rootFolderName={repositoryRootName}
+                    rootTrailingAction={gitStatusRefreshButton}
                     leadingMeta={primaryTreeSection === "unstaged" ? compactTreeMetaNode : undefined}
                     compactHeader={primaryTreeSection === "unstaged"}
                     selectedFiles={selectedFiles}
