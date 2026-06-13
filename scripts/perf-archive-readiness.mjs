@@ -23,6 +23,11 @@
 //   - Missing budget block (warn).
 //   - Unsupported evidence class (residual risk; must remain visible).
 //
+// Release mode (`--release`) is stricter:
+//   - Metrics above budget.hardFail are hard failures.
+//   - Release-required runtime evidence cannot remain unsupported.
+//   - Proxy release evidence remains visible as residual debt.
+//
 // Exit codes:
 //   0  pass (no hard fail, no warn/residual)
 //   1  hard failure
@@ -37,6 +42,40 @@ import { resolve } from "node:path";
 const PERF_BASELINE_PATH = "docs/perf/baseline.json";
 const RUNTIME_EVIDENCE_GATES_PATH = "docs/perf/runtime-evidence-gates.json";
 const SELF_CHANGE_NAME = "close-performance-iteration-2026-06";
+
+const RELEASE_REQUIRED_RECORDS = new Map([
+  ["S-CS-COLD/bundleSizeMain", { owner: "bundle-size-optimization", nextAction: "Reduce main bundle below hardFail or record release blocker." }],
+  ["S-CS-COLD/firstPaintMs", { owner: "release-grade-evidence-collection", nextAction: "Collect measured Tauri/webview first-paint timing." }],
+  ["S-CS-COLD/firstInteractiveMs", { owner: "release-grade-evidence-collection", nextAction: "Collect measured Tauri/webview first-interactive timing." }],
+  ["S-RS-VL/visibleTextLagP95", { owner: "release-grade-evidence-collection", nextAction: "Collect runtime visible text lag from correlated runtime milestones." }],
+  ["S-RS-RA/reducerAmplificationMedian", { owner: "release-grade-evidence-collection", nextAction: "Collect runtime reducer amplification counters." }],
+  ["S-RS-FD/batchFlushDurationP95", { owner: "release-grade-evidence-collection", nextAction: "Collect runtime batch flush duration timings." }],
+  ["S-RS-TS/terminalSettlementP95", { owner: "release-grade-evidence-collection", nextAction: "Collect runtime terminal settlement timings." }],
+]);
+
+const BUDGET_RESIDUALS = new Map([
+  ["S-LL-200/commitDurationP50", ["release-grade-evidence-collection", "Define owner-approved long-list commit budget by row count."]],
+  ["S-LL-200/commitDurationP95", ["release-grade-evidence-collection", "Define owner-approved long-list commit budget by row count."]],
+  ["S-LL-200/firstPaintAfterMount", ["release-grade-evidence-collection", "Define browser/runtime first-paint budget before hard gate."]],
+  ["S-LL-500/commitDurationP50", ["release-grade-evidence-collection", "Define owner-approved long-list commit budget by row count."]],
+  ["S-LL-500/commitDurationP95", ["release-grade-evidence-collection", "Define owner-approved long-list commit budget by row count."]],
+  ["S-LL-500/firstPaintAfterMount", ["release-grade-evidence-collection", "Define browser/runtime first-paint budget before hard gate."]],
+  ["S-LL-1000/commitDurationP50", ["release-grade-evidence-collection", "Define owner-approved long-list commit budget by row count."]],
+  ["S-LL-1000/commitDurationP95", ["release-grade-evidence-collection", "Define owner-approved long-list commit budget by row count."]],
+  ["S-LL-1000/firstPaintAfterMount", ["release-grade-evidence-collection", "Define browser/runtime first-paint budget before hard gate."]],
+  ["S-CI-50/inputEventLossCount", ["input-latency-budget", "Approve zero-loss input event hardFail before encoding budget."]],
+  ["S-CI-50/compositionToCommit", ["input-latency-budget", "Define IME/runtime composition-to-commit budget source."]],
+  ["S-CI-100-IME/inputEventLossCount", ["input-latency-budget", "Approve zero-loss IME input event hardFail before encoding budget."]],
+  ["S-CI-100-IME/compositionToCommit", ["input-latency-budget", "Define IME/runtime composition-to-commit budget source."]],
+  ["S-RS-PE/dedupHitRatio", ["realtime-runtime-evidence", "Keep diagnostic until release hard-budget source is approved."]],
+  ["S-RS-PE/assemblerLatency", ["realtime-runtime-evidence", "Define runtime assembler latency budget source."]],
+  ["S-RS-VL/visibleTextLagP95", ["realtime-runtime-evidence", "Collect measured runtime visible text lag before encoding release budget."]],
+  ["S-RS-RA/reducerAmplificationMedian", ["realtime-runtime-evidence", "Collect measured runtime reducer amplification before encoding release budget."]],
+  ["S-RS-FD/batchFlushDurationP95", ["realtime-runtime-evidence", "Collect measured runtime batch flush duration before encoding release budget."]],
+  ["S-RS-TS/terminalSettlementP95", ["realtime-runtime-evidence", "Collect measured runtime terminal settlement before encoding release budget."]],
+  ["S-CS-COLD/firstPaintMs", ["release-grade-evidence-collection", "Collect measured Tauri/webview first-paint timing before setting budget."]],
+  ["S-CS-COLD/firstInteractiveMs", ["release-grade-evidence-collection", "Collect measured Tauri/webview first-interactive timing before setting budget."]],
+]);
 
 const VALID_EVIDENCE_CLASSES = new Set([
   "measured",
@@ -57,17 +96,30 @@ async function readJsonIfExists(path) {
   return JSON.parse(await readFile(absolutePath, "utf-8"));
 }
 
-function getOpenSpecActiveNames() {
+function getArgValue(args, name) {
+  const index = args.indexOf(name);
+  if (index === -1) return null;
+  return args[index + 1] ?? null;
+}
+
+function readOpenSpecActiveNamesFromJson(parsed) {
+  const names = Array.isArray(parsed?.changes)
+    ? parsed.changes.map((c) => c?.name).filter(Boolean)
+    : [];
+  return new Set(names);
+}
+
+async function getOpenSpecActiveNames(activeChangesJsonPath) {
+  if (activeChangesJsonPath) {
+    const parsed = await readJsonIfExists(activeChangesJsonPath);
+    return readOpenSpecActiveNamesFromJson(parsed);
+  }
   try {
     const output = execFileSync("openspec", ["list", "--json"], {
       cwd: process.cwd(),
       encoding: "utf-8",
     });
-    const parsed = JSON.parse(output);
-    const names = Array.isArray(parsed?.changes)
-      ? parsed.changes.map((c) => c?.name).filter(Boolean)
-      : [];
-    return new Set(names);
+    return readOpenSpecActiveNamesFromJson(JSON.parse(output));
   } catch (error) {
     throw new Error(
       `Failed to read \`openspec list --json\`: ${error.message ?? String(error)}`
@@ -165,10 +217,14 @@ function checkUnitConsistency(baseline, runtimeGates) {
   for (const metric of metrics) {
     const hasBudget = collectUnitConflict(metric, failures);
     if (!hasBudget) {
+      const label = recordLabel(metric);
+      const residual = BUDGET_RESIDUALS.get(label);
       warnings.push({
         check: "budget-missing",
-        record: recordLabel(metric),
+        record: label,
         detail: `metric has observed unit=${metric?.unit ?? "?"} but no budget block`,
+        owner: residual?.[0] ?? "unassigned",
+        nextAction: residual?.[1] ?? "Assign owner and budget decision before archive.",
       });
     }
   }
@@ -271,6 +327,96 @@ function checkLargeFileOwnership(runtimeGates) {
   return failures;
 }
 
+function checkReleaseHardBreaches(baseline, runtimeGates) {
+  const failures = [];
+  const seen = new Set();
+  const records = [
+    ...(Array.isArray(baseline?.metrics) ? baseline.metrics : []),
+    ...runtimeMetricRecords(runtimeGates),
+  ];
+  for (const record of records) {
+    const budget = record?.budget;
+    if (!budget || budget.hardFail === undefined || budget.hardFail === null) {
+      continue;
+    }
+    const value = record?.value;
+    if (typeof value !== "number" || value <= budget.hardFail) {
+      continue;
+    }
+    const label = recordLabel(record);
+    const dedupeKey = `release-hard-budget-breach:${label}`;
+    if (seen.has(dedupeKey)) {
+      continue;
+    }
+    seen.add(dedupeKey);
+    const releaseInfo = RELEASE_REQUIRED_RECORDS.get(label);
+    failures.push({
+      check: "release-hard-budget-breach",
+      record: label,
+      detail: `value=${value} exceeds hardFail=${budget.hardFail} ${record?.unit ?? budget?.unit ?? ""}`.trim(),
+      owner: budget.owner ?? releaseInfo?.owner ?? "unassigned",
+      source: budget.source ?? "unknown",
+      nextAction: releaseInfo?.nextAction ?? "Reduce the metric below hardFail or record an explicit release blocker.",
+    });
+  }
+  return failures;
+}
+
+function buildReleaseEvidenceClassification(baseline, runtimeGates) {
+  const failures = [];
+  const warnings = [];
+  const records = [
+    ...(Array.isArray(baseline?.metrics) ? baseline.metrics : []),
+    ...runtimeMetricRecords(runtimeGates),
+  ];
+  const byLabel = new Map();
+  for (const record of records) {
+    const label = recordLabel(record);
+    const existing = byLabel.get(label);
+    if (!existing || (existing.evidenceClass !== "measured" && record?.evidenceClass === "measured")) {
+      byLabel.set(label, record);
+    }
+  }
+
+  for (const [label, info] of RELEASE_REQUIRED_RECORDS) {
+    const record = byLabel.get(label);
+    if (!record) {
+      failures.push({
+        check: "release-evidence-missing",
+        record: label,
+        detail: "release-required metric is absent from performance evidence",
+        owner: info.owner,
+        nextAction: info.nextAction,
+      });
+      continue;
+    }
+    const evidenceClass = record.evidenceClass;
+    if (evidenceClass === "measured") {
+      continue;
+    }
+    const payload = {
+      record: label,
+      detail: `release-required metric has evidenceClass=${evidenceClass ?? "missing"}`,
+      owner: info.owner,
+      source: record.source ?? record.budget?.source ?? "unknown",
+      nextAction: info.nextAction,
+    };
+    if (evidenceClass === "unsupported" || evidenceClass === undefined || evidenceClass === null) {
+      failures.push({
+        check: "release-evidence-unsupported",
+        ...payload,
+      });
+    } else {
+      warnings.push({
+        check: "release-evidence-proxy",
+        ...payload,
+      });
+    }
+  }
+
+  return { failures, warnings };
+}
+
 function summarizeUnsupported(runtimeGates) {
   return runtimeEvidenceObjects(runtimeGates)
     .filter((item) => item.record?.evidenceClass === "unsupported")
@@ -279,12 +425,12 @@ function summarizeUnsupported(runtimeGates) {
 
 function renderTextReport(result) {
   const lines = [];
-  lines.push("perf-archive-readiness");
+  lines.push(result.releaseMode ? "perf-archive-readiness (release mode)" : "perf-archive-readiness");
   lines.push("=======================");
   lines.push("");
   lines.push(`Inputs:`);
-  lines.push(`  - ${PERF_BASELINE_PATH}`);
-  lines.push(`  - ${RUNTIME_EVIDENCE_GATES_PATH}`);
+  lines.push(`  - ${result.inputs.baseline}`);
+  lines.push(`  - ${result.inputs.runtimeEvidenceGates}`);
   lines.push(`  - openspec list --json (active changes: ${result.activeChangeCount})`);
   lines.push("");
   lines.push(`Result: ${result.status.toUpperCase()}`);
@@ -328,13 +474,16 @@ function renderTextReport(result) {
   return lines.join("\n");
 }
 
-function buildInputGuard() {
+function buildInputGuard(paths) {
   const inputsMissing = [];
-  if (!existsSync(repoPath(PERF_BASELINE_PATH))) {
-    inputsMissing.push(PERF_BASELINE_PATH);
+  if (!existsSync(repoPath(paths.baseline))) {
+    inputsMissing.push(paths.baseline);
   }
-  if (!existsSync(repoPath(RUNTIME_EVIDENCE_GATES_PATH))) {
-    inputsMissing.push(RUNTIME_EVIDENCE_GATES_PATH);
+  if (!existsSync(repoPath(paths.runtimeEvidenceGates))) {
+    inputsMissing.push(paths.runtimeEvidenceGates);
+  }
+  if (paths.activeChangesJson && !existsSync(repoPath(paths.activeChangesJson))) {
+    inputsMissing.push(paths.activeChangesJson);
   }
   if (inputsMissing.length > 0) {
     return `Missing required input file(s): ${inputsMissing.join(", ")}`;
@@ -345,8 +494,14 @@ function buildInputGuard() {
 async function main() {
   const args = process.argv.slice(2);
   const jsonMode = args.includes("--json");
+  const releaseMode = args.includes("--release");
+  const paths = {
+    baseline: getArgValue(args, "--baseline") ?? PERF_BASELINE_PATH,
+    runtimeEvidenceGates: getArgValue(args, "--runtime-evidence") ?? RUNTIME_EVIDENCE_GATES_PATH,
+    activeChangesJson: getArgValue(args, "--active-changes-json"),
+  };
 
-  const inputError = buildInputGuard();
+  const inputError = buildInputGuard(paths);
   if (inputError) {
     if (jsonMode) {
       process.stdout.write(`${JSON.stringify({ ok: false, error: inputError }, null, 2)}\n`);
@@ -359,8 +514,8 @@ async function main() {
   let baseline;
   let runtimeGates;
   try {
-    baseline = await readJsonIfExists(PERF_BASELINE_PATH);
-    runtimeGates = await readJsonIfExists(RUNTIME_EVIDENCE_GATES_PATH);
+    baseline = await readJsonIfExists(paths.baseline);
+    runtimeGates = await readJsonIfExists(paths.runtimeEvidenceGates);
   } catch (error) {
     const message = `Failed to parse input JSON: ${error.message ?? String(error)}`;
     if (jsonMode) {
@@ -373,7 +528,7 @@ async function main() {
 
   let activeNames;
   try {
-    activeNames = getOpenSpecActiveNames();
+    activeNames = await getOpenSpecActiveNames(paths.activeChangesJson);
   } catch (error) {
     const message = error.message ?? String(error);
     if (jsonMode) {
@@ -385,15 +540,20 @@ async function main() {
   }
 
   const unitCheck = checkUnitConsistency(baseline, runtimeGates);
+  const releaseCheck = releaseMode
+    ? buildReleaseEvidenceClassification(baseline, runtimeGates)
+    : { failures: [], warnings: [] };
   const hardFailures = [
     ...checkEvidenceClassCoverage(baseline, runtimeGates),
     ...unitCheck.failures,
     ...checkHardFailAnnotation(baseline, runtimeGates),
     ...checkArchiveReadinessStaleness(runtimeGates, activeNames),
     ...checkLargeFileOwnership(runtimeGates),
+    ...(releaseMode ? checkReleaseHardBreaches(baseline, runtimeGates) : []),
+    ...releaseCheck.failures,
   ];
 
-  const warnings = [...unitCheck.warnings];
+  const warnings = [...unitCheck.warnings, ...releaseCheck.warnings];
   const unsupportedRecords = summarizeUnsupported(runtimeGates);
   const budgetMissingCount = warnings.filter((w) => w.check === "budget-missing").length;
 
@@ -414,6 +574,7 @@ async function main() {
     ok: exitCode !== 3,
     status,
     exitCode,
+    releaseMode,
     activeChangeCount: activeNames.size,
     metricCount: Array.isArray(baseline?.metrics) ? baseline.metrics.length : 0,
     budgetMissingCount,
@@ -421,9 +582,9 @@ async function main() {
     warnings,
     unsupportedRecords,
     inputs: {
-      baseline: PERF_BASELINE_PATH,
-      runtimeEvidenceGates: RUNTIME_EVIDENCE_GATES_PATH,
-      openSpec: "openspec list --json",
+      baseline: paths.baseline,
+      runtimeEvidenceGates: paths.runtimeEvidenceGates,
+      openSpec: paths.activeChangesJson ?? "openspec list --json",
     },
   };
 

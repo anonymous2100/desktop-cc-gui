@@ -1,23 +1,19 @@
 # Runtime Evidence Gate Governance Report
 
-Generated at: 2026-06-12T16:51:24.241Z
+Generated at: 2026-06-13T04:01:35.576Z
 
 ## Archive Readiness
 
 | Change | Tasks | Recommendation | Qualifier |
 |---|---:|---|---|
-| realtime-input-and-io-isolation-2026-06 | 68/68 | archive-candidate-after-qualifier-review | Review validation and platform qualifiers before archive. |
-| frontend-prop-chain-stability-2026-06 | 45/45 | task-complete-not-archive-ready | Manual QA says jank improved but still exists; follow-up `calibrate-performance-iteration-debt` must reconcile profiler/evidence qualifiers before archive. |
-| file-editor-io-render-isolation-2026-06 | 24/24 | archive-candidate-after-qualifier-review | Review validation and platform qualifiers before archive. |
-| workspace-tree-and-large-file-listing-budget | 26/26 | task-complete-cache-substrate-verified | Follow-up `calibrate-performance-iteration-debt` wires desktop and daemon workspace listing to `ScanCache`, removes recursive pre-walk cache validation, and verifies miss/hit/invalidated behavior with focused Rust tests. |
-| markdown-off-main-thread-pipeline | 27/27 | archive-candidate-after-qualifier-review | Review validation and platform qualifiers before archive. |
-| backend-io-cache-and-bridge-payload-budget | 27/27 | archive-candidate-after-qualifier-review | Review validation and platform qualifiers before archive. |
-| renderer-resource-backpressure | 33/33 | archive-candidate-after-qualifier-review | Review validation and platform qualifiers before archive. |
-| composer-and-message-row-render-budget | 20/20 | archive-candidate-after-qualifier-review | Review validation and platform qualifiers before archive. |
+
+## Previous Archive Context
+
+- close-performance-iteration-2026-06: 25/25, previous-closure-context. Retained as historical closure context; not a current completed-active archive candidate.
 
 ## In Progress
 
-- No in-progress active changes.
+- collect-release-grade-performance-evidence: 26/28, not-archive-ready
 
 ## Compatibility / Cleanup Matrix
 

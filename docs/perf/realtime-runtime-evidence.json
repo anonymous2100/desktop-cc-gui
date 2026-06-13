@@ -1,0 +1,44 @@
+{
+  "schemaVersion": "1.0",
+  "generatedAt": "2026-06-12T20:47:44.691Z",
+  "source": "realtime-runtime",
+  "metrics": [
+    {
+      "scenario": "S-RS-VL",
+      "metric": "visibleTextLagP95",
+      "value": null,
+      "unit": "ms",
+      "evidenceClass": "unsupported",
+      "unsupportedReason": "No measured realtime.turnTrace.summary diagnostics were found. Enable turn trace in a Tauri/webview session and export renderer diagnostics."
+    },
+    {
+      "scenario": "S-RS-RA",
+      "metric": "reducerAmplificationMedian",
+      "value": null,
+      "unit": "ratio",
+      "evidenceClass": "unsupported",
+      "unsupportedReason": "No measured realtime.turnTrace.summary diagnostics were found. Enable turn trace in a Tauri/webview session and export renderer diagnostics."
+    },
+    {
+      "scenario": "S-RS-FD",
+      "metric": "batchFlushDurationP95",
+      "value": null,
+      "unit": "ms",
+      "evidenceClass": "unsupported",
+      "unsupportedReason": "No measured realtime.turnTrace.summary diagnostics were found. Enable turn trace in a Tauri/webview session and export renderer diagnostics."
+    },
+    {
+      "scenario": "S-RS-TS",
+      "metric": "terminalSettlementP95",
+      "value": null,
+      "unit": "ms",
+      "evidenceClass": "unsupported",
+      "unsupportedReason": "No measured realtime.turnTrace.summary diagnostics were found. Enable turn trace in a Tauri/webview session and export renderer diagnostics."
+    }
+  ],
+  "notes": [
+    "input=.artifacts/realtime-runtime-diagnostics.json",
+    "measuredSummaryCount=0",
+    "contentSafety=ids, durations, counters, and dimensions only; no prompt, assistant text, tool output, or file content"
+  ]
+}

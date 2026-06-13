@@ -18,6 +18,7 @@ import {
   recordStartupTaskTrace,
   type StartupPhase,
 } from "./features/startup-orchestration/utils/startupTrace";
+import { recordStartupPerfMarker } from "./services/perfBaseline/startupMarkers";
 
 function renderBootstrapFallback(error: unknown) {
   const root = document.getElementById("root");
@@ -226,6 +227,7 @@ async function bootstrap() {
   appendRendererDiagnostic("bootstrap/render-committed");
   startRendererBlankScreenWatchdog({ rootId: "root" });
   recordStartupMilestone("shell-ready");
+  recordStartupPerfMarker("first-paint");
   pushBootstrapNotice("runtimeNotice.bootstrap.ready");
   void markRendererReady();
   void runPostRenderBootstrapTasks();

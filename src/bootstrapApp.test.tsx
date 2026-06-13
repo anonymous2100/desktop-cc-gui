@@ -12,6 +12,7 @@ const startRendererBlankScreenWatchdogMock = vi.hoisted(() => vi.fn());
 const pushGlobalRuntimeNoticeMock = vi.hoisted(() => vi.fn());
 const recordStartupMilestoneMock = vi.hoisted(() => vi.fn());
 const recordStartupTaskTraceMock = vi.hoisted(() => vi.fn());
+const recordStartupPerfMarkerMock = vi.hoisted(() => vi.fn());
 const invokeMock = vi.hoisted(() => vi.fn());
 const isTauriMock = vi.hoisted(() => vi.fn(() => false));
 
@@ -48,6 +49,10 @@ vi.mock("./features/startup-orchestration/utils/startupTrace", () => ({
   recordStartupTaskTrace: recordStartupTaskTraceMock,
 }));
 
+vi.mock("./services/perfBaseline/startupMarkers", () => ({
+  recordStartupPerfMarker: recordStartupPerfMarkerMock,
+}));
+
 vi.mock("./i18n", () => ({
   i18nReady: Promise.resolve(),
 }));
@@ -80,6 +85,7 @@ describe("startApp", () => {
     pushGlobalRuntimeNoticeMock.mockReset();
     recordStartupMilestoneMock.mockReset();
     recordStartupTaskTraceMock.mockReset();
+    recordStartupPerfMarkerMock.mockReset();
     invokeMock.mockReset();
     isTauriMock.mockReset();
     isTauriMock.mockReturnValue(false);
@@ -106,6 +112,7 @@ describe("startApp", () => {
     expect(renderMock).toHaveBeenCalledTimes(1);
     expect(startRendererBlankScreenWatchdogMock).toHaveBeenCalledWith({ rootId: "root" });
     expect(recordStartupMilestoneMock).toHaveBeenCalledWith("shell-ready");
+    expect(recordStartupPerfMarkerMock).toHaveBeenCalledWith("first-paint");
     expect(recordStartupTaskTraceMock).toHaveBeenCalledWith(
       expect.objectContaining({
         taskId: "bootstrap:app-import",

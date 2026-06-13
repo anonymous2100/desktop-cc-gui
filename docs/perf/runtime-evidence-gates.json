@@ -1,11 +1,12 @@
 {
   "schemaVersion": "1.0",
-  "generatedAt": "2026-06-12T19:44:59.000Z",
+  "generatedAt": "2026-06-13T04:01:35.576Z",
   "sources": {
     "perfBaseline": "docs/perf/baseline.json",
     "composerBaseline": "docs/perf/composer-baseline.json",
     "browserScroll": "docs/perf/long-list-browser-scroll.json",
     "realtimeTurnTrace": "docs/perf/realtime-turn-trace.json",
+    "realtimeRuntimeEvidence": "docs/perf/realtime-runtime-evidence.json",
     "realtimeProfile": null,
     "largeFileWatchlist": ".artifacts/large-files-near-threshold.json",
     "openSpec": "openspec list --json"
@@ -15,7 +16,7 @@
       "source": "docs/perf/baseline.json",
       "scenario": "S-LL-200",
       "metric": "commitDurationP50",
-      "value": 10.15,
+      "value": 11.44,
       "unit": "ms",
       "evidenceClass": "proxy",
       "budget": null,
@@ -26,7 +27,7 @@
       "source": "docs/perf/baseline.json",
       "scenario": "S-LL-200",
       "metric": "commitDurationP95",
-      "value": 10.15,
+      "value": 11.44,
       "unit": "ms",
       "evidenceClass": "proxy",
       "budget": null,
@@ -37,7 +38,7 @@
       "source": "docs/perf/baseline.json",
       "scenario": "S-LL-200",
       "metric": "firstPaintAfterMount",
-      "value": 35.81,
+      "value": 37.17,
       "unit": "ms",
       "evidenceClass": "proxy",
       "budget": null,
@@ -48,7 +49,7 @@
       "source": "docs/perf/baseline.json",
       "scenario": "S-LL-500",
       "metric": "commitDurationP50",
-      "value": 13.84,
+      "value": 14.32,
       "unit": "ms",
       "evidenceClass": "proxy",
       "budget": null,
@@ -59,7 +60,7 @@
       "source": "docs/perf/baseline.json",
       "scenario": "S-LL-500",
       "metric": "commitDurationP95",
-      "value": 13.84,
+      "value": 14.32,
       "unit": "ms",
       "evidenceClass": "proxy",
       "budget": null,
@@ -70,7 +71,7 @@
       "source": "docs/perf/baseline.json",
       "scenario": "S-LL-500",
       "metric": "firstPaintAfterMount",
-      "value": 33.48,
+      "value": 35.73,
       "unit": "ms",
       "evidenceClass": "proxy",
       "budget": null,
@@ -81,7 +82,7 @@
       "source": "docs/perf/baseline.json",
       "scenario": "S-LL-1000",
       "metric": "commitDurationP50",
-      "value": 18.03,
+      "value": 27.01,
       "unit": "ms",
       "evidenceClass": "proxy",
       "budget": null,
@@ -92,7 +93,7 @@
       "source": "docs/perf/baseline.json",
       "scenario": "S-LL-1000",
       "metric": "commitDurationP95",
-      "value": 18.03,
+      "value": 27.01,
       "unit": "ms",
       "evidenceClass": "proxy",
       "budget": null,
@@ -103,7 +104,7 @@
       "source": "docs/perf/baseline.json",
       "scenario": "S-LL-1000",
       "metric": "firstPaintAfterMount",
-      "value": 36.91,
+      "value": 48.29,
       "unit": "ms",
       "evidenceClass": "proxy",
       "budget": null,
@@ -133,11 +134,11 @@
       "source": "docs/perf/baseline.json",
       "scenario": "S-CI-50",
       "metric": "keystrokeToCommitP95",
-      "value": 0.09,
+      "value": 0.08,
       "unit": "ms",
       "evidenceClass": "proxy",
       "budget": {
-        "observed": 0.09,
+        "observed": 0.08,
         "target": 16,
         "hardFail": 32,
         "unit": "ms",
@@ -204,7 +205,7 @@
       "source": "docs/perf/baseline.json",
       "scenario": "S-CI-100-IME",
       "metric": "compositionToCommit",
-      "value": 0.13,
+      "value": 0.12,
       "unit": "ms",
       "evidenceClass": "proxy",
       "budget": null,
@@ -264,7 +265,7 @@
       "source": "docs/perf/baseline.json",
       "scenario": "S-RS-PE",
       "metric": "assemblerLatency",
-      "value": 4.18,
+      "value": 4.77,
       "unit": "ms",
       "evidenceClass": "proxy",
       "budget": null,
@@ -335,11 +336,11 @@
       "source": "docs/perf/baseline.json",
       "scenario": "S-CS-COLD",
       "metric": "bundleSizeMain",
-      "value": 1121481,
+      "value": 1132559,
       "unit": "bytes-gzip",
       "evidenceClass": "measured",
       "budget": {
-        "observed": 1121481,
+        "observed": 1132559,
         "target": 950000,
         "hardFail": 1100000,
         "unit": "bytes-gzip",
@@ -347,7 +348,7 @@
         "source": "docs/perf/baseline.json",
         "rollout": "advisory-until-bundle-optimization"
       },
-      "reason": "App-GOSdMQOY.js",
+      "reason": "App-JqN3Gseo.js",
       "nextAction": "Track for regression."
     },
     {
@@ -366,7 +367,7 @@
         "source": "docs/perf/baseline.json",
         "rollout": "advisory"
       },
-      "reason": "subset-shared.chunk-BukY6QKG.js",
+      "reason": "subset-shared.chunk-CKdmgRUl.js",
       "nextAction": "Track for regression."
     },
     {
@@ -377,7 +378,7 @@
       "unit": "ms",
       "evidenceClass": "unsupported",
       "budget": null,
-      "reason": "Tauri webview headless cold-start timing is not available in this script; bundle baseline is recorded.",
+      "reason": "Tauri/webview startup marker snapshot was not provided; bundle baseline is recorded.",
       "nextAction": "Collect real Tauri webview cold-start timing on a supported runner."
     },
     {
@@ -388,7 +389,7 @@
       "unit": "ms",
       "evidenceClass": "unsupported",
       "budget": null,
-      "reason": "Tauri webview headless cold-start timing is not available in this script; bundle baseline is recorded.",
+      "reason": "Tauri/webview startup marker snapshot was not provided; bundle baseline is recorded.",
       "nextAction": "Collect real Tauri webview cold-start timing on a supported runner."
     },
     {
@@ -467,12 +468,72 @@
       "budget": null,
       "reason": "browser=/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
       "nextAction": "Track for regression."
+    },
+    {
+      "source": "docs/perf/realtime-runtime-evidence.json",
+      "scenario": "S-RS-VL",
+      "metric": "visibleTextLagP95",
+      "value": null,
+      "unit": "ms",
+      "evidenceClass": "unsupported",
+      "budget": {
+        "target": 2000,
+        "hardFail": 5000,
+        "rollout": "advisory-until-runtime-trace"
+      },
+      "reason": "No measured realtime.turnTrace.summary diagnostics were found. Enable turn trace in a Tauri/webview session and export renderer diagnostics.",
+      "nextAction": "Correlate replay metrics with runtime visible-lag and terminal-pressure traces."
+    },
+    {
+      "source": "docs/perf/realtime-runtime-evidence.json",
+      "scenario": "S-RS-RA",
+      "metric": "reducerAmplificationMedian",
+      "value": null,
+      "unit": "ratio",
+      "evidenceClass": "unsupported",
+      "budget": {
+        "target": 2,
+        "hardFail": 4,
+        "rollout": "advisory-until-runtime-trace"
+      },
+      "reason": "No measured realtime.turnTrace.summary diagnostics were found. Enable turn trace in a Tauri/webview session and export renderer diagnostics.",
+      "nextAction": "Correlate replay metrics with runtime visible-lag and terminal-pressure traces."
+    },
+    {
+      "source": "docs/perf/realtime-runtime-evidence.json",
+      "scenario": "S-RS-FD",
+      "metric": "batchFlushDurationP95",
+      "value": null,
+      "unit": "ms",
+      "evidenceClass": "unsupported",
+      "budget": {
+        "target": 8,
+        "hardFail": 16,
+        "rollout": "advisory-until-runtime-trace"
+      },
+      "reason": "No measured realtime.turnTrace.summary diagnostics were found. Enable turn trace in a Tauri/webview session and export renderer diagnostics.",
+      "nextAction": "Correlate replay metrics with runtime visible-lag and terminal-pressure traces."
+    },
+    {
+      "source": "docs/perf/realtime-runtime-evidence.json",
+      "scenario": "S-RS-TS",
+      "metric": "terminalSettlementP95",
+      "value": null,
+      "unit": "ms",
+      "evidenceClass": "unsupported",
+      "budget": {
+        "target": 100,
+        "hardFail": 250,
+        "rollout": "advisory-until-runtime-trace"
+      },
+      "reason": "No measured realtime.turnTrace.summary diagnostics were found. Enable turn trace in a Tauri/webview session and export renderer diagnostics.",
+      "nextAction": "Correlate replay metrics with runtime visible-lag and terminal-pressure traces."
     }
   ],
   "realtimeSummary": {
     "firstTokenLatencyMs": 5000,
     "interTokenJitterP95Ms": 920,
-    "assemblerLatencyMs": 4.18,
+    "assemblerLatencyMs": 4.77,
     "visibleTextLagP95Ms": 24,
     "reducerAmplificationMedian": 4,
     "batchFlushDurationP95Ms": 13.33,
@@ -619,7 +680,7 @@
       "evidenceClass": "proxy"
     },
     "longListProxy": {
-      "commitDurationP95Ms": 18.03,
+      "commitDurationP95Ms": 27.01,
       "browserScrollFrameDropPct": 0,
       "evidenceClass": "measured"
     },
@@ -799,7 +860,7 @@
       "source": "docs/perf/baseline.json",
       "scenario": "S-LL-200",
       "metric": "commitDurationP50",
-      "value": 10.15,
+      "value": 11.44,
       "unit": "ms",
       "evidenceClass": "proxy",
       "budget": null,
@@ -810,7 +871,7 @@
       "source": "docs/perf/baseline.json",
       "scenario": "S-LL-200",
       "metric": "commitDurationP95",
-      "value": 10.15,
+      "value": 11.44,
       "unit": "ms",
       "evidenceClass": "proxy",
       "budget": null,
@@ -821,7 +882,7 @@
       "source": "docs/perf/baseline.json",
       "scenario": "S-LL-200",
       "metric": "firstPaintAfterMount",
-      "value": 35.81,
+      "value": 37.17,
       "unit": "ms",
       "evidenceClass": "proxy",
       "budget": null,
@@ -832,7 +893,7 @@
       "source": "docs/perf/baseline.json",
       "scenario": "S-LL-500",
       "metric": "commitDurationP50",
-      "value": 13.84,
+      "value": 14.32,
       "unit": "ms",
       "evidenceClass": "proxy",
       "budget": null,
@@ -843,7 +904,7 @@
       "source": "docs/perf/baseline.json",
       "scenario": "S-LL-500",
       "metric": "commitDurationP95",
-      "value": 13.84,
+      "value": 14.32,
       "unit": "ms",
       "evidenceClass": "proxy",
       "budget": null,
@@ -854,7 +915,7 @@
       "source": "docs/perf/baseline.json",
       "scenario": "S-LL-500",
       "metric": "firstPaintAfterMount",
-      "value": 33.48,
+      "value": 35.73,
       "unit": "ms",
       "evidenceClass": "proxy",
       "budget": null,
@@ -865,7 +926,7 @@
       "source": "docs/perf/baseline.json",
       "scenario": "S-LL-1000",
       "metric": "commitDurationP50",
-      "value": 18.03,
+      "value": 27.01,
       "unit": "ms",
       "evidenceClass": "proxy",
       "budget": null,
@@ -876,7 +937,7 @@
       "source": "docs/perf/baseline.json",
       "scenario": "S-LL-1000",
       "metric": "commitDurationP95",
-      "value": 18.03,
+      "value": 27.01,
       "unit": "ms",
       "evidenceClass": "proxy",
       "budget": null,
@@ -887,7 +948,7 @@
       "source": "docs/perf/baseline.json",
       "scenario": "S-LL-1000",
       "metric": "firstPaintAfterMount",
-      "value": 36.91,
+      "value": 48.29,
       "unit": "ms",
       "evidenceClass": "proxy",
       "budget": null,
@@ -917,11 +978,11 @@
       "source": "docs/perf/baseline.json",
       "scenario": "S-CI-50",
       "metric": "keystrokeToCommitP95",
-      "value": 0.09,
+      "value": 0.08,
       "unit": "ms",
       "evidenceClass": "proxy",
       "budget": {
-        "observed": 0.09,
+        "observed": 0.08,
         "target": 16,
         "hardFail": 32,
         "unit": "ms",
@@ -988,7 +1049,7 @@
       "source": "docs/perf/baseline.json",
       "scenario": "S-CI-100-IME",
       "metric": "compositionToCommit",
-      "value": 0.13,
+      "value": 0.12,
       "unit": "ms",
       "evidenceClass": "proxy",
       "budget": null,
@@ -1048,7 +1109,7 @@
       "source": "docs/perf/baseline.json",
       "scenario": "S-RS-PE",
       "metric": "assemblerLatency",
-      "value": 4.18,
+      "value": 4.77,
       "unit": "ms",
       "evidenceClass": "proxy",
       "budget": null,
@@ -1119,11 +1180,11 @@
       "source": "docs/perf/baseline.json",
       "scenario": "S-CS-COLD",
       "metric": "bundleSizeMain",
-      "value": 1121481,
+      "value": 1132559,
       "unit": "bytes-gzip",
       "evidenceClass": "measured",
       "budget": {
-        "observed": 1121481,
+        "observed": 1132559,
         "target": 950000,
         "hardFail": 1100000,
         "unit": "bytes-gzip",
@@ -1131,7 +1192,7 @@
         "source": "docs/perf/baseline.json",
         "rollout": "advisory-until-bundle-optimization"
       },
-      "reason": "App-GOSdMQOY.js",
+      "reason": "App-JqN3Gseo.js",
       "nextAction": "Track for regression."
     },
     {
@@ -1150,7 +1211,7 @@
         "source": "docs/perf/baseline.json",
         "rollout": "advisory"
       },
-      "reason": "subset-shared.chunk-BukY6QKG.js",
+      "reason": "subset-shared.chunk-CKdmgRUl.js",
       "nextAction": "Track for regression."
     },
     {
@@ -1161,7 +1222,7 @@
       "unit": "ms",
       "evidenceClass": "unsupported",
       "budget": null,
-      "reason": "Tauri webview headless cold-start timing is not available in this script; bundle baseline is recorded.",
+      "reason": "Tauri/webview startup marker snapshot was not provided; bundle baseline is recorded.",
       "nextAction": "Collect real Tauri webview cold-start timing on a supported runner."
     },
     {
@@ -1172,7 +1233,7 @@
       "unit": "ms",
       "evidenceClass": "unsupported",
       "budget": null,
-      "reason": "Tauri webview headless cold-start timing is not available in this script; bundle baseline is recorded.",
+      "reason": "Tauri/webview startup marker snapshot was not provided; bundle baseline is recorded.",
       "nextAction": "Collect real Tauri webview cold-start timing on a supported runner."
     },
     {
@@ -1251,89 +1312,93 @@
       "budget": null,
       "reason": "browser=/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
       "nextAction": "Track for regression."
+    },
+    {
+      "source": "docs/perf/realtime-runtime-evidence.json",
+      "scenario": "S-RS-VL",
+      "metric": "visibleTextLagP95",
+      "value": null,
+      "unit": "ms",
+      "evidenceClass": "unsupported",
+      "budget": {
+        "target": 2000,
+        "hardFail": 5000,
+        "rollout": "advisory-until-runtime-trace"
+      },
+      "reason": "No measured realtime.turnTrace.summary diagnostics were found. Enable turn trace in a Tauri/webview session and export renderer diagnostics.",
+      "nextAction": "Correlate replay metrics with runtime visible-lag and terminal-pressure traces."
+    },
+    {
+      "source": "docs/perf/realtime-runtime-evidence.json",
+      "scenario": "S-RS-RA",
+      "metric": "reducerAmplificationMedian",
+      "value": null,
+      "unit": "ratio",
+      "evidenceClass": "unsupported",
+      "budget": {
+        "target": 2,
+        "hardFail": 4,
+        "rollout": "advisory-until-runtime-trace"
+      },
+      "reason": "No measured realtime.turnTrace.summary diagnostics were found. Enable turn trace in a Tauri/webview session and export renderer diagnostics.",
+      "nextAction": "Correlate replay metrics with runtime visible-lag and terminal-pressure traces."
+    },
+    {
+      "source": "docs/perf/realtime-runtime-evidence.json",
+      "scenario": "S-RS-FD",
+      "metric": "batchFlushDurationP95",
+      "value": null,
+      "unit": "ms",
+      "evidenceClass": "unsupported",
+      "budget": {
+        "target": 8,
+        "hardFail": 16,
+        "rollout": "advisory-until-runtime-trace"
+      },
+      "reason": "No measured realtime.turnTrace.summary diagnostics were found. Enable turn trace in a Tauri/webview session and export renderer diagnostics.",
+      "nextAction": "Correlate replay metrics with runtime visible-lag and terminal-pressure traces."
+    },
+    {
+      "source": "docs/perf/realtime-runtime-evidence.json",
+      "scenario": "S-RS-TS",
+      "metric": "terminalSettlementP95",
+      "value": null,
+      "unit": "ms",
+      "evidenceClass": "unsupported",
+      "budget": {
+        "target": 100,
+        "hardFail": 250,
+        "rollout": "advisory-until-runtime-trace"
+      },
+      "reason": "No measured realtime.turnTrace.summary diagnostics were found. Enable turn trace in a Tauri/webview session and export renderer diagnostics.",
+      "nextAction": "Correlate replay metrics with runtime visible-lag and terminal-pressure traces."
     }
   ],
   "coldStartSummary": {
     "firstPaintEvidence": "unsupported",
     "firstInteractiveEvidence": "unsupported",
-    "reason": "Tauri webview headless cold-start timing is not available in this script; bundle baseline is recorded.",
+    "reason": "Tauri/webview startup marker snapshot was not provided; bundle baseline is recorded.",
     "nextAction": "Collect Tauri webview timing on supported macOS/Windows/Linux runners."
   },
   "archiveReadiness": {
     "source": "openspec list --json",
     "completed": [],
-    "inProgress": [],
-    "error": null,
-    "previousArchiveContext": {
-      "source": "git log + openspec/changes/archive/",
-      "note": "Changes already archived in the 2026-06-12 closure batch. Preserved here as history; not part of the current active completed set.",
-      "changes": [
-        {
-          "name": "realtime-input-and-io-isolation-2026-06",
-          "tasks": "68/68",
-          "recommendation": "archive-candidate-after-qualifier-review",
-          "qualifier": "Review validation and platform qualifiers before archive.",
-          "archivedAs": "2026-06-12-realtime-input-and-io-isolation-2026-06",
-          "archivedAt": "2026-06-12"
-        },
-        {
-          "name": "frontend-prop-chain-stability-2026-06",
-          "tasks": "45/45",
-          "recommendation": "archive-candidate-after-qualifier-review",
-          "qualifier": "Review validation and platform qualifiers before archive.",
-          "archivedAs": "2026-06-12-frontend-prop-chain-stability-2026-06",
-          "archivedAt": "2026-06-12"
-        },
-        {
-          "name": "file-editor-io-render-isolation-2026-06",
-          "tasks": "24/24",
-          "recommendation": "archive-candidate-after-qualifier-review",
-          "qualifier": "Review validation and platform qualifiers before archive.",
-          "archivedAs": "2026-06-12-file-editor-io-render-isolation-2026-06",
-          "archivedAt": "2026-06-12"
-        },
-        {
-          "name": "workspace-tree-and-large-file-listing-budget",
-          "tasks": "26/26",
-          "recommendation": "archive-candidate-after-qualifier-review",
-          "qualifier": "Review validation and platform qualifiers before archive.",
-          "archivedAs": "2026-06-12-workspace-tree-and-large-file-listing-budget",
-          "archivedAt": "2026-06-12"
-        },
-        {
-          "name": "markdown-off-main-thread-pipeline",
-          "tasks": "27/27",
-          "recommendation": "archive-candidate-after-qualifier-review",
-          "qualifier": "Review validation and platform qualifiers before archive.",
-          "archivedAs": "2026-06-12-markdown-off-main-thread-pipeline",
-          "archivedAt": "2026-06-12"
-        },
-        {
-          "name": "backend-io-cache-and-bridge-payload-budget",
-          "tasks": "27/27",
-          "recommendation": "archive-candidate-after-qualifier-review",
-          "qualifier": "Review validation and platform qualifiers before archive.",
-          "archivedAs": "2026-06-12-backend-io-cache-and-bridge-payload-budget",
-          "archivedAt": "2026-06-12"
-        },
-        {
-          "name": "renderer-resource-backpressure",
-          "tasks": "33/33",
-          "recommendation": "archive-candidate-after-qualifier-review",
-          "qualifier": "Review validation and platform qualifiers before archive.",
-          "archivedAs": "2026-06-12-renderer-resource-backpressure",
-          "archivedAt": "2026-06-12"
-        },
-        {
-          "name": "composer-and-message-row-render-budget",
-          "tasks": "20/20",
-          "recommendation": "archive-candidate-after-qualifier-review",
-          "qualifier": "Review validation and platform qualifiers before archive.",
-          "archivedAs": "2026-06-12-composer-and-message-row-render-budget",
-          "archivedAt": "2026-06-12"
-        }
-      ]
-    }
+    "previousArchiveContext": [
+      {
+        "name": "close-performance-iteration-2026-06",
+        "tasks": "25/25",
+        "recommendation": "previous-closure-context",
+        "qualifier": "Retained as historical closure context; not a current completed-active archive candidate."
+      }
+    ],
+    "inProgress": [
+      {
+        "name": "collect-release-grade-performance-evidence",
+        "tasks": "26/28",
+        "recommendation": "not-archive-ready"
+      }
+    ],
+    "error": null
   },
   "compatibilityPaths": [
     {
@@ -1372,9 +1437,9 @@
         "priority": "P0",
         "policyId": "bridge-runtime-critical",
         "headroom": 86,
-        "facade": "Preserve service exports, payload mapping, and web/Tauri fallback semantics.",
-        "owner": "backend-modularization-debt",
-        "followUp": "Split Tauri service adapter; preserve hook/component contracts and web/Tauri fallback semantics."
+        "owner": "frontend-tauri-bridge",
+        "followUp": "Preserve service exports, payload mapping, and web/Tauri fallback semantics. Next split must be scoped to bridge-runtime-critical (86 lines headroom).",
+        "facade": "Preserve service exports, payload mapping, and web/Tauri fallback semantics."
       },
       {
         "path": "src-tauri/src/engine/claude_history.rs",
@@ -1382,9 +1447,9 @@
         "priority": "P0",
         "policyId": "bridge-runtime-critical",
         "headroom": 95,
-        "facade": "Preserve command registration, Rust module facade, payload shape, and cross-platform paths.",
-        "owner": "backend-modularization-debt",
-        "followUp": "Split Claude history module while preserving command registration, payload shape, and cross-platform paths."
+        "owner": "backend-engine-runtime",
+        "followUp": "Preserve command registration, Rust module facade, payload shape, and cross-platform paths. Next split must be scoped to bridge-runtime-critical (95 lines headroom).",
+        "facade": "Preserve command registration, Rust module facade, payload shape, and cross-platform paths."
       },
       {
         "path": "src-tauri/src/codex/mod.rs",
@@ -1392,9 +1457,9 @@
         "priority": "P0",
         "policyId": "bridge-runtime-critical",
         "headroom": 116,
-        "facade": "Preserve command registration, Rust module facade, payload shape, and cross-platform paths.",
-        "owner": "backend-modularization-debt",
-        "followUp": "Split Codex facade into per-concern submodules; preserve Tauri command surface."
+        "owner": "backend-codex-runtime",
+        "followUp": "Preserve command registration, Rust module facade, payload shape, and cross-platform paths. Next split must be scoped to bridge-runtime-critical (116 lines headroom).",
+        "facade": "Preserve command registration, Rust module facade, payload shape, and cross-platform paths."
       },
       {
         "path": "src-tauri/src/git/mod.rs",
@@ -1402,9 +1467,9 @@
         "priority": "P0",
         "policyId": "bridge-runtime-critical",
         "headroom": 221,
-        "facade": "Preserve command registration, Rust module facade, payload shape, and cross-platform paths.",
-        "owner": "backend-modularization-debt",
-        "followUp": "Split Git module; preserve command registration, payload shape, and platform paths."
+        "owner": "backend-git-runtime",
+        "followUp": "Preserve command registration, Rust module facade, payload shape, and cross-platform paths. Next split must be scoped to bridge-runtime-critical (221 lines headroom).",
+        "facade": "Preserve command registration, Rust module facade, payload shape, and cross-platform paths."
       },
       {
         "path": "src-tauri/src/runtime/mod.rs",
@@ -1412,9 +1477,9 @@
         "priority": "P0",
         "policyId": "bridge-runtime-critical",
         "headroom": 229,
-        "facade": "Preserve command registration, Rust module facade, payload shape, and cross-platform paths.",
-        "owner": "backend-modularization-debt",
-        "followUp": "Split runtime module; preserve bridge runtime contracts and payload compatibility."
+        "owner": "backend-runtime",
+        "followUp": "Preserve command registration, Rust module facade, payload shape, and cross-platform paths. Next split must be scoped to bridge-runtime-critical (229 lines headroom).",
+        "facade": "Preserve command registration, Rust module facade, payload shape, and cross-platform paths."
       },
       {
         "path": "src-tauri/src/engine/commands.rs",
@@ -1422,9 +1487,9 @@
         "priority": "P0",
         "policyId": "bridge-runtime-critical",
         "headroom": 314,
-        "facade": "Preserve command registration, Rust module facade, payload shape, and cross-platform paths.",
-        "owner": "backend-modularization-debt",
-        "followUp": "Split engine command dispatch; preserve Tauri command facade and payload shape."
+        "owner": "backend-engine-runtime",
+        "followUp": "Preserve command registration, Rust module facade, payload shape, and cross-platform paths. Next split must be scoped to bridge-runtime-critical (314 lines headroom).",
+        "facade": "Preserve command registration, Rust module facade, payload shape, and cross-platform paths."
       },
       {
         "path": "src-tauri/src/engine/claude.rs",
@@ -1432,9 +1497,9 @@
         "priority": "P0",
         "policyId": "bridge-runtime-critical",
         "headroom": 328,
-        "facade": "Preserve command registration, Rust module facade, payload shape, and cross-platform paths.",
-        "owner": "backend-modularization-debt",
-        "followUp": "Split engine claude module; preserve command registration and cross-platform paths."
+        "owner": "backend-engine-runtime",
+        "followUp": "Preserve command registration, Rust module facade, payload shape, and cross-platform paths. Next split must be scoped to bridge-runtime-critical (328 lines headroom).",
+        "facade": "Preserve command registration, Rust module facade, payload shape, and cross-platform paths."
       },
       {
         "path": "src-tauri/src/session_management.rs",
@@ -1442,9 +1507,9 @@
         "priority": "P1",
         "policyId": "default-source",
         "headroom": 24,
-        "facade": "Preserve command registration, Rust module facade, payload shape, and cross-platform paths.",
-        "owner": "backend-modularization-debt",
-        "followUp": "Split session management; preserve Tauri command facade and payload compatibility."
+        "owner": "backend-runtime",
+        "followUp": "Preserve command registration, Rust module facade, payload shape, and cross-platform paths. Next split must be scoped to default-source (24 lines headroom).",
+        "facade": "Preserve command registration, Rust module facade, payload shape, and cross-platform paths."
       },
       {
         "path": "src/features/threads/hooks/useThreadEventHandlers.ts",
@@ -1452,9 +1517,9 @@
         "priority": "P1",
         "policyId": "feature-hotpath",
         "headroom": 53,
-        "facade": "Preserve hook input/output shape and async cleanup semantics.",
-        "owner": "frontend-modularization-debt",
-        "followUp": "Split useThreadEventHandlers; preserve hook input/output shape and async cleanup semantics."
+        "owner": "frontend-thread-runtime",
+        "followUp": "Preserve hook input/output shape and async cleanup semantics. Next split must be scoped to feature-hotpath (53 lines headroom).",
+        "facade": "Preserve hook input/output shape and async cleanup semantics."
       },
       {
         "path": "src-tauri/src/bin/cc_gui_daemon/daemon_state.rs",
@@ -1462,9 +1527,9 @@
         "priority": "P1",
         "policyId": "default-source",
         "headroom": 64,
-        "facade": "Preserve command registration, Rust module facade, payload shape, and cross-platform paths.",
-        "owner": "backend-modularization-debt",
-        "followUp": "Split cc_gui_daemon state; preserve command registration and cross-platform paths."
+        "owner": "daemon-runtime",
+        "followUp": "Preserve command registration, Rust module facade, payload shape, and cross-platform paths. Next split must be scoped to default-source (64 lines headroom).",
+        "facade": "Preserve command registration, Rust module facade, payload shape, and cross-platform paths."
       }
     ],
     "nextAction": "Pick one coherent runtime boundary; do not batch unrelated hot paths together."

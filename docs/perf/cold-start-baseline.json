@@ -1,38 +1,39 @@
 {
   "schemaVersion": "1.0",
-  "generatedAt": "2026-06-11T07:23:48.615Z",
+  "generatedAt": "2026-06-13T04:01:32.501Z",
   "source": "cold-start",
   "metrics": [
     {
       "scenario": "S-CS-COLD",
       "metric": "bundleSizeMain",
-      "value": 1121481,
-      "unit": "bytes",
-      "notes": "App-GOSdMQOY.js"
+      "value": 1132559,
+      "unit": "bytes-gzip",
+      "notes": "App-JqN3Gseo.js"
     },
     {
       "scenario": "S-CS-COLD",
       "metric": "bundleSizeVendor",
       "value": 741552,
-      "unit": "bytes",
-      "notes": "subset-shared.chunk-BukY6QKG.js"
+      "unit": "bytes-gzip",
+      "notes": "subset-shared.chunk-CKdmgRUl.js"
     },
     {
       "scenario": "S-CS-COLD",
       "metric": "firstPaintMs",
       "value": null,
       "unit": "ms",
-      "unsupportedReason": "Tauri webview headless cold-start timing is not available in this script; bundle baseline is recorded."
+      "unsupportedReason": "Tauri/webview startup marker snapshot was not provided; bundle baseline is recorded."
     },
     {
       "scenario": "S-CS-COLD",
       "metric": "firstInteractiveMs",
       "value": null,
       "unit": "ms",
-      "unsupportedReason": "Tauri webview headless cold-start timing is not available in this script; bundle baseline is recorded."
+      "unsupportedReason": "Tauri/webview startup marker snapshot was not provided; bundle baseline is recorded."
     }
   ],
   "notes": [
-    "platform=darwin"
+    "platform=darwin",
+    "startupMarkers=missing"
   ]
 }

@@ -10,11 +10,13 @@ const PERF_BASELINE_PATH = "docs/perf/baseline.json";
 const COMPOSER_BASELINE_PATH = "docs/perf/composer-baseline.json";
 const BROWSER_SCROLL_PATH = "docs/perf/long-list-browser-scroll.json";
 const REALTIME_TURN_TRACE_PATH = "docs/perf/realtime-turn-trace.json";
+const REALTIME_RUNTIME_EVIDENCE_PATH = "docs/perf/realtime-runtime-evidence.json";
 const REALTIME_PROFILE_PATH = "docs/perf/realtime-profile.jsonl";
 const LARGE_FILE_WATCHLIST_PATH = ".artifacts/large-files-near-threshold.json";
 const OUTPUT_JSON_PATH = "docs/perf/runtime-evidence-gates.json";
 const OUTPUT_PERF_MARKDOWN_PATH = "docs/perf/runtime-evidence-gates.md";
 const OUTPUT_OPENSPEC_MARKDOWN_PATH = "openspec/docs/runtime-evidence-gates-2026-05-24.md";
+const CLOSURE_CHANGE_NAMES = new Set(["close-performance-iteration-2026-06"]);
 
 const compatibilityPaths = [
   {
@@ -93,6 +95,14 @@ function markdownCell(value) {
 }
 
 function classifyMetric(metric) {
+  if (
+    metric.evidenceClass === "measured"
+    || metric.evidenceClass === "proxy"
+    || metric.evidenceClass === "manual-only"
+    || metric.evidenceClass === "unsupported"
+  ) {
+    return metric.evidenceClass;
+  }
   const note = `${metric.notes ?? ""} ${metric.unsupportedReason ?? ""}`.toLowerCase();
   if (metric.value == null || metric.unsupportedReason) {
     return "unsupported";
@@ -447,24 +457,28 @@ const REALTIME_TRACE_BUDGETS = {
   "S-RS-VL": {
     target: 2000,
     hardFail: 5000,
+    rollout: "advisory-until-runtime-trace",
     reason: "Replay-derived first-delta -> first-visible-text P95; jsdom/PerformanceObserver path is the follow-up.",
     nextAction: "Wire PerformanceObserver in Tauri webview to record first visible text growth and bring this to measured.",
   },
   "S-RS-RA": {
     target: 2,
     hardFail: 4,
+    rollout: "advisory-until-runtime-trace",
     reason: "Replay-derived reducer amplification median; reflects fixture batch grouping.",
     nextAction: "Cross-check with renderer-side reducer commit count under live Tauri session.",
   },
   "S-RS-FD": {
     target: 8,
     hardFail: 16,
+    rollout: "advisory-until-runtime-trace",
     reason: "Replay-derived batch flush duration P95; replay group window is the surrogate.",
     nextAction: "Replace with measured wall-clock gap between batcher flush-start and flush-end in the renderer hot path.",
   },
   "S-RS-TS": {
     target: 100,
     hardFail: 250,
+    rollout: "advisory-until-runtime-trace",
     reason: "Replay-derived terminal settlement P95 (last reducer commit -> agentCompleted).",
     nextAction: "Wire real Tauri/webview terminal signal (provider final + reducer final) and reclassify to measured.",
   },
@@ -482,11 +496,15 @@ function buildRealtimeTraceBudgets(perfEvidence) {
         : entry.scenario === "S-RS-TS" ? "terminalSettlementP95"
         : null
     )) {
-      entry.budget = { target: budget.target, hardFail: budget.hardFail };
-      entry.reason = budget.reason;
-      entry.nextAction = budget.nextAction;
-      entry.evidenceClass = "proxy";
-      entry.source = "docs/perf/realtime-extended-baseline.json";
+      entry.budget = { target: budget.target, hardFail: budget.hardFail, rollout: budget.rollout };
+      if (entry.source === REALTIME_RUNTIME_EVIDENCE_PATH) {
+        entry.nextAction = entry.nextAction ?? budget.nextAction;
+      } else if (entry.evidenceClass !== "measured") {
+        entry.reason = budget.reason;
+        entry.nextAction = budget.nextAction;
+        entry.evidenceClass = "proxy";
+        entry.source = "docs/perf/realtime-extended-baseline.json";
+      }
     }
   }
   return perfEvidence;
@@ -704,12 +722,20 @@ function qualifierForChange(changeName) {
 function buildArchiveReadiness(openSpecState) {
   const changes = Array.isArray(openSpecState?.changes) ? openSpecState.changes : [];
   const completed = changes
-    .filter((change) => change.status === "complete")
+    .filter((change) => change.status === "complete" && !CLOSURE_CHANGE_NAMES.has(change.name))
     .map((change) => ({
       name: change.name,
       tasks: `${change.completedTasks}/${change.totalTasks}`,
       recommendation: "archive-candidate-after-qualifier-review",
       qualifier: qualifierForChange(change.name),
+    }));
+  const previousArchiveContext = changes
+    .filter((change) => change.status === "complete" && CLOSURE_CHANGE_NAMES.has(change.name))
+    .map((change) => ({
+      name: change.name,
+      tasks: `${change.completedTasks}/${change.totalTasks}`,
+      recommendation: "previous-closure-context",
+      qualifier: "Retained as historical closure context; not a current completed-active archive candidate.",
     }));
   const inProgress = changes
     .filter((change) => change.status !== "complete")
@@ -721,6 +747,7 @@ function buildArchiveReadiness(openSpecState) {
   return {
     source: "openspec list --json",
     completed,
+    previousArchiveContext,
     inProgress,
     error: openSpecState?.error ?? null,
   };
@@ -748,6 +775,41 @@ function splitFacadeNote(path) {
   return "Declare public facade before splitting.";
 }
 
+function largeFileOwner(path) {
+  if (path.startsWith("src-tauri/src/engine/")) {
+    return "backend-engine-runtime";
+  }
+  if (path.startsWith("src-tauri/src/codex/")) {
+    return "backend-codex-runtime";
+  }
+  if (path.startsWith("src-tauri/src/git/")) {
+    return "backend-git-runtime";
+  }
+  if (path.startsWith("src-tauri/src/runtime/")) {
+    return "backend-runtime";
+  }
+  if (path.startsWith("src-tauri/src/bin/")) {
+    return "daemon-runtime";
+  }
+  if (path.startsWith("src-tauri/src/")) {
+    return "backend-runtime";
+  }
+  if (path.startsWith("src/services/tauri")) {
+    return "frontend-tauri-bridge";
+  }
+  if (path.startsWith("src/features/threads/")) {
+    return "frontend-thread-runtime";
+  }
+  return "code-health";
+}
+
+function largeFileFollowUp(finding) {
+  const headroom = toFiniteNumber(finding.failThreshold) == null || toFiniteNumber(finding.lines) == null
+    ? "unknown headroom"
+    : `${toFiniteNumber(finding.failThreshold) - toFiniteNumber(finding.lines)} lines headroom`;
+  return `${splitFacadeNote(finding.path)} Next split must be scoped to ${finding.policyId ?? "current policy"} (${headroom}).`;
+}
+
 function buildLargeFileSummary(largeFileReport) {
   const findings = Array.isArray(largeFileReport?.results) ? largeFileReport.results : [];
   const ranked = findings
@@ -760,6 +822,8 @@ function buildLargeFileSummary(largeFileReport) {
         priority: finding.priority,
         policyId: finding.policyId,
         headroom: failThreshold == null || lines == null ? null : failThreshold - lines,
+        owner: largeFileOwner(finding.path),
+        followUp: largeFileFollowUp(finding),
         facade: splitFacadeNote(finding.path),
       };
     })
@@ -900,6 +964,12 @@ function createOpenSpecMarkdown(report) {
   for (const change of report.archiveReadiness.completed) {
     lines.push(`| ${markdownCell(change.name)} | ${change.tasks} | ${change.recommendation} | ${markdownCell(change.qualifier)} |`);
   }
+  if (report.archiveReadiness.previousArchiveContext?.length > 0) {
+    lines.push("", "## Previous Archive Context", "");
+    for (const change of report.archiveReadiness.previousArchiveContext) {
+      lines.push(`- ${change.name}: ${change.tasks}, ${change.recommendation}. ${change.qualifier}`);
+    }
+  }
   lines.push("", "## In Progress", "");
   if (report.archiveReadiness.inProgress.length === 0) {
     lines.push("- No in-progress active changes.");
@@ -931,6 +1001,7 @@ async function main() {
   const composerBaseline = await readJsonIfExists(COMPOSER_BASELINE_PATH);
   const browserScroll = await readJsonIfExists(BROWSER_SCROLL_PATH);
   const realtimeTurnTrace = await readJsonIfExists(REALTIME_TURN_TRACE_PATH);
+  const realtimeRuntimeEvidence = await readJsonIfExists(REALTIME_RUNTIME_EVIDENCE_PATH);
   const realtimeProfile = await readJsonlIfExists(REALTIME_PROFILE_PATH);
   const largeFileReport = await readJsonIfExists(LARGE_FILE_WATCHLIST_PATH);
   const openSpecState = runJson("openspec", ["list", "--json"]);
@@ -938,6 +1009,7 @@ async function main() {
     { path: PERF_BASELINE_PATH, fragment: perfBaseline },
     { path: COMPOSER_BASELINE_PATH, fragment: composerBaseline },
     { path: BROWSER_SCROLL_PATH, fragment: browserScroll },
+    { path: REALTIME_RUNTIME_EVIDENCE_PATH, fragment: realtimeRuntimeEvidence },
   ]);
   performanceEvidence.push(...buildRealtimeProfileEvidence(realtimeProfile));
   // Enrich baseline rows in place; the function mutates and returns the same array.
@@ -950,6 +1022,7 @@ async function main() {
       composerBaseline: existsSync(repoPath(COMPOSER_BASELINE_PATH)) ? COMPOSER_BASELINE_PATH : null,
       browserScroll: existsSync(repoPath(BROWSER_SCROLL_PATH)) ? BROWSER_SCROLL_PATH : null,
       realtimeTurnTrace: existsSync(repoPath(REALTIME_TURN_TRACE_PATH)) ? REALTIME_TURN_TRACE_PATH : null,
+      realtimeRuntimeEvidence: existsSync(repoPath(REALTIME_RUNTIME_EVIDENCE_PATH)) ? REALTIME_RUNTIME_EVIDENCE_PATH : null,
       realtimeProfile: existsSync(repoPath(REALTIME_PROFILE_PATH)) ? REALTIME_PROFILE_PATH : null,
       largeFileWatchlist: existsSync(repoPath(LARGE_FILE_WATCHLIST_PATH)) ? LARGE_FILE_WATCHLIST_PATH : null,
       openSpec: "openspec list --json",

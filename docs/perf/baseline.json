@@ -1,72 +1,72 @@
 {
   "schemaVersion": "1.0",
-  "generatedAt": "2026-06-11T14:21:21.611Z",
+  "generatedAt": "2026-06-13T04:01:32.580Z",
   "version": "0.5.9",
   "git": {
     "branch": "feature/v0.5.9",
-    "commit": "e16f08a15bfacef871c65be4da08502a2334fb56"
+    "commit": "4fdbd1bb85fe5218b32128c29727c358cc8ea8cb"
   },
   "metrics": [
     {
       "scenario": "S-LL-200",
       "metric": "commitDurationP50",
-      "value": 10.15,
+      "value": 11.44,
       "unit": "ms",
       "evidenceClass": "proxy"
     },
     {
       "scenario": "S-LL-200",
       "metric": "commitDurationP95",
-      "value": 10.15,
+      "value": 11.44,
       "unit": "ms",
       "evidenceClass": "proxy"
     },
     {
       "scenario": "S-LL-200",
       "metric": "firstPaintAfterMount",
-      "value": 35.81,
+      "value": 37.17,
       "unit": "ms",
       "evidenceClass": "proxy"
     },
     {
       "scenario": "S-LL-500",
       "metric": "commitDurationP50",
-      "value": 13.84,
+      "value": 14.32,
       "unit": "ms",
       "evidenceClass": "proxy"
     },
     {
       "scenario": "S-LL-500",
       "metric": "commitDurationP95",
-      "value": 13.84,
+      "value": 14.32,
       "unit": "ms",
       "evidenceClass": "proxy"
     },
     {
       "scenario": "S-LL-500",
       "metric": "firstPaintAfterMount",
-      "value": 33.48,
+      "value": 35.73,
       "unit": "ms",
       "evidenceClass": "proxy"
     },
     {
       "scenario": "S-LL-1000",
       "metric": "commitDurationP50",
-      "value": 18.03,
+      "value": 27.01,
       "unit": "ms",
       "evidenceClass": "proxy"
     },
     {
       "scenario": "S-LL-1000",
       "metric": "commitDurationP95",
-      "value": 18.03,
+      "value": 27.01,
       "unit": "ms",
       "evidenceClass": "proxy"
     },
     {
       "scenario": "S-LL-1000",
       "metric": "firstPaintAfterMount",
-      "value": 36.91,
+      "value": 48.29,
       "unit": "ms",
       "evidenceClass": "proxy"
     },
@@ -90,11 +90,11 @@
     {
       "scenario": "S-CI-50",
       "metric": "keystrokeToCommitP95",
-      "value": 0.09,
+      "value": 0.08,
       "unit": "ms",
       "evidenceClass": "proxy",
       "budget": {
-        "observed": 0.09,
+        "observed": 0.08,
         "target": 16,
         "hardFail": 32,
         "unit": "ms",
@@ -143,7 +143,7 @@
     {
       "scenario": "S-CI-100-IME",
       "metric": "compositionToCommit",
-      "value": 0.13,
+      "value": 0.12,
       "unit": "ms",
       "evidenceClass": "proxy"
     },
@@ -190,7 +190,7 @@
     {
       "scenario": "S-RS-PE",
       "metric": "assemblerLatency",
-      "value": 4.18,
+      "value": 4.77,
       "unit": "ms",
       "notes": "replay reducer-path proxy latency",
       "evidenceClass": "proxy"
@@ -230,12 +230,12 @@
     {
       "scenario": "S-CS-COLD",
       "metric": "bundleSizeMain",
-      "value": 1121481,
+      "value": 1132559,
       "unit": "bytes-gzip",
-      "notes": "App-GOSdMQOY.js",
+      "notes": "App-JqN3Gseo.js",
       "evidenceClass": "measured",
       "budget": {
-        "observed": 1121481,
+        "observed": 1132559,
         "target": 950000,
         "hardFail": 1100000,
         "unit": "bytes-gzip",
@@ -249,7 +249,7 @@
       "metric": "bundleSizeVendor",
       "value": 741552,
       "unit": "bytes-gzip",
-      "notes": "subset-shared.chunk-BukY6QKG.js",
+      "notes": "subset-shared.chunk-CKdmgRUl.js",
       "evidenceClass": "measured",
       "budget": {
         "observed": 741552,
@@ -266,7 +266,7 @@
       "metric": "firstPaintMs",
       "value": null,
       "unit": "ms",
-      "unsupportedReason": "Tauri webview headless cold-start timing is not available in this script; bundle baseline is recorded.",
+      "unsupportedReason": "Tauri/webview startup marker snapshot was not provided; bundle baseline is recorded.",
       "evidenceClass": "unsupported"
     },
     {
@@ -274,26 +274,26 @@
       "metric": "firstInteractiveMs",
       "value": null,
       "unit": "ms",
-      "unsupportedReason": "Tauri webview headless cold-start timing is not available in this script; bundle baseline is recorded.",
+      "unsupportedReason": "Tauri/webview startup marker snapshot was not provided; bundle baseline is recorded.",
       "evidenceClass": "unsupported"
     }
   ],
   "sources": [
     {
       "source": "long-list",
-      "generatedAt": "2026-06-11T06:15:22.105Z"
+      "generatedAt": "2026-06-11T19:33:46.693Z"
     },
     {
       "source": "composer-input",
-      "generatedAt": "2026-06-11T06:15:22.006Z"
+      "generatedAt": "2026-06-11T18:33:50.345Z"
     },
     {
       "source": "realtime-extended",
-      "generatedAt": "2026-06-11T14:21:21.202Z"
+      "generatedAt": "2026-06-12T14:39:07.228Z"
     },
     {
       "source": "cold-start",
-      "generatedAt": "2026-06-11T07:23:48.615Z"
+      "generatedAt": "2026-06-13T04:01:32.501Z"
     }
   ],
   "residualRisks": [],
@@ -302,7 +302,7 @@
     "previousVersion": "0.5.6",
     "currentVersion": "0.5.9",
     "status": "available",
-    "missingCount": 4,
+    "missingCount": 6,
     "notComparableCount": 2,
     "metrics": [
       {
@@ -310,8 +310,8 @@
         "metric": "commitDurationP50",
         "unit": "ms",
         "previousValue": 17.6,
-        "currentValue": 10.15,
-        "delta": -7.45,
+        "currentValue": 11.44,
+        "delta": -6.16,
         "evidenceClass": "proxy",
         "status": "comparable",
         "reason": ""
@@ -321,8 +321,8 @@
         "metric": "commitDurationP95",
         "unit": "ms",
         "previousValue": 17.6,
-        "currentValue": 10.15,
-        "delta": -7.45,
+        "currentValue": 11.44,
+        "delta": -6.16,
         "evidenceClass": "proxy",
         "status": "comparable",
         "reason": ""
@@ -332,8 +332,8 @@
         "metric": "firstPaintAfterMount",
         "unit": "ms",
         "previousValue": 54.54,
-        "currentValue": 35.81,
-        "delta": -18.73,
+        "currentValue": 37.17,
+        "delta": -17.37,
         "evidenceClass": "proxy",
         "status": "comparable",
         "reason": ""
@@ -343,8 +343,8 @@
         "metric": "commitDurationP50",
         "unit": "ms",
         "previousValue": 170.66,
-        "currentValue": 13.84,
-        "delta": -156.82,
+        "currentValue": 14.32,
+        "delta": -156.34,
         "evidenceClass": "proxy",
         "status": "comparable",
         "reason": ""
@@ -354,8 +354,8 @@
         "metric": "commitDurationP95",
         "unit": "ms",
         "previousValue": 170.66,
-        "currentValue": 13.84,
-        "delta": -156.82,
+        "currentValue": 14.32,
+        "delta": -156.34,
         "evidenceClass": "proxy",
         "status": "comparable",
         "reason": ""
@@ -365,8 +365,8 @@
         "metric": "firstPaintAfterMount",
         "unit": "ms",
         "previousValue": 195.04,
-        "currentValue": 33.48,
-        "delta": -161.56,
+        "currentValue": 35.73,
+        "delta": -159.31,
         "evidenceClass": "proxy",
         "status": "comparable",
         "reason": ""
@@ -376,8 +376,8 @@
         "metric": "commitDurationP50",
         "unit": "ms",
         "previousValue": 34.47,
-        "currentValue": 18.03,
-        "delta": -16.44,
+        "currentValue": 27.01,
+        "delta": -7.46,
         "evidenceClass": "proxy",
         "status": "comparable",
         "reason": ""
@@ -387,8 +387,8 @@
         "metric": "commitDurationP95",
         "unit": "ms",
         "previousValue": 34.47,
-        "currentValue": 18.03,
-        "delta": -16.44,
+        "currentValue": 27.01,
+        "delta": -7.46,
         "evidenceClass": "proxy",
         "status": "comparable",
         "reason": ""
@@ -398,8 +398,8 @@
         "metric": "firstPaintAfterMount",
         "unit": "ms",
         "previousValue": 58.43,
-        "currentValue": 36.91,
-        "delta": -21.52,
+        "currentValue": 48.29,
+        "delta": -10.14,
         "evidenceClass": "proxy",
         "status": "comparable",
         "reason": ""
@@ -420,8 +420,8 @@
         "metric": "keystrokeToCommitP95",
         "unit": "ms",
         "previousValue": 0.08,
-        "currentValue": 0.09,
-        "delta": 0.01,
+        "currentValue": 0.08,
+        "delta": 0,
         "evidenceClass": "proxy",
         "status": "comparable",
         "reason": ""
@@ -475,8 +475,8 @@
         "metric": "compositionToCommit",
         "unit": "ms",
         "previousValue": 0.11,
-        "currentValue": 0.13,
-        "delta": 0.02,
+        "currentValue": 0.12,
+        "delta": 0.01,
         "evidenceClass": "proxy",
         "status": "comparable",
         "reason": ""
@@ -519,8 +519,8 @@
         "metric": "assemblerLatency",
         "unit": "ms",
         "previousValue": 5.73,
-        "currentValue": 4.18,
-        "delta": -1.55,
+        "currentValue": 4.77,
+        "delta": -0.96,
         "evidenceClass": "proxy",
         "status": "comparable",
         "reason": ""
@@ -573,23 +573,23 @@
         "scenario": "S-CS-COLD",
         "metric": "bundleSizeMain",
         "unit": "bytes-gzip",
-        "previousValue": 1284244,
-        "currentValue": 1121481,
-        "delta": -162763,
+        "previousValue": null,
+        "currentValue": 1132559,
+        "delta": null,
         "evidenceClass": "measured",
-        "status": "comparable",
-        "reason": ""
+        "status": "missing",
+        "reason": "Previous baseline metric not found."
       },
       {
         "scenario": "S-CS-COLD",
         "metric": "bundleSizeVendor",
         "unit": "bytes-gzip",
-        "previousValue": 672901,
+        "previousValue": null,
         "currentValue": 741552,
-        "delta": 68651,
+        "delta": null,
         "evidenceClass": "measured",
-        "status": "comparable",
-        "reason": ""
+        "status": "missing",
+        "reason": "Previous baseline metric not found."
       },
       {
         "scenario": "S-CS-COLD",
