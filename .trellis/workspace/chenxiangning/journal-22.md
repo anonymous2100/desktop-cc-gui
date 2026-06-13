@@ -80,3 +80,57 @@
 ### Next Steps
 
 - None - task complete
+
+
+## Session 830: 收口并行对话运行时残留 P0 修复
+
+**Date**: 2026-06-13
+**Task**: 收口并行对话运行时残留 P0 修复
+**Branch**: `feature/v0.5.9`
+
+### Summary
+
+完成 fix-parallel-conversation-runtime-residuals-2026-06 P0 修复提交：补齐性能 flag 自检/重置、ClaudeSession Drop 兜底、active process diagnostics、OpenSpec/Trellis 文档与验证记录。
+
+### Main Changes
+
+本次会话完成并提交 OpenSpec change fix-parallel-conversation-runtime-residuals-2026-06。
+
+主要内容：
+- 在 realtimePerfFlags 增加统一 flag registry、active flag inspection、reset helper 与测试。
+- 在 Settings Other section 增加 performance diagnostics reset UI，补齐 i18n 与组件测试。
+- 在 Tauri/Rust 侧为 ClaudeSession 增加 Drop best-effort child process cleanup。
+- 增加 get_engine_active_process_diagnostics command、frontend tauri wrapper 与 Rust/frontend tests。
+- 同步 parallel-conversation-runtime-residuals OpenSpec main spec 与 Trellis frontend guide。
+- 保留 investigate-parallel-conversation-jank-2026-06 作为背景 artifacts，但未归档，因其 tasks 未完成。
+
+验证：
+- npm run lint
+- npm run typecheck
+- npm test（667 test files completed）
+- focused vitest for realtimePerfFlags / OtherSection / tauri / i18n
+- cargo targeted test engine_active_process_diagnostics_sorts_workspaces_and_counts_processes
+- npm run check:runtime-contracts
+- npm run doctor:strict
+- openspec validate fix-parallel-conversation-runtime-residuals-2026-06 --strict
+- openspec validate --specs --strict
+- bash -n scripts/perf-reproduce-jank.sh
+
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `bd456e46` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
