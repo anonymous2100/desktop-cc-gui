@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-22.md`
-- **Total Sessions**: 828
+- **Total Sessions**: 829
 - **Last Active**: 2026-06-13
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-22.md` | ~40 | Active |
+| `journal-22.md` | ~76 | Active |
 | `journal-21.md` | ~1970 | Archived |
 | `journal-20.md` | ~1997 | Archived |
 | `journal-19.md` | ~1989 | Archived |
@@ -50,6 +50,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 829 | 2026-06-13 | 修复 heavy-test-noise 与 branding gate | `38e3cee0` | `feature/v0.5.9` |
 | 828 | 2026-06-13 | 修复 AppShell domain context 测试换行断言 | `cd41bcb8` | `feature/v0.5.9` |
 | 827 | 2026-06-13 | 收口 Windows 离线安装与文件打开缓存刷新 | `10082f60`, `f880be4d` | `feature/v0.5.9` |
 | 826 | 2026-06-13 | 收口客户端性能残余证据 | `a8bd4b24` | `feature/v0.5.9` |
