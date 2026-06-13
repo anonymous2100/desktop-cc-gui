@@ -18,7 +18,7 @@ function runScript(args) {
 }
 
 test("startup marker snapshot extracts latest diagnostic payload", async () => {
-  const dir = await mkdtemp(join(tmpdir(), "mossx-startup-marker-"));
+  const dir = await mkdtemp(join(tmpdir(), "ccgui-startup-marker-"));
   const inputPath = join(dir, "diagnostics.json");
   const outputPath = join(dir, "startup.json");
   await writeFile(inputPath, JSON.stringify({

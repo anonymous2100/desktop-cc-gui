@@ -446,7 +446,7 @@ mod tests {
 
     #[test]
     fn jsonl_append_reader_handles_append_truncate_and_corrupt_fallback() {
-        let dir = std::env::temp_dir().join(format!("mossx-backend-budget-{}", std::process::id()));
+        let dir = std::env::temp_dir().join(format!("ccgui-backend-budget-{}", std::process::id()));
         let _ = fs::remove_dir_all(&dir);
         fs::create_dir_all(&dir).expect("create tempdir");
         let path = dir.join("events.jsonl");

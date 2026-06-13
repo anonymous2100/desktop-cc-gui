@@ -23,7 +23,7 @@ function runScript(args) {
 }
 
 test("cold-start baseline upgrades first-paint / first-interactive to measured when marker snapshot is provided", async () => {
-  const dir = await mkdtemp(join(tmpdir(), "mossx-cold-start-"));
+  const dir = await mkdtemp(join(tmpdir(), "ccgui-cold-start-"));
   const snapshotPath = join(dir, "startup-markers.json");
   const outputPath = join(dir, "cold-start.json");
   await writeFile(snapshotPath, JSON.stringify({
@@ -49,7 +49,7 @@ test("cold-start baseline upgrades first-paint / first-interactive to measured w
 });
 
 test("cold-start baseline keeps first-paint / first-interactive unsupported with provided-snapshot reason when no --startup-markers is passed", async () => {
-  const dir = await mkdtemp(join(tmpdir(), "mossx-cold-start-"));
+  const dir = await mkdtemp(join(tmpdir(), "ccgui-cold-start-"));
   const outputPath = join(dir, "cold-start.json");
   await runScript(["--skip-build", "--output", outputPath]);
   const fragment = JSON.parse(await readFile(outputPath, "utf-8"));
@@ -64,7 +64,7 @@ test("cold-start baseline keeps first-paint / first-interactive unsupported with
 });
 
 test("cold-start baseline distinguishes corrupt snapshot from missing snapshot via reason text", async () => {
-  const dir = await mkdtemp(join(tmpdir(), "mossx-cold-start-"));
+  const dir = await mkdtemp(join(tmpdir(), "ccgui-cold-start-"));
   const snapshotPath = join(dir, "corrupt.json");
   const outputPath = join(dir, "cold-start.json");
   await writeFile(snapshotPath, "{not valid json", "utf-8");

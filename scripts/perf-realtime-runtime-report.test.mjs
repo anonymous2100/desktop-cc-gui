@@ -18,7 +18,7 @@ function runScript(args) {
 }
 
 test("realtime runtime report derives measured metrics from content-safe diagnostics", async () => {
-  const dir = await mkdtemp(join(tmpdir(), "mossx-realtime-runtime-"));
+  const dir = await mkdtemp(join(tmpdir(), "ccgui-realtime-runtime-"));
   const inputPath = join(dir, "diagnostics.json");
   const outputPath = join(dir, "runtime.json");
   await writeFile(inputPath, JSON.stringify({
@@ -68,7 +68,7 @@ test("realtime runtime report derives measured metrics from content-safe diagnos
 });
 
 test("realtime runtime report keeps missing diagnostics unsupported", async () => {
-  const dir = await mkdtemp(join(tmpdir(), "mossx-realtime-runtime-"));
+  const dir = await mkdtemp(join(tmpdir(), "ccgui-realtime-runtime-"));
   const outputPath = join(dir, "runtime.json");
   await runScript(["--input", join(dir, "missing.json"), "--output", outputPath]);
   const fragment = JSON.parse(await readFile(outputPath, "utf-8"));

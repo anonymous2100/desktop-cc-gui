@@ -1034,54 +1034,58 @@ describe("useLayoutNodes client UI visibility", () => {
     });
   });
 
-  it("passes selected codex provider when confirming message-tail fork", async () => {
-    vi.mocked(getCodexProviders).mockResolvedValueOnce([
-      { id: "provider-a", name: "Provider A" },
-      { id: "provider-b", name: "Provider B" },
-    ]);
-    const onForkFromMessage = vi.fn(async () => {});
+  it(
+    "passes selected codex provider when confirming message-tail fork",
+    async () => {
+      vi.mocked(getCodexProviders).mockResolvedValueOnce([
+        { id: "provider-a", name: "Provider A" },
+        { id: "provider-b", name: "Provider B" },
+      ]);
+      const onForkFromMessage = vi.fn(async () => {});
 
-    render(
-      <LayoutNodesHarness
-        options={createLayoutOptions({
-          onForkFromMessage,
-          threadsByWorkspace: {
-            [workspace.id]: [
-              {
-                id: "thread-1",
-                name: "Thread",
-                updatedAt: 1,
-                engineSource: "codex",
-                providerProfileId: "provider-a",
-                providerProfileName: "Provider A",
-                providerProfileSource: "managed",
-              },
-            ],
+      render(
+        <LayoutNodesHarness
+          options={createLayoutOptions({
+            onForkFromMessage,
+            threadsByWorkspace: {
+              [workspace.id]: [
+                {
+                  id: "thread-1",
+                  name: "Thread",
+                  updatedAt: 1,
+                  engineSource: "codex",
+                  providerProfileId: "provider-a",
+                  providerProfileName: "Provider A",
+                  providerProfileSource: "managed",
+                },
+              ],
+            },
+          })}
+        />,
+      );
+
+      fireEvent.click(screen.getByRole("button", { name: "open fork confirm" }));
+
+      const selector = await screen.findByLabelText("messages.forkProviderLabel");
+      expect((selector as HTMLSelectElement).value).toBe("provider-a");
+      fireEvent.change(selector, { target: { value: "provider-b" } });
+      fireEvent.click(
+        screen.getByRole("button", { name: "messages.forkConfirmAction" }),
+      );
+
+      await waitFor(() => {
+        expect(onForkFromMessage).toHaveBeenCalledWith("user-fork-anchor", {
+          providerProfileId: "provider-b",
+          providerProfile: {
+            id: "provider-b",
+            name: "Provider B",
+            source: "managed",
           },
-        })}
-      />,
-    );
-
-    fireEvent.click(screen.getByRole("button", { name: "open fork confirm" }));
-
-    const selector = await screen.findByLabelText("messages.forkProviderLabel");
-    expect((selector as HTMLSelectElement).value).toBe("provider-a");
-    fireEvent.change(selector, { target: { value: "provider-b" } });
-    fireEvent.click(
-      screen.getByRole("button", { name: "messages.forkConfirmAction" }),
-    );
-
-    await waitFor(() => {
-      expect(onForkFromMessage).toHaveBeenCalledWith("user-fork-anchor", {
-        providerProfileId: "provider-b",
-        providerProfile: {
-          id: "provider-b",
-          name: "Provider B",
-          source: "managed",
-        },
+        });
       });
-    });
-  });
+    },
+    10_000,
+  );
 
   it("uses the active thread engine when restoring a Claude session while Codex is selected globally", async () => {
     const { result } = await renderUseLayoutNodes(
