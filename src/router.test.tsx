@@ -1,6 +1,6 @@
 /** @vitest-environment jsdom */
 import { render, screen } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 let windowLabel = "main";
 
@@ -31,6 +31,15 @@ vi.mock("./features/client-documentation/components/ClientDocumentationWindow", 
 import { AppRouter } from "./router";
 
 describe("AppRouter", () => {
+  beforeAll(async () => {
+    await Promise.all([
+      import("./features/about/components/AboutView"),
+      import("./features/files/components/DetachedFileExplorerWindow"),
+      import("./features/spec/components/DetachedSpecHubWindow"),
+      import("./features/client-documentation/components/ClientDocumentationWindow"),
+    ]);
+  });
+
   beforeEach(() => {
     windowLabel = "main";
   });

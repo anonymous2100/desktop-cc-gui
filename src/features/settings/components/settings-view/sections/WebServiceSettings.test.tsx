@@ -235,6 +235,9 @@ describe("WebServiceSettings", () => {
     const generateButton = await screen.findByRole("button", {
       name: "settings.webServiceGenerateToken",
     });
+    await waitFor(() => {
+      expect((generateButton as HTMLButtonElement).disabled).toBe(false);
+    });
     fireEvent.click(generateButton);
 
     await waitFor(() => {
