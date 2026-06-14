@@ -16,9 +16,9 @@ configure({ asyncUtilTimeout: 5000 });
 
 async function flushReactSuspenseMicrotasks() {
   await act(async () => {
-    await Promise.resolve();
-    await Promise.resolve();
-    await Promise.resolve();
+    for (let round = 0; round < 8; round += 1) {
+      await Promise.resolve();
+    }
   });
 }
 
