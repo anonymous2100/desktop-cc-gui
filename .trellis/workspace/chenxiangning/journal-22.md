@@ -431,3 +431,36 @@
 ### Next Steps
 
 - None - task complete
+
+
+## Session 838: 修复 WebService token 生成测试超时
+
+**Date**: 2026-06-14
+**Task**: 修复 WebService token 生成测试超时
+**Branch**: `feature/v0.5.9`
+
+### Summary
+
+修复 Linux CI 中 WebServiceSettings token 生成测试 5000ms timeout：将 token hex 生成抽成可注入 helper 并补纯函数测试，组件测试注入固定 generator，避免依赖 globalThis.crypto descriptor 和异步 UI 时序；同时把生成逻辑放入 try/catch 内，错误可进入组件错误状态。验证通过 focused WebService Vitest、CI 对应 settings 四文件组合、npm run typecheck、完整 npm run check:heavy-test-noise（670 test files，WebService 批次通过，act warnings 0，breachCount 0）。
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `556adfb7` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
