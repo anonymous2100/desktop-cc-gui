@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-22.md`
-- **Total Sessions**: 840
+- **Total Sessions**: 841
 - **Last Active**: 2026-06-14
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-22.md` | ~556 | Active |
+| `journal-22.md` | ~618 | Active |
 | `journal-21.md` | ~1970 | Archived |
 | `journal-20.md` | ~1997 | Archived |
 | `journal-19.md` | ~1989 | Archived |
@@ -50,6 +50,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 841 | 2026-06-14 | 稳定 Suspense host-task teardown | `d4fcbbee5422b68c7c42e4efc9ad6099fe9fcc85` | `feature/v0.5.9` |
 | 840 | 2026-06-14 | 稳定 heavy-test-noise Suspense teardown | `ce59b8118fe1a09adc22289298c9b98c6cec8de7` | `feature/v0.5.9` |
 | 839 | 2026-06-14 | 修复 fork provider 选择测试时序 | `8c3bc5fe` | `feature/v0.5.9` |
 | 838 | 2026-06-14 | 修复 WebService token 生成测试超时 | `556adfb7` | `feature/v0.5.9` |

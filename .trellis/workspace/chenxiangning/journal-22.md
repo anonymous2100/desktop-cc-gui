@@ -554,3 +554,65 @@
 ### Next Steps
 
 - None - task complete
+
+
+## Session 841: 稳定 Suspense host-task teardown
+
+**Date**: 2026-06-14
+**Task**: 稳定 Suspense host-task teardown
+**Branch**: `feature/v0.5.9`
+
+### Summary
+
+修复 heavy-test-noise 在 CI 上复发的 React 19 Suspense pingSuspendedRoot act warning。
+
+### Main Changes
+
+### Goal
+
+修复前一版 microtask-only teardown 在 CI 上仍复发的 `heavy-test-noise` failure：React 19 Suspense resource 在测试外完成加载，触发 `pingSuspendedRoot` / `act(...)` warning。
+
+### Root Cause
+
+上一版只在 `act(...)` 内增加 `Promise.resolve()` 轮数，只覆盖 microtask drain。CI 上 `React.lazy` / dynamic import / Suspense resource settlement 可能跨 host task，导致 resource ping 仍可能发生在测试 teardown 的 `act(...)` 边界外。
+
+### Changes
+
+- `src/test/vitest.setup.ts`
+  - 新增 `waitForReactHostTask()`，使用 `MessageChannel` 等待 host-task scheduled work；缺失 `MessageChannel` 时退回 resolved promise。
+  - 将 `flushReactSuspenseMicrotasks()` 改为 `flushReactSuspenseWork()`。
+  - 每轮在同一个 `act(...)` 边界内执行 microtask -> host task -> microtask。
+  - 保持 cleanup 前后各 flush 一次。
+- `.trellis/spec/frontend/quality-guidelines.md`
+  - 在 heavy-test-noise / runtime-heavy child 场景中沉淀 React 19 Suspense teardown 规则：不能只依赖 repeated `Promise.resolve()`，必须覆盖 host task。
+
+### Validation
+
+- `node node_modules/vitest/vitest.mjs run --maxWorkers 1 --minWorkers 1 src/router.test.tsx src/app-shell-parts/appShellLazyBoundaries.test.ts src/features/files/components/FileViewPanel.lazy-race.test.tsx`
+- `npm run typecheck`
+- `npm run check:heavy-test-noise`：completed 670 test files；act warnings 0；stdout/stderr payload lines 0。
+- `npm run lint`
+
+### Notes
+
+- 本次未全局静默 `console.error`，仍保留 heavy-test-noise 对真实 act/stderr/stdout regression 的捕获能力。
+- `src/templates/markdown/spec/` 在当前仓库不存在，因此 break-loop 文档同步没有可执行目标。
+
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `d4fcbbee5422b68c7c42e4efc9ad6099fe9fcc85` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
