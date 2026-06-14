@@ -285,3 +285,50 @@
 ### Next Steps
 
 - None - task complete
+
+
+## Session 834: 重新触发 heavy noise CI 验证
+
+**Date**: 2026-06-14
+**Task**: 重新触发 heavy noise CI 验证
+**Branch**: `feature/v0.5.9`
+
+### Summary
+
+(Add summary)
+
+### Main Changes
+
+目标：重新触发 heavy-test-noise CI，验证 macos-latest 上 Messages reasoning/render Suspense act warning 是否已消失。
+
+主要操作：
+- 本地已按 workflow 等价执行 parser tests：node --test scripts/check-heavy-test-noise.test.mjs scripts/test-batched.test.mjs，21/21 pass。
+- 本地已执行 npm run check:heavy-test-noise，670 test files 完成，act warnings 0，stdout/stderr payload 0。
+- 当前代码基线已包含 Messages.runtime-reconnect.test.tsx 与 Messages.reasoning-render.test.tsx 的 Markdown lazy runtime 隔离。
+- 创建空提交 7486cdfb test(ci): 重新触发 heavy noise 验证，用于触发 GitHub Actions 重新跑 CI。
+
+验证：
+- node --test scripts/check-heavy-test-noise.test.mjs scripts/test-batched.test.mjs：pass。
+- npm run check:heavy-test-noise：pass；.artifacts/heavy-test-noise.json status=pass, breachCount=0, actWarningCount=0。
+
+后续：
+- push 后观察 GitHub Actions heavy-test-noise-sentry 三平台结果。
+
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `7486cdfb` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
