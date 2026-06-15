@@ -616,3 +616,36 @@
 ### Next Steps
 
 - None - task complete
+
+
+## Session 842: 修复 Messages 测试 Suspense act 噪声
+
+**Date**: 2026-06-15
+**Task**: 修复 Messages 测试 Suspense act 噪声
+**Branch**: `bump-version-0.5.10`
+
+### Summary
+
+隔离 Messages 父组件测试中的 Markdown 懒加载运行时，消除 check:heavy-test-noise 中由 Suspense lazy import 触发的 React act warning；保留 Markdown 专项测试走真实组件。验证 npm run check:heavy-test-noise 通过，act warnings 为 0。
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `9f7002bf` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
