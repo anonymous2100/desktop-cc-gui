@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ask } from "@tauri-apps/plugin-dialog";
 import { useLayoutNodes } from "../features/layout/hooks/useLayoutNodes";
-import { MainHeaderActions } from "../features/app/components/MainHeaderActions";
+import { useMainHeaderActionItems } from "../features/app/components/MainHeaderActions";
 import { WorkspaceAliasPrompt } from "../features/workspaces/components/WorkspaceAliasPrompt";
 import { useClientUiVisibility } from "../features/client-ui-visibility/hooks/useClientUiVisibility";
 import { useProjectMapDataset } from "../features/project-map/hooks/useProjectMapDataset";
@@ -862,6 +862,32 @@ export function useAppShellLayoutNodesSection(
       alertError(error instanceof Error ? error.message : String(error));
     });
   }, [activeWorkspace?.name, activeWorkspaceId, alertError]);
+
+  const mainHeaderActions = useMainHeaderActionItems({
+    isCompact,
+    rightPanelCollapsed,
+    sidebarToggleProps: mainHeaderSidebarToggleProps,
+    showRuntimeConsoleButton:
+      !isCompact && clientUiVisibility.isControlVisible("topTool.runtimeConsole"),
+    isRuntimeConsoleVisible: runtimeRunState.runtimeConsoleVisible,
+    onToggleRuntimeConsole: handleToggleRuntimeConsole,
+    showTerminalButton:
+      !isCompact && clientUiVisibility.isControlVisible("topTool.terminal"),
+    isTerminalOpen: terminalOpen,
+    onToggleTerminal: handleToggleTerminalPanel,
+    showSoloButton:
+      soloModeEnabled && clientUiVisibility.isControlVisible("topTool.focus"),
+    isSoloMode,
+    onToggleSoloMode: toggleSoloMode,
+    isBrowserDockOpen: browserDockOpen,
+    onToggleBrowserDock: clientUiVisibility.isControlVisible("topTool.browserDock")
+      ? handleToggleBrowserDock
+      : undefined,
+    showClientDocumentationButton:
+      !isCompact &&
+      clientUiVisibility.isControlVisible("topTool.clientDocumentation"),
+    onOpenClientDocumentation: handleOpenClientDocumentation,
+  });
   const handleCloseBrowserDock = useCallback(() => {
     // Browser Agent now lives in its own tool window.
   }, []);
@@ -1402,42 +1428,7 @@ export function useAppShellLayoutNodesSection(
       onLaunchScriptDraftChange: launchScriptState.onDraftScriptChange,
       onSaveLaunchScript: launchScriptState.onSaveLaunchScript,
       launchScriptsState,
-      mainHeaderActionsNode: (
-        <MainHeaderActions
-          isCompact={isCompact}
-          rightPanelCollapsed={rightPanelCollapsed}
-          sidebarToggleProps={mainHeaderSidebarToggleProps}
-          showRuntimeConsoleButton={
-            !isCompact &&
-            clientUiVisibility.isControlVisible("topTool.runtimeConsole")
-          }
-          isRuntimeConsoleVisible={runtimeRunState.runtimeConsoleVisible}
-          onToggleRuntimeConsole={handleToggleRuntimeConsole}
-          showTerminalButton={
-            !isCompact &&
-            clientUiVisibility.isControlVisible("topTool.terminal")
-          }
-          isTerminalOpen={terminalOpen}
-          onToggleTerminal={handleToggleTerminalPanel}
-          showSoloButton={
-            soloModeEnabled &&
-            clientUiVisibility.isControlVisible("topTool.focus")
-          }
-          isSoloMode={isSoloMode}
-          onToggleSoloMode={toggleSoloMode}
-          isBrowserDockOpen={browserDockOpen}
-          onToggleBrowserDock={
-            clientUiVisibility.isControlVisible("topTool.browserDock")
-              ? handleToggleBrowserDock
-              : undefined
-          }
-          showClientDocumentationButton={
-            !isCompact &&
-            clientUiVisibility.isControlVisible("topTool.clientDocumentation")
-          }
-          onOpenClientDocumentation={handleOpenClientDocumentation}
-        />
-      ),
+      mainHeaderActions,
       filePanelMode,
       onFilePanelModeChange: setFilePanelMode,
       liveEditPreviewEnabled,
