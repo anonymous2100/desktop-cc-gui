@@ -688,3 +688,48 @@
 ### Next Steps
 
 - None - task complete
+
+
+## Session 844: 修复 Composer 文件引用深层路径搜索
+
+**Date**: 2026-06-16
+**Task**: 修复 Composer 文件引用深层路径搜索
+**Branch**: `feature/v0.5.10`
+
+### Summary
+
+修复 Composer @ 文件引用无路径查询无法命中深层文件的问题，回写 OpenSpec contract 并完成 focused tests/typecheck/lint/OpenSpec 验证。
+
+### Main Changes
+
+## 本次工作
+- 修复 `ChatInputBoxAdapter.fileCompletionProvider` 的候选源分层问题：无 `/` 查询先匹配 root candidates，不足时按 workspace 缓存并搜索 full workspace snapshot。
+- 保留 `@dir/query` scoped 查询的 lazy directory-children lookup，避免破坏文件树 progressive loading 性能边界。
+- 同步 `useComposerAutocompleteState` 的 legacy/parent autocomplete 语义，避免父层 suggestionsOpen 与真实 dropdown 语义漂移。
+- 回写 `composer-file-reference-index-availability` main spec 与历史 proposal closure，记录 nested workspace path search contract。
+
+## 验证
+- `npx vitest run src/features/composer/components/ChatInputBox/ChatInputBoxAdapter.test.tsx src/features/composer/hooks/useComposerAutocompleteState.test.tsx`
+- `npm run typecheck`
+- `npm run lint`
+- `openspec validate --all --strict --no-interactive`
+- `git diff --check`
+
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `3f08861b` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
