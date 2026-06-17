@@ -1,6 +1,6 @@
 {
   "schemaVersion": "1.0",
-  "generatedAt": "2026-06-17T15:44:05.020Z",
+  "generatedAt": "2026-06-17T16:11:17.348Z",
   "source": "realtime-extended",
   "metrics": [
     {
@@ -25,7 +25,7 @@
     {
       "scenario": "S-RS-PE",
       "metric": "assemblerLatency",
-      "value": 4.59,
+      "value": 4.21,
       "unit": "ms",
       "notes": "replay reducer-path proxy latency"
     },
@@ -39,7 +39,7 @@
     {
       "scenario": "S-RS-RA",
       "metric": "reducerAmplificationMedian",
-      "value": 4,
+      "value": 1.33,
       "unit": "ratio",
       "notes": "reducer commit count / delta count (median across completed turns)"
     },

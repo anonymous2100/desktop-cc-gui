@@ -7,6 +7,7 @@ import {
   completeTurnTrace,
   isTurnTraceEnabled,
   noteTurnBatchFlushBoundary,
+  noteTurnDeltaIngress,
   noteTurnFirstEngineDeltaIngress,
   noteTurnFirstVisibleRowRender,
   noteTurnFirstVisibleTextGrowth,
@@ -403,7 +404,9 @@ function getStreamLatencyThresholds() {
 
 export function isStreamLatencyTraceEnabled() {
   if (streamLatencyTraceEnabledCache === null) {
-    streamLatencyTraceEnabledCache = readBooleanDebugFlag(STREAM_LATENCY_TRACE_FLAG_KEY);
+    const env = (import.meta.env ?? {}) as Record<string, string | boolean | undefined>;
+    streamLatencyTraceEnabledCache = readBooleanDebugFlag(STREAM_LATENCY_TRACE_FLAG_KEY)
+      || (env.MODE !== "test" && (env.DEV === true || env.VITE_ENABLE_PERF_BASELINE === "1"));
   }
   return streamLatencyTraceEnabledCache;
 }
@@ -1077,6 +1080,8 @@ export function noteThreadDeltaReceived(
         : undefined;
       if (wasFirstDeltaPending) {
         noteTurnFirstEngineDeltaIngress(dimensions, timestamp);
+      } else {
+        noteTurnDeltaIngress(dimensions, timestamp);
       }
       noteTurnReducerCommit({
         dimensions,

@@ -121,6 +121,14 @@ function readBooleanFlag(key: string): boolean {
   }
 }
 
+function isDevOrPerfTraceEnabled(): boolean {
+  const env = (import.meta.env ?? {}) as Record<string, string | boolean | undefined>;
+  if (env.MODE === "test") {
+    return false;
+  }
+  return env.DEV === true || env.VITE_ENABLE_PERF_BASELINE === "1";
+}
+
 function isTraceEnabled(): boolean {
   if (forcedOn) {
     return true;
@@ -129,7 +137,8 @@ function isTraceEnabled(): boolean {
     return cachedTraceEnabled;
   }
   cachedTraceEnabled = readBooleanFlag(STREAM_LATENCY_TRACE_FLAG_KEY)
-    || readBooleanFlag(TURN_TRACE_GATE_KEY);
+    || readBooleanFlag(TURN_TRACE_GATE_KEY)
+    || isDevOrPerfTraceEnabled();
   return cachedTraceEnabled;
 }
 
@@ -380,12 +389,16 @@ function recordMilestone(
   const traceId = generateTraceId(dimensions);
   const existing = turns.get(traceId);
   const baseSummary = existing?.summary ?? ensureTurn(dimensions, atMs);
+  const milestoneAtMs =
+    name === "first-engine-delta-ingress" && baseSummary.milestones[name] !== undefined
+      ? baseSummary.milestones[name]
+      : atMs;
   const summary: TurnTraceSummary = {
     ...baseSummary,
     dimensions: { ...baseSummary.dimensions, ...dimensions },
     milestones: {
       ...baseSummary.milestones,
-      [name]: atMs,
+      [name]: milestoneAtMs,
     },
     counters: { ...baseSummary.counters },
   };
@@ -421,6 +434,13 @@ export function noteTurnRuntimeProcessStarted(
 }
 
 export function noteTurnFirstEngineDeltaIngress(
+  dimensions: TurnTraceDimensions,
+  atMs: number = nowMs(),
+) {
+  noteTurnDeltaIngress(dimensions, atMs);
+}
+
+export function noteTurnDeltaIngress(
   dimensions: TurnTraceDimensions,
   atMs: number = nowMs(),
 ) {
@@ -475,9 +495,9 @@ export function noteTurnReducerCommit(input: {
     atMs,
     (counters) => {
       counters.reducerCommitCount += 1;
-      // deltaCount is incremented by noteTurnFirstEngineDeltaIngress (once per
-      // first-delta event) so the amplification ratio = reducerCommitCount / deltaCount
-      // reflects "reducer work per unique delta stream".
+      // deltaCount is incremented by noteTurnDeltaIngress for every content
+      // delta. The amplification ratio therefore reflects reducer work per
+      // actual runtime delta, not per first-token stream.
       if (input.isReasoningDelta) {
         counters.reasoningDeltaCount += 1;
       }

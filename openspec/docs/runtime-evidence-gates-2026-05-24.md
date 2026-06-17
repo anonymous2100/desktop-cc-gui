@@ -1,6 +1,6 @@
 # Runtime Evidence Gate Governance Report
 
-Generated at: 2026-06-17T15:45:18.383Z
+Generated at: 2026-06-17T16:22:58.800Z
 
 ## Archive Readiness
 

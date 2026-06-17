@@ -1,4 +1,5 @@
 import { execFileSync } from "node:child_process";
+import { existsSync } from "node:fs";
 import { mkdtemp, rm, writeFile, readFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -32,11 +33,36 @@ type RuntimeEvidenceMetric = {
 
 const schemaVersion = "1.0";
 const outputPath = getArgValue("--output") ?? "docs/perf/v0511-runtime-evidence.json";
+const defaultDiagnosticsPath = ".artifacts/realtime-runtime-diagnostics.json";
+const diagnosticsPath = resolveDiagnosticsPath(getArgValue("--diagnostics"));
 const burstDeltaCount = 1000;
 const fixtureDurationSec = 1;
 const longTaskThresholdMs = 50;
 const fileIoFixtureBytes = 10 * 1024 * 1024;
 const fileIoIterations = 5;
+const measuredMetricUnits = new Map([
+  ["S-IO-RR/prepareThreadItems_calls_per_1000_delta", "count"],
+  ["S-IO-RR/realtime_reducer_dispatches_per_1000_delta", "count"],
+  ["S-IO-RR/thread_reducer_flush_ms_p95", "ms"],
+  ["S-IO-RR/realtime_delta_route_ms_p95", "ms"],
+  ["S-IO-AS/app_server_event_raw_per_sec", "events/sec"],
+  ["S-IO-AS/app_server_event_ipc_emit_per_sec", "events/sec"],
+  ["S-IO-AS/app_server_event_route_ms_p95", "ms"],
+  ["S-IO-AS/realtime_reducer_dispatches_per_1000_delta", "count"],
+  ["S-IO-AS/main_thread_long_task_count_during_stream", "count"],
+  ["S-IO-FC/fs_event_raw_per_sec", "events/sec"],
+  ["S-IO-FC/fs_event_emitted_per_sec", "events/sec"],
+  ["S-IO-FC/fs_event_same_path_coalesce_ratio", "ratio"],
+  ["S-IO-FC/fs_event_empty_batch_emit_count", "count"],
+  ["S-IO-FS/file_io_command_wall_ms_p95", "ms"],
+  ["S-IO-FS/file_io_async_worker_stall_ms_p95", "ms"],
+  ["S-IO-FS/file_io_blocking_pool_call_count", "count"],
+  ["S-IO-FS/tauri_command_during_stream_ms_p95", "ms"],
+  ["S-IO-FP/composer_render_count_per_streaming_minute", "count"],
+  ["S-IO-FP/sidebar_render_count_per_streaming_minute", "count"],
+  ["S-IO-FP/thread_row_rerender_count_per_1000_delta", "count"],
+  ["S-IO-FP/layout_nodes_recompute_count_per_1000_delta", "count"],
+]);
 
 function gitValue(args: string[], fallback: string) {
   try {
@@ -73,6 +99,231 @@ function metric(input: {
     notes: input.notes,
     unsupportedReason: input.unsupportedReason,
   };
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function toFiniteNonNegativeNumber(value: unknown) {
+  const numberValue = Number(value);
+  return Number.isFinite(numberValue) && numberValue >= 0
+    ? Number(numberValue.toFixed(3))
+    : null;
+}
+
+function toBoundedNotes(value: unknown) {
+  return typeof value === "string" && value.trim()
+    ? value.trim().slice(0, 200)
+    : undefined;
+}
+
+function resolveDiagnosticsPath(rawPath: string | null) {
+  if (rawPath === "none" || rawPath === "off" || rawPath === "false") {
+    return null;
+  }
+  if (rawPath) {
+    return rawPath;
+  }
+  return existsSync(defaultDiagnosticsPath) ? defaultDiagnosticsPath : null;
+}
+
+function collectDiagnosticEntries(input: unknown): Array<Record<string, unknown>> {
+  if (Array.isArray(input)) {
+    return input.filter(isRecord);
+  }
+  if (!isRecord(input)) {
+    return [];
+  }
+  for (const key of ["entries", "diagnostics", "rendererDiagnostics", "rendererLifecycleLog"]) {
+    if (Array.isArray(input[key])) {
+      return input[key].filter(isRecord);
+    }
+  }
+  const app = input.app;
+  if (isRecord(app)) {
+    const diagnostics = app.diagnostics;
+    if (isRecord(diagnostics) && Array.isArray(diagnostics.rendererLifecycleLog)) {
+      return diagnostics.rendererLifecycleLog.filter(isRecord);
+    }
+  }
+  return [];
+}
+
+function measuredMetricFromDiagnostic(entry: Record<string, unknown>, sourcePath: string): RuntimeEvidenceMetric | null {
+  if (entry.label !== "perf.v0511.runtime-evidence" || !isRecord(entry.payload)) {
+    return null;
+  }
+  const payload = entry.payload;
+  const scenario = typeof payload.scenario === "string" ? payload.scenario : null;
+  const name = typeof payload.metric === "string" ? payload.metric : null;
+  if (!scenario || !name) {
+    return null;
+  }
+  const metricKey = `${scenario}/${name}`;
+  const expectedUnit = measuredMetricUnits.get(metricKey);
+  if (!expectedUnit) {
+    return null;
+  }
+  const value = toFiniteNonNegativeNumber(payload.value);
+  if (value === null) {
+    return null;
+  }
+  const unit = typeof payload.unit === "string" && payload.unit === expectedUnit
+    ? payload.unit
+    : expectedUnit;
+  return metric({
+    scenario,
+    name,
+    value,
+    unit,
+    evidenceClass: "measured",
+    notes:
+      toBoundedNotes(payload.notes) ??
+      `Measured Tauri/WebView runtime diagnostic from ${sourcePath}.`,
+  });
+}
+
+function readNestedNumber(payload: Record<string, unknown>, group: string, field: string) {
+  const nested = payload[group];
+  if (!isRecord(nested)) {
+    return null;
+  }
+  return toFiniteNonNegativeNumber(nested[field]);
+}
+
+function measuredReducerDispatchesPer1000Delta(
+  payload: Record<string, unknown>,
+  sourcePath: string,
+) {
+  const deltaCount = readNestedNumber(payload, "counters", "deltaCount");
+  const reducerCommitCount = readNestedNumber(payload, "counters", "reducerCommitCount");
+  if (deltaCount === null || deltaCount <= 0 || reducerCommitCount === null) {
+    return null;
+  }
+  return metric({
+    scenario: "S-IO-RR",
+    name: "realtime_reducer_dispatches_per_1000_delta",
+    value: Number(((reducerCommitCount / deltaCount) * 1000).toFixed(3)),
+    unit: "count",
+    evidenceClass: "measured",
+    notes:
+      `Measured realtime.turnTrace.summary reducerCommitCount/deltaCount from ${sourcePath}.`,
+  });
+}
+
+function measuredMetricsFromTurnTrace(entry: Record<string, unknown>, sourcePath: string) {
+  if (entry.label !== "realtime.turnTrace.summary" || !isRecord(entry.payload)) {
+    return [];
+  }
+  const payload = entry.payload;
+  if (payload.evidenceClass !== "measured") {
+    return [];
+  }
+  const rows: RuntimeEvidenceMetric[] = [];
+  const reducerDispatchesPer1000Delta = measuredReducerDispatchesPer1000Delta(
+    payload,
+    sourcePath,
+  );
+  if (reducerDispatchesPer1000Delta) {
+    rows.push(reducerDispatchesPer1000Delta);
+  }
+  const firstDeltaToBatchFlushEndMs = readNestedNumber(
+    payload,
+    "deltas",
+    "firstDeltaToBatchFlushEndMs",
+  );
+  if (firstDeltaToBatchFlushEndMs !== null) {
+    rows.push(metric({
+      scenario: "S-IO-RR",
+      name: "realtime_delta_route_ms_p95",
+      value: firstDeltaToBatchFlushEndMs,
+      unit: "ms",
+      evidenceClass: "measured",
+      notes:
+        `Measured realtime.turnTrace.summary firstDeltaToBatchFlushEndMs from ${sourcePath}.`,
+    }));
+  }
+  const batchFlushEndToReducerCommitMs = readNestedNumber(
+    payload,
+    "deltas",
+    "batchFlushEndToReducerCommitMs",
+  );
+  if (batchFlushEndToReducerCommitMs !== null) {
+    rows.push(metric({
+      scenario: "S-IO-RR",
+      name: "thread_reducer_flush_ms_p95",
+      value: batchFlushEndToReducerCommitMs,
+      unit: "ms",
+      evidenceClass: "measured",
+      notes:
+        `Measured realtime.turnTrace.summary batchFlushEndToReducerCommitMs from ${sourcePath}.`,
+    }));
+  }
+  const batchFlushDurationAvgMs = readNestedNumber(
+    payload,
+    "counters",
+    "batchFlushDurationAvgMs",
+  );
+  if (batchFlushDurationAvgMs !== null) {
+    rows.push(metric({
+      scenario: "S-IO-AS",
+      name: "app_server_event_route_ms_p95",
+      value: batchFlushDurationAvgMs,
+      unit: "ms",
+      evidenceClass: "measured",
+      notes:
+        `Measured realtime.turnTrace.summary batchFlushDurationAvgMs from ${sourcePath}.`,
+    }));
+  }
+  return rows;
+}
+
+async function buildMeasuredMetricsFromDiagnostics(path: string | null) {
+  if (!path || !existsSync(path)) {
+    return [];
+  }
+  const input = JSON.parse(await readFile(path, "utf-8")) as unknown;
+  const valuesByKey = new Map<string, RuntimeEvidenceMetric[]>();
+  const addMeasured = (measured: RuntimeEvidenceMetric | null) => {
+    if (!measured) {
+      return;
+    }
+    const key = `${measured.scenario}/${measured.metric}`;
+    valuesByKey.set(key, [...(valuesByKey.get(key) ?? []), measured]);
+  };
+  for (const entry of collectDiagnosticEntries(input)) {
+    addMeasured(measuredMetricFromDiagnostic(entry, path));
+    for (const measured of measuredMetricsFromTurnTrace(entry, path)) {
+      addMeasured(measured);
+    }
+  }
+  return [...valuesByKey.values()].map((rows) => {
+    const lastRow = rows[rows.length - 1];
+    const values = rows
+      .map((row) => row.value)
+      .filter((value): value is number => value !== null);
+    return {
+      ...lastRow,
+      value: percentile(values, 0.95),
+      notes: `${lastRow?.notes ?? "Measured runtime diagnostic."} sampleCount=${values.length}`,
+    } as RuntimeEvidenceMetric;
+  });
+}
+
+function mergeMeasuredMetrics(
+  proxyMetrics: RuntimeEvidenceMetric[],
+  measuredMetrics: RuntimeEvidenceMetric[],
+) {
+  if (measuredMetrics.length === 0) {
+    return proxyMetrics;
+  }
+  const measuredByKey = new Map(
+    measuredMetrics.map((entry) => [`${entry.scenario}/${entry.metric}`, entry]),
+  );
+  return proxyMetrics.map((entry) =>
+    measuredByKey.get(`${entry.scenario}/${entry.metric}`) ?? entry
+  );
 }
 
 function processingEngineState(threadId: string, items: ConversationItem[]): ThreadState {
@@ -433,6 +684,15 @@ function buildFrontendPropChainMetrics() {
 }
 
 async function main() {
+  const measuredMetrics = await buildMeasuredMetricsFromDiagnostics(diagnosticsPath);
+  const proxyMetrics = [
+    ...buildRealtimeInputRenderMetrics(),
+    ...buildAppServerBatchMetrics(),
+    ...buildFileChangeDebounceMetrics(),
+    ...await buildBackendFileIoMetrics(),
+    ...buildFrontendPropChainMetrics(),
+  ];
+  const metrics = mergeMeasuredMetrics(proxyMetrics, measuredMetrics);
   const fragment = {
     schemaVersion,
     generatedAt: new Date().toISOString(),
@@ -441,15 +701,12 @@ async function main() {
       branch: gitValue(["rev-parse", "--abbrev-ref", "HEAD"], "unknown"),
       commit: gitValue(["rev-parse", "HEAD"], "unknown"),
     },
-    metrics: [
-      ...buildRealtimeInputRenderMetrics(),
-      ...buildAppServerBatchMetrics(),
-      ...buildFileChangeDebounceMetrics(),
-      ...await buildBackendFileIoMetrics(),
-      ...buildFrontendPropChainMetrics(),
-    ],
+    metrics,
     notes: [
       "Proxy rows are deterministic fixture evidence, not release-grade desktop runtime proof.",
+      diagnosticsPath
+        ? `Measured diagnostics input: ${diagnosticsPath}; accepted measuredMetricCount=${measuredMetrics.length}.`
+        : "Measured diagnostics input was not provided; proxy rows remain the active evidence.",
       "Unsupported rows are intentionally preserved when the current repository lacks a trustworthy producer.",
       "S-IO-FS and S-IO-FP proxy rows are content-safe fixture evidence; native Tauri/WebView capture remains the release-grade follow-up.",
     ],

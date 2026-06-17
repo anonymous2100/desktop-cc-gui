@@ -1,44 +1,44 @@
 {
   "schemaVersion": "1.0",
-  "generatedAt": "2026-06-17T04:12:24.041Z",
+  "generatedAt": "2026-06-17T16:22:45.873Z",
   "source": "realtime-runtime",
   "metrics": [
     {
       "scenario": "S-RS-VL",
       "metric": "visibleTextLagP95",
-      "value": 35,
+      "value": null,
       "unit": "ms",
-      "evidenceClass": "measured",
-      "notes": "measured runtime turn trace from .artifacts/realtime-runtime-diagnostics.json"
+      "evidenceClass": "unsupported",
+      "unsupportedReason": "No measured realtime.turnTrace.summary diagnostics were found. Enable turn trace in a Tauri/webview session and export renderer diagnostics."
     },
     {
       "scenario": "S-RS-RA",
       "metric": "reducerAmplificationMedian",
-      "value": 3,
+      "value": null,
       "unit": "ratio",
-      "evidenceClass": "measured",
-      "notes": "measured runtime turn trace from .artifacts/realtime-runtime-diagnostics.json"
+      "evidenceClass": "unsupported",
+      "unsupportedReason": "No measured realtime.turnTrace.summary diagnostics were found. Enable turn trace in a Tauri/webview session and export renderer diagnostics."
     },
     {
       "scenario": "S-RS-FD",
       "metric": "batchFlushDurationP95",
-      "value": 14,
+      "value": null,
       "unit": "ms",
-      "evidenceClass": "measured",
-      "notes": "measured runtime turn trace from .artifacts/realtime-runtime-diagnostics.json"
+      "evidenceClass": "unsupported",
+      "unsupportedReason": "No measured realtime.turnTrace.summary diagnostics were found. Enable turn trace in a Tauri/webview session and export renderer diagnostics."
     },
     {
       "scenario": "S-RS-TS",
       "metric": "terminalSettlementP95",
-      "value": 70,
+      "value": null,
       "unit": "ms",
-      "evidenceClass": "measured",
-      "notes": "measured runtime turn trace from .artifacts/realtime-runtime-diagnostics.json"
+      "evidenceClass": "unsupported",
+      "unsupportedReason": "No measured realtime.turnTrace.summary diagnostics were found. Enable turn trace in a Tauri/webview session and export renderer diagnostics."
     }
   ],
   "notes": [
     "input=.artifacts/realtime-runtime-diagnostics.json",
-    "measuredSummaryCount=2",
+    "measuredSummaryCount=0",
     "contentSafety=ids, durations, counters, and dimensions only; no prompt, assistant text, tool output, or file content"
   ]
 }

@@ -84,3 +84,50 @@ The remaining unsupported rows require real Tauri/WebView or long-running proces
 - Cold-start timing values were not invented; the existing startup marker path remains the only way to upgrade timing to measured.
 - Realtime route timing, app-server route timing, backend file I/O timing, and frontend render-count hardening are now covered by proxy producers and a producer contract test.
 - These proxy producers do not claim release-grade desktop runtime proof; native Tauri/WebView capture remains the next evidence upgrade.
+
+## Measured Diagnostics Upgrade
+
+- Added `--diagnostics=<path>` support to `scripts/perf-v0511-runtime-evidence.ts`.
+- Without an explicit path, the producer now reads `.artifacts/realtime-runtime-diagnostics.json` when present; use `--diagnostics=none` to force proxy-only regression output.
+- Accepted measured rows are limited to the v0.5.11 S-IO whitelist and require numeric non-negative values.
+- Explicit `perf.v0511.runtime-evidence` diagnostics can promote individual rows from `proxy` to `measured`.
+- Existing `realtime.turnTrace.summary` diagnostics with `evidenceClass: "measured"` now promote:
+  - `S-IO-RR/realtime_reducer_dispatches_per_1000_delta` from `counters.reducerCommitCount / counters.deltaCount * 1000`
+  - `S-IO-RR/realtime_delta_route_ms_p95` from `deltas.firstDeltaToBatchFlushEndMs`
+  - `S-IO-RR/thread_reducer_flush_ms_p95` from `deltas.batchFlushEndToReducerCommitMs`
+  - `S-IO-AS/app_server_event_route_ms_p95` from `counters.batchFlushDurationAvgMs`
+- Malformed, negative, or non-whitelisted diagnostics are ignored; prompt/body/tool text is not copied into the evidence fragment.
+- The current local `.artifacts/realtime-runtime-diagnostics.json` promotes two measured S-IO rows:
+  - `S-IO-RR/realtime_reducer_dispatches_per_1000_delta = 4000`
+  - `S-IO-AS/app_server_event_route_ms_p95 = 14ms`
+- `deltas.firstDeltaToFirstVisibleTextMs` remains a visible-lag field and is intentionally not mapped to the route/flush S-IO metrics.
+
+Example:
+
+```bash
+npm run perf:v0511-runtime-evidence
+npm run check:runtime-evidence-gates
+```
+
+## Turn Trace Delta-Count Calibration
+
+- Root cause found in current code: `noteTurnFirstEngineDeltaIngress` incremented `deltaCount` only for the first delta, while `noteTurnReducerCommit` incremented for every reducer commit. This made `reducerAmplification = reducerCommitCount / deltaCount` describe commits per first-token stream, not commits per runtime delta.
+- Added `noteTurnDeltaIngress` and wired it into:
+  - `src/features/threads/utils/streamLatencyDiagnostics.ts`
+  - `src/features/threads/contracts/realtimeTurnTraceReplay.ts`
+- The first-delta milestone remains stable; later delta ingress events increment `deltaCount` without overwriting `first-engine-delta-ingress`.
+- Reproducible proxy replay result after the calibration:
+  - `docs/perf/realtime-turn-trace.json`: `reducerAmplificationMedian` changed from `4` to `1.33`.
+  - `docs/perf/realtime-extended-baseline.json`: `S-RS-RA/reducerAmplificationMedian` changed from `4` to `1.33`.
+- `.artifacts/realtime-runtime-diagnostics.json` is gitignored local runtime state. If it was exported before this calibration, rerun the app trace before treating its measured `deltaCount` / `reducerCommitCount` values as post-fix evidence.
+
+## Renderer Diagnostics Export Calibration
+
+- Added `scripts/perf-export-renderer-diagnostics.mjs` and `npm run perf:renderer-diagnostics:export`.
+- The script reads `~/.ccgui/client/app.json`, extracts `diagnostics.rendererLifecycleLog`, and writes `.artifacts/realtime-runtime-diagnostics.json`.
+- Current post-restart app store fact:
+  - `~/.ccgui/client/app.json` updated at `2026-06-18 00:20:27`.
+  - Exported renderer diagnostic entries: `1200`.
+  - Exported `realtime.turnTrace.summary` entries: `0`.
+- Because the just-run app conversation did not have turn trace enabled, `docs/perf/realtime-runtime-evidence.json` now correctly reports `measuredSummaryCount=0` instead of reusing the stale fixture artifact.
+- `turnTraceCorrelation.ts` and `streamLatencyDiagnostics.ts` now auto-enable bounded trace in Vite dev or `VITE_ENABLE_PERF_BASELINE=1`, while keeping test mode default-off. The next dev/hot app conversation after this code is loaded should produce fresh `realtime.turnTrace.summary` rows without requiring DevTools localStorage setup.

@@ -1,10 +1,10 @@
 {
   "schemaVersion": "1.0",
-  "generatedAt": "2026-06-17T15:44:06.247Z",
+  "generatedAt": "2026-06-17T16:22:47.009Z",
   "source": "v0511-runtime-evidence",
   "git": {
     "branch": "feature/v0.5.11",
-    "commit": "f4e20aeda4d65badc2e7dd4cad14a00f3f4e59bd"
+    "commit": "7706f6270784efed25e8aa28e992b5d8b6d88d3f"
   },
   "metrics": [
     {
@@ -26,7 +26,7 @@
     {
       "scenario": "S-IO-RR",
       "metric": "thread_reducer_flush_ms_p95",
-      "value": 0.025,
+      "value": 0.027,
       "unit": "ms",
       "evidenceClass": "proxy",
       "notes": "Proxy timing from the same reducer-only 1000-delta fixture; not a browser frame/render measurement."
@@ -114,7 +114,7 @@
     {
       "scenario": "S-IO-FS",
       "metric": "file_io_command_wall_ms_p95",
-      "value": 12.892,
+      "value": 5.75,
       "unit": "ms",
       "evidenceClass": "proxy",
       "notes": "Proxy Node async fs fixture: 10MB write+read wall-time P95; Tauri command timing remains release follow-up."
@@ -122,7 +122,7 @@
     {
       "scenario": "S-IO-FS",
       "metric": "file_io_async_worker_stall_ms_p95",
-      "value": 0.248,
+      "value": 0.183,
       "unit": "ms",
       "evidenceClass": "proxy",
       "notes": "Proxy event-loop stall probe sampled with setImmediate during async 10MB write+read fixture."
@@ -138,7 +138,7 @@
     {
       "scenario": "S-IO-FS",
       "metric": "tauri_command_during_stream_ms_p95",
-      "value": 12.892,
+      "value": 5.75,
       "unit": "ms",
       "evidenceClass": "proxy",
       "notes": "Proxy wall-time reused for the content-safe file I/O fixture; not a live Tauri command measurement."
@@ -178,6 +178,7 @@
   ],
   "notes": [
     "Proxy rows are deterministic fixture evidence, not release-grade desktop runtime proof.",
+    "Measured diagnostics input: .artifacts/realtime-runtime-diagnostics.json; accepted measuredMetricCount=0.",
     "Unsupported rows are intentionally preserved when the current repository lacks a trustworthy producer.",
     "S-IO-FS and S-IO-FP proxy rows are content-safe fixture evidence; native Tauri/WebView capture remains the release-grade follow-up."
   ]

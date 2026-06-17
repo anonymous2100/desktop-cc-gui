@@ -16,6 +16,7 @@ import {
   isTurnTraceEnabled,
   listTurnTraceSummaries,
   noteTurnBatchFlushBoundary,
+  noteTurnDeltaIngress,
   noteTurnFirstEngineDeltaIngress,
   noteTurnFirstVisibleRowRender,
   noteTurnFirstVisibleTextGrowth,
@@ -229,9 +230,11 @@ describe("turnTraceCorrelation", () => {
     expect(listTurnTraceSummaries()).toEqual([]);
   });
 
-  it("accumulates reducer amplification across multiple commits", () => {
+  it("counts every delta ingress without overwriting the first-delta milestone", () => {
     noteTurnSendCommitted(baseDimensions, 0);
     noteTurnFirstEngineDeltaIngress(baseDimensions, 10);
+    noteTurnDeltaIngress(baseDimensions, 20);
+    noteTurnDeltaIngress(baseDimensions, 25);
     noteTurnReducerCommit({ dimensions: baseDimensions, atMs: 15, isAssistantDelta: true });
     noteTurnReducerCommit({ dimensions: baseDimensions, atMs: 20, isAssistantDelta: true });
     noteTurnReducerCommit({ dimensions: baseDimensions, atMs: 25, isAssistantDelta: true });
@@ -240,9 +243,11 @@ describe("turnTraceCorrelation", () => {
     completeTurnTrace(baseDimensions, { atMs: 100, reason: "completed" });
     const summary = getTurnTraceSummary("thread-1", "turn-1") as TurnTraceSummary;
     expect(summary.counters.reducerCommitCount).toBe(3);
-    expect(summary.counters.deltaCount).toBe(1);
-    // 3 commits / 1 delta = 3
-    expect(summary.counters.reducerAmplification).toBe(3);
+    expect(summary.counters.deltaCount).toBe(3);
+    expect(summary.milestones["first-engine-delta-ingress"]).toBe(10);
+    // 3 commits / 3 deltas = 1
+    expect(summary.counters.reducerAmplification).toBe(1);
+    expect(summary.deltas.firstDeltaToFirstVisibleTextMs).toBe(25);
   });
 
   it("emits renderer diagnostic payload that is content-safe and bounded", () => {

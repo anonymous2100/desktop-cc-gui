@@ -93,6 +93,48 @@ describe("streamLatencyDiagnostics", () => {
     expect(summary.milestones["runtime-process-started"]).toBe(1_000);
   });
 
+  it("feeds every received delta into turn trace amplification counters", async () => {
+    vi.stubGlobal("window", {
+      localStorage: {
+        getItem: (key: string) =>
+          key === "ccgui.debug.turnTrace.enabled" ? "1" : null,
+      },
+    });
+
+    await primeThreadStreamLatencyContext({
+      workspaceId: "ws-1",
+      threadId: "thread-trace-deltas",
+      engine: "claude",
+      model: "claude-sonnet-4.5",
+    });
+    noteThreadTurnStarted({
+      workspaceId: "ws-1",
+      threadId: "thread-trace-deltas",
+      turnId: "turn-trace-deltas",
+      startedAt: 1_000,
+    });
+
+    noteThreadDeltaReceived("thread-trace-deltas", 1_100, {
+      source: "delta",
+      itemId: "assistant-1",
+      textLength: 4,
+    });
+    noteThreadDeltaReceived("thread-trace-deltas", 1_130, {
+      source: "delta",
+      itemId: "assistant-1",
+      textLength: 6,
+    });
+
+    const summary = getTurnTraceSummary(
+      "thread-trace-deltas",
+      "turn-trace-deltas",
+    ) as TurnTraceSummary;
+    expect(summary.counters.deltaCount).toBe(2);
+    expect(summary.counters.reducerCommitCount).toBe(2);
+    expect(summary.counters.reducerAmplification).toBe(1);
+    expect(summary.milestones["first-engine-delta-ingress"]).toBe(1_100);
+  });
+
   it("activates the Qwen Windows mitigation only after render amplification evidence appears", async () => {
     mocks.isWindowsPlatform.mockReturnValue(true);
     mocks.getCurrentClaudeConfig.mockResolvedValue({
