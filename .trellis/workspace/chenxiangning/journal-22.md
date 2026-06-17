@@ -1087,3 +1087,51 @@
 ### Next Steps
 
 - None - task complete
+
+
+## Session 853: 补齐稳定性归档文档
+
+**Date**: 2026-06-17
+**Task**: 补齐稳定性归档文档
+**Branch**: `feature/v0.5.10`
+
+### Summary
+
+补齐已归档稳定性 proposals 的 What Changes，并更新主 specs 的 Purpose，消除 archive 后 TBD 与 proposal section warning。
+
+### Main Changes
+
+- 为 `chat-stream-render-isolation-2026-06` archived proposal 增加 `## What Changes`,总结 reducer fast path、streaming virtualization、complexity delta、workspace-scoped refs、TTL cleanup、proxy budget/evidence deferral。
+- 为 `stabilize-long-running-client-runtime-2026-06` archived proposal 增加 `## What Changes`,总结 child process parity、active process diagnostics、stale diagnostics、long-list virtualization、Markdown worker lifecycle、S-LR evidence deferral。
+- 更新 5 个主 specs 的 Purpose,替换归档后残留的 `TBD - created by archiving change ...`:
+  - `topbar-render-isolation`
+  - `app-shell-domain-context-isolation`
+  - `long-list-virtualization-performance`
+  - `markdown-parse-pipeline`
+  - `runtime-performance-evidence-gates`
+
+验证：
+- `openspec validate topbar-render-isolation --strict --no-interactive` pass
+- `openspec validate app-shell-domain-context-isolation --strict --no-interactive` pass
+- `openspec validate long-list-virtualization-performance --strict --no-interactive` pass
+- `openspec validate markdown-parse-pipeline --strict --no-interactive` pass
+- `openspec validate runtime-performance-evidence-gates --strict --no-interactive` pass
+
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `4e00c1ed` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
