@@ -2,6 +2,32 @@
 
 ---
 
+##### **2026年6月18日（v0.5.11）**
+
+中文：
+
+✨ Features
+- 新增 v0.5.11 性能证据门禁，覆盖 cold start、Composer、long list、realtime、runtime evidence 与历史基线归档，让发布前性能状态具备可审计的证据闭环
+- 新增 renderer 诊断导出与 turn trace 校准链路，将 renderer 指标、realtime runtime evidence 和 turn trace summary 接入统一性能证据报告
+
+🔧 Improvements
+- 升级应用版本号到 `0.5.11`，同步前端包配置与 Tauri 配置
+- 收口 v0.5.10 性能闭环文档，补齐 runtime evidence gates、验证记录与 OpenSpec 任务状态
+- 锁定 `turn completed` 写出 trace summary 的测试覆盖，减少 realtime trace 回归时的证据缺口
+
+English:
+
+✨ Features
+- Add the v0.5.11 performance evidence gates across cold start, Composer, long lists, realtime, runtime evidence, and historical baseline archiving so release performance has an auditable evidence loop
+- Add renderer diagnostics export and turn-trace calibration, connecting renderer metrics, realtime runtime evidence, and turn trace summaries into the unified performance evidence report
+
+🔧 Improvements
+- Bump app version to `0.5.11` across frontend package metadata and Tauri configuration
+- Close the v0.5.10 performance loop documentation with updated runtime evidence gates, verification records, and OpenSpec task status
+- Lock test coverage for writing `turn completed` trace summaries to reduce evidence gaps during realtime trace regressions
+
+---
+
 ##### **2026年6月16日（v0.5.10）**
 
 中文：
