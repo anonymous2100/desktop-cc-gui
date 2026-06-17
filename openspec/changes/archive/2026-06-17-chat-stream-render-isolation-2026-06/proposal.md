@@ -14,6 +14,15 @@
 2. `useThreads.ts` 顶部实际 21 个 `useRef`(原提案误记 18),其中 6 个跨 workspace 串线风险:`pendingMemoryCaptureRef` / `pendingAssistantCompletionRef` / `recentThreadErrorsRef` 是 `Record<string, T>` 结构,`pendingInterruptsRef` / `interruptedThreadsRef` / `handledClaudeExitPlanToolIdsRef` 是 `Set<string>` 结构。`Set` 不带 workspace 维度,workspace 切换后旧 set 里的 threadId 仍然命中,是真实 bug。**注意:`codex` 引擎不串线由 `isClaudeSessionBootstrapThreadId`(`claudeForkThread.ts`)保障,跟 `claude-pending-` / `gemini-pending-` / `opencode-pending-` 前缀的 `threadPendingResolution.ts:18` 路径并列存在**,原提案 evidence point 误写 `codex-pending-` 前缀,本次 review 已修正。
 3. streaming 期间 `MessagesTimeline` 不虚拟化导致 DOM 节点随 row 数线性增长,在长会话 + 多 thread 并行 streaming 时 React reconciliation 时间帧爆炸;复杂度缓存 `streamingMarkdownComplexityCacheRef` 当前仅在 `isHuge` 分支命中,中等长度 streaming 期间每次都全量扫描。
 
+## What Changes
+
+- Extends reducer no-op fast paths for `completeAgentMessage` and `upsertItem` without changing existing `appendAgentDelta`, reasoning, or tool-output fast paths.
+- Enables streaming timeline virtualization for long conversations, raises streaming overscan deliberately, and keeps an escape hatch through `TIMELINE_VIRTUALIZATION_DURING_STREAMING_ENABLED`.
+- Adds incremental Markdown streaming complexity analysis so equal or append-only deltas avoid full text rescans.
+- Upgrades core transient thread refs to workspace-scoped storage and cleans them during LRU eviction to prevent cross-workspace stale state.
+- Adds 30-minute TTL cleanup for handler-side transient maps and local `Messages` timer cleanup on active-thread changes.
+- Encodes `S-CHAT-100..104` proxy budgets and `chat-stream/*` diagnostics while explicitly deferring release-grade Tauri/WebView measured traces to follow-up evidence collection.
+
 ## Code Facts / 现状事实(已 review pass 对齐)
 
 - `useThreadsReducer.ts` 102 行 `INCREMENTAL_DERIVATION_ENABLED = isIncrementalDerivationEnabled()`,默认 true(`realtimePerfFlags.ts:75-82` `defaultValue: true` / `testDefaultValue: true`)。5 处守卫位于行 1068 / 1631 / 1693 / 1876 / 1953。

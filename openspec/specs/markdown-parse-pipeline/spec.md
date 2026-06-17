@@ -1,7 +1,8 @@
 # markdown-parse-pipeline Specification
 
 ## Purpose
-TBD - created by archiving change markdown-off-main-thread-pipeline. Update Purpose after archive.
+
+Defines the Markdown parse and precompute pipeline contract for final and live assistant content. Large final Markdown SHOULD use worker-capable serializable precompute with explicit fallback diagnostics, while live streaming fragments MUST stay on the lightweight path and avoid per-delta full rich parsing that would block the renderer.
 ## Requirements
 ### Requirement: Large Final Markdown MUST Use Worker-Capable Precompute Or Explicit Fallback
 
@@ -113,4 +114,3 @@ The existing fast Markdown worker adapter MUST expose bounded diagnostics for wo
 - **WHEN** worker creation, worker execution, or worker response handling falls back to the main path
 - **THEN** diagnostics MUST include a bounded fallback reason
 - **AND** the fallback reason MUST NOT contain conversation or file content
-

@@ -18,6 +18,15 @@
 - `fastMarkdownRenderer` worker substrate 已存在,下一步应扩展 pending request / stale result / cache diagnostics,而不是新造 worker pool。
 - 当前 active process map 只证明 registry ownership,不等价于 OS child process 已退出;stale 判断也不能假设所有 engine 都已有统一 progress metadata。
 
+## What Changes
+
+- Adds OpenCode and Gemini child-process `Drop` parity with Claude, using non-blocking best-effort process cleanup.
+- Extends active engine process diagnostics across Claude, OpenCode, and Gemini while keeping registry ownership separate from OS process liveness evidence.
+- Adds diagnostics-only stale child candidate reporting with explicit unsupported markers when progress metadata is unavailable.
+- Virtualizes large workspace/session lists and introduces visible-row lazy projection so module switching remains bounded under large histories.
+- Extends Markdown worker lifecycle diagnostics for pending, fallback, dispose, and stale-result paths while keeping live streaming fragments lightweight.
+- Encodes `S-LR-*` runtime evidence gates with measured/proxy/manual/unsupported qualifiers and defers true 15-30 minute Tauri/WebView long-run traces to release-grade follow-up evidence.
+
 ## Goals
 
 1. **G1 child process bounded**: 关闭 workspace/session 后 30s 内 registered active engine child handles 归零;OS process liveness 必须单独采样或明确标记 unsupported/manual-only。

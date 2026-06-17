@@ -1,7 +1,8 @@
 # app-shell-domain-context-isolation Specification
 
 ## Purpose
-TBD - created by archiving change app-shell-domain-context-isolation-2026-06. Update Purpose after archive.
+
+Defines the domain-context isolation contract for AppShell state propagation. The spec requires executable owner-map completeness, narrowed flatten boundaries for hot consumers, explicit search/composer field boundaries, separated settings/model/collaboration domains, and referentially stable action arrays so unrelated domain updates do not cascade through legacy flat context adapters.
 ## Requirements
 ### Requirement: AppShell Domain Owner Map MUST Cover Raw Context Keys
 
@@ -94,4 +95,3 @@ Arrays or objects passed to memoized AppShell hot path components MUST be refere
 - **WHEN** a visible label, active flag, availability flag, or callback dependency changes
 - **THEN** the action array MUST get a new reference
 - **AND** the changed action MUST reflect the new input
-

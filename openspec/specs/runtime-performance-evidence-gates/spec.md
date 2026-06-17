@@ -1,7 +1,8 @@
 # runtime-performance-evidence-gates Specification
 
 ## Purpose
-TBD - created by archiving change stabilize-runtime-performance-evidence-gates. Update Purpose after archive.
+
+Defines governance for runtime performance evidence gates. The spec requires every performance and stability closure claim to declare its evidence class (`measured`, `proxy`, `manual-only`, or `unsupported`), preserve platform qualifiers, keep archive-readiness explicit, and avoid treating proxy or registry-only evidence as release-grade measured proof.
 ## Requirements
 ### Requirement: Runtime Evidence Gate MUST Classify Closure Evidence
 
@@ -483,4 +484,3 @@ Long-running runtime diagnostics MUST remain safe and bounded even during multi-
 - **WHEN** evidence is produced by jsdom, static counters, fixtures, synthetic worker tests, or manual notes without runtime timing
 - **THEN** it MUST be classified as `proxy` or `manual-only`
 - **AND** archive-readiness MUST list the measured runtime/WebView follow-up if release-grade proof is required
-

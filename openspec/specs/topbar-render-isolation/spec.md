@@ -1,7 +1,8 @@
 # topbar-render-isolation Specification
 
 ## Purpose
-TBD - created by archiving change topbar-runtime-state-stability-2026-06. Update Purpose after archive.
+
+Defines the render-stability contract for AppShell topbar hot paths. The spec covers stable runtime run-state references, isolation of high-frequency runtime output from file-editor context, memoized topbar components, RAF-coalesced runtime log updates, and field-level callback dependencies that prevent terminal output from invalidating unrelated toolbar and panel interactions.
 ## Requirements
 ### Requirement: Runtime Run State Reference MUST Be Stable Across Reducer Re-runs
 
@@ -121,4 +122,3 @@ TBD - created by archiving change topbar-runtime-state-stability-2026-06. Update
 - **AND** `handleToggleTerminal` is unchanged
 - **AND** `terminalOpen` is unchanged
 - **THEN** `handleToggleTerminalPanel` MUST be referentially equal to the previous render
-

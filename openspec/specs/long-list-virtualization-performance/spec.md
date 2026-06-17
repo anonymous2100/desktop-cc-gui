@@ -1,7 +1,8 @@
 # long-list-virtualization-performance Specification
 
 ## Purpose
-TBD - created by archiving change optimize-long-list-virtualization. Update Purpose after archive.
+
+Defines the performance contract for long lists in chat, workspace, and session surfaces. Long-list rendering MUST use viewport-bounded projection or virtualization while preserving row identity, scroll semantics, active selection, pinned/session grouping behavior, and lazy visible-row projection under large workspace or conversation counts.
 ## Requirements
 ### Requirement: Long Message Lists MUST Use A Viewport Projection Boundary
 
@@ -159,4 +160,3 @@ Session row derived data such as processing state, unread state, background acti
 - **WHEN** module or workspace switch performance evidence is collected
 - **THEN** the report MUST distinguish selection latency, list mount/commit cost, and row projection cost where available
 - **AND** proxy evidence MUST remain labeled as proxy unless collected from real runtime timing
-
