@@ -261,6 +261,7 @@ describe("useThreadEventHandlers diagnostics", () => {
     turnHookFactory.setOnTurnCompletedOverride(null);
     itemHookFactory.reset();
     window.localStorage.removeItem("ccgui.debug.turnDiagnosticsVerbose");
+    window.localStorage.removeItem("ccgui.debug.turnTrace.enabled");
     streamLatencyMocks.getCurrentClaudeConfig.mockReset();
     streamLatencyMocks.queryTurnReconciliationStatus.mockReset();
     streamLatencyMocks.queryTurnReconciliationStatus.mockResolvedValue({
@@ -284,6 +285,7 @@ describe("useThreadEventHandlers diagnostics", () => {
   });
 
   afterEach(() => {
+    window.localStorage.removeItem("ccgui.debug.turnTrace.enabled");
     vi.useRealTimers();
     vi.clearAllMocks();
   });
@@ -2198,6 +2200,7 @@ describe("useThreadEventHandlers diagnostics", () => {
 
   it("emits detailed diagnostics when verbose flag is enabled", () => {
     window.localStorage.setItem("ccgui.debug.turnDiagnosticsVerbose", "1");
+    window.localStorage.setItem("ccgui.debug.turnTrace.enabled", "1");
     const onDebug = vi.fn();
     const { result } = renderHook(() => useThreadEventHandlers(makeOptions(onDebug)));
 
@@ -2221,6 +2224,20 @@ describe("useThreadEventHandlers diagnostics", () => {
     expect(labels).toContain("thread/session:turn-diagnostic:first-delta");
     expect(labels).toContain("thread/session:turn-diagnostic:first-execution-item");
     expect(labels).toContain("thread/session:turn-diagnostic:completed");
+    expect(streamLatencyMocks.appendRendererDiagnostic).toHaveBeenCalledWith(
+      "realtime.turnTrace.summary",
+      expect.objectContaining({
+        threadId: "thread-1",
+        turnId: "turn-1",
+        endedReason: "completed",
+        evidenceClass: "proxy",
+        counters: expect.objectContaining({
+          deltaCount: 1,
+          reducerCommitCount: 1,
+          reducerAmplification: 1,
+        }),
+      }),
+    );
   });
 
   it("includes latest progress evidence in terminal diagnostics", () => {
