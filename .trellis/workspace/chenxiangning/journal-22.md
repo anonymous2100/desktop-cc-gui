@@ -990,3 +990,51 @@
 ### Next Steps
 
 - None - task complete
+
+
+## Session 851: 收口 AppShell 运行态稳定性与 OpenSpec 归档
+
+**Date**: 2026-06-17
+**Task**: 收口 AppShell 运行态稳定性与 OpenSpec 归档
+**Branch**: `feature/v0.5.10`
+
+### Summary
+
+完成 AppShell runtime state 稳定化、domain context 隔离、大文件门禁修复，并归档两个 OpenSpec change。
+
+### Main Changes
+
+- 实现运行态稳定性收口：稳定 `useRuntimeLogSession` 返回引用，runtime output 使用 RAF coalesce，过滤空 workspace / 空 payload。
+- 拆分 AppShell domain context：新增 `runtimeContext`、`modelSelectionContext`、`collaborationModeContext`，补全 owner map completeness gate 和 duplicate raw key guard。
+- 收窄 hot consumer boundary：layout / sections / render / search-composer 不再默认 full flatten；补 focused tests。
+- 稳定 topbar hot path：`MainHeader`、`PanelTabs` memo；`MainHeaderActions` action array memo。
+- 修复大文件硬门禁：抽出 `threadReconciliationStatusQuery.ts`，`useThreadEventHandlers.ts` 降至 2799 行，`check:large-files:gate` found=0。
+- OpenSpec 收口：归档 `topbar-runtime-state-stability-2026-06` 和 `app-shell-domain-context-isolation-2026-06`，同步主 specs。
+
+验证：
+- `npm run lint` pass
+- `npm run typecheck` pass
+- `npm run check:large-files:gate` pass, found=0
+- `npm run check:heavy-test-noise` pass, completed 680 test files
+- `openspec validate topbar-render-isolation --strict --no-interactive` pass
+- `openspec validate app-shell-domain-context-isolation --strict --no-interactive` pass
+
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `7d8b987d` | (see git log) |
+| `29b835f0` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
