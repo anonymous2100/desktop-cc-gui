@@ -167,6 +167,91 @@ useEffect(() => {
 - Hook tests for stale timeout/cancel settlement.
 - Hook tests for ordinary submit failure preserving pending request.
 
+## Scenario: Workspace File Tree Refresh Invalidation
+
+### 1. Scope / Trigger
+
+- Trigger：修改 `src/features/workspaces/hooks/useWorkspaceFiles.ts`、`src/features/files/components/FileTreePanel.tsx`、`src/services/tauri/workspaceFiles.ts`、`list_workspace_files` 或 `list_workspace_directory_children`。
+- 目标：手动刷新必须获取磁盘最新事实，不能被 frontend lazy subtree cache 或 backend listing cache 挡住。
+
+### 2. Signatures
+
+- Service:
+  - `getWorkspaceFiles(workspaceId: string, options?: { forceRefresh?: boolean })`
+  - `getWorkspaceDirectoryChildren(workspaceId: string, path: string, options?: { forceRefresh?: boolean })`
+- Tauri commands:
+  - `list_workspace_files(workspace_id: String, force_refresh: Option<bool>)`
+  - `list_workspace_directory_children(workspace_id: String, path: String, force_refresh: Option<bool>)`
+- UI action:
+  - manual refresh button MUST call a local invalidation action before invoking `refreshFiles("manual")`.
+
+### 3. Contracts
+
+- Initial load and polling SHOULD pass `forceRefresh: false` to preserve listing-budget cache behavior.
+- Manual refresh MUST pass `forceRefresh: true` and backend MUST invalidate the matching listing cache key before scanning.
+- `FileTreePanel` MUST clear `lazyFiles` / `lazyDirectories` / `loadedLazyDirectories` / lazy metadata before manual refresh, so expanded lazy directories can refetch children.
+- Successful create/copy/paste/rename operations SHOULD optimistically reveal the affected path, then trigger refresh for backend truth reconciliation.
+- Delete/trash operations MUST purge the deleted subtree locally and then refresh.
+- Detached file explorer MUST receive the same `sourceVersion` / refresh behavior as the main file tree.
+
+### 4. Validation & Error Matrix
+
+| 场景 | 必须行为 | 禁止行为 |
+|---|---|---|
+| 手动点击刷新 | clear frontend lazy cache + `forceRefresh: true` | 只重放 cached request |
+| 外部磁盘新增文件 | 刷新后 expanded lazy directory 重新请求 children | `loadedLazyDirectories` 阻止重新加载 |
+| 前端新建文件/文件夹 | 新路径立即出现在树中并后台校准 | 等轮询或旧 cache，导致操作成功但 UI 不变 |
+| rename/paste/duplicate | 选择并 reveal 返回的 `result.path` | 只刷新 root，忽略当前 subtree |
+| backend cache 命中 | manual refresh 先 invalidate cache key | 返回 stale `ScanCacheState::Hit` 响应 |
+| remote daemon mode | `forceRefresh` 字段透传 daemon RPC | 桌面模式有效、remote mode 无效 |
+
+### 5. Good / Base / Bad Cases
+
+- Good：刷新按钮调用 `refreshFileTree()`，先清 lazy subtree cache，再由 `useWorkspaceFiles.refreshFiles("manual")` 传 `forceRefresh: true`。
+- Base：polling 调用继续使用 `forceRefresh: false`，避免大 workspace 失去 cache 保护。
+- Bad：只在 `useWorkspaceFiles` 重新请求 root children，但不清 `FileTreePanel` 的 lazy directory cache。
+
+### 6. Tests Required
+
+- Vitest：`useWorkspaceFiles` manual refresh asserts `getWorkspaceDirectoryChildren(workspaceId, "", { forceRefresh: true })`。
+- Vitest：`FileTreePanel` manual refresh clears loaded lazy directories and refetches expanded lazy children.
+- Rust：`list_workspace_files_inner_with_refresh(..., true)` 和 `list_workspace_directory_children_inner_with_refresh(..., true)` bypass cached signature and include newly created disk entries.
+- Contract gate：run `npm run check:runtime-contracts` after changing service / command payload fields.
+
+### 7. Wrong vs Correct
+
+#### Wrong
+
+```typescript
+onClick={() => onRefreshFiles?.()}
+```
+
+#### Correct
+
+```typescript
+const refreshFileTree = () => {
+  clearLazyDirectoryCache();
+  onRefreshFiles?.();
+};
+```
+
+#### Wrong
+
+```rust
+list_workspace_directory_children_inner(&root, &path, MAX_WORKSPACE_DIRECTORY_CHILDREN)
+```
+
+#### Correct
+
+```rust
+list_workspace_directory_children_inner_with_refresh(
+    &root,
+    &path,
+    MAX_WORKSPACE_DIRECTORY_CHILDREN,
+    force_refresh.unwrap_or(false),
+)
+```
+
 ## Testing 要求
 
 - 非 trivial hook 至少覆盖：

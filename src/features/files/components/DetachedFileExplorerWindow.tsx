@@ -79,6 +79,7 @@ export function DetachedFileExplorerWindow() {
     files,
     directories,
     directoryMetadata,
+    sourceVersion,
     gitignoredFiles,
     gitignoredDirectories,
     isLoading,
@@ -235,6 +236,7 @@ export function DetachedFileExplorerWindow() {
         files={files}
         directories={directories}
         directoryMetadata={directoryMetadata}
+        sourceVersion={sourceVersion}
         isLoading={isLoading}
         loadError={loadError}
         gitignoredFiles={gitignoredFiles}

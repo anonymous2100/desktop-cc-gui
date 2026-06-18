@@ -691,6 +691,89 @@ export function FileTreePanel({
     dragMovedRef.current = false;
   }, []);
 
+  const clearLazyDirectoryCache = useCallback(() => {
+    setLazyFiles(new Set());
+    setLazyDirectories(new Set());
+    setLazyGitignoredFiles(new Set());
+    setLazyGitignoredDirectories(new Set());
+    setLazyLoadableDirectories(new Set());
+    setLazyDirectoryMetadata(new Map());
+    setLoadedLazyDirectories(new Set());
+    setLoadingLazyDirectories(new Set());
+    setLazyDirectoryLoadErrors(new Map());
+    loadedLazyDirectoriesRef.current = new Set();
+    loadingLazyDirectoriesRef.current = new Set();
+  }, []);
+
+  const refreshFileTree = useCallback(() => {
+    clearLazyDirectoryCache();
+    onRefreshFiles?.();
+  }, [clearLazyDirectoryCache, onRefreshFiles]);
+
+  const resolveFileTreeParentPath = useCallback((relativePath: string) => {
+    const normalized = relativePath.trim().replaceAll("\\", "/").replace(/^\/+|\/+$/g, "");
+    const separatorIndex = normalized.lastIndexOf("/");
+    return separatorIndex > 0 ? normalized.slice(0, separatorIndex) : "";
+  }, []);
+
+  const revealOptimisticFileTreePath = useCallback(
+    (relativePath: string, kind: "file" | "folder") => {
+      const normalized = relativePath.trim().replaceAll("\\", "/").replace(/^\/+|\/+$/g, "");
+      if (!normalized) {
+        return;
+      }
+      const parentPath = resolveFileTreeParentPath(normalized);
+      if (parentPath) {
+        setExpandedFolders((prev) => {
+          if (prev.has(parentPath)) {
+            return prev;
+          }
+          return new Set(prev).add(parentPath);
+        });
+      }
+      setSuppressedDeletedPaths((prev) => {
+        if (!prev.has(normalized)) {
+          return prev;
+        }
+        const next = new Set(prev);
+        next.delete(normalized);
+        return next;
+      });
+      if (kind === "folder") {
+        setLazyDirectories((prev) => {
+          if (prev.has(normalized)) {
+            return prev;
+          }
+          return new Set(prev).add(normalized);
+        });
+        setLazyDirectoryMetadata((prev) => {
+          const next = new Map(prev);
+          next.set(normalized, { path: normalized, child_state: "empty" });
+          return next;
+        });
+      } else {
+        setLazyFiles((prev) => {
+          if (prev.has(normalized)) {
+            return prev;
+          }
+          return new Set(prev).add(normalized);
+        });
+      }
+      if (parentPath) {
+        setLazyDirectoryMetadata((prev) => {
+          const next = new Map(prev);
+          next.set(parentPath, { path: parentPath, child_state: "loaded" });
+          return next;
+        });
+      }
+      setSelectedNodePath(normalized);
+      setSelectedNodeType(kind);
+      setSelectedNodePaths(new Set([normalized]));
+      selectionAnchorPathRef.current = normalized;
+    },
+    [resolveFileTreeParentPath],
+  );
+
   const loadLazyDirectoryChildren = useCallback(
     async (path: string) => {
       if (
@@ -834,6 +917,19 @@ export function FileTreePanel({
     },
     [workspaceId],
   );
+
+  useEffect(() => {
+    effectiveExpandedFolders.forEach((path) => {
+      if (
+        !effectiveLazyLoadableDirectories.has(path) ||
+        loadedLazyDirectoriesRef.current.has(path) ||
+        loadingLazyDirectoriesRef.current.has(path)
+      ) {
+        return;
+      }
+      void loadLazyDirectoryChildren(path);
+    });
+  }, [effectiveExpandedFolders, effectiveLazyLoadableDirectories, loadLazyDirectoryChildren]);
 
   useEffect(() => {
     if (!previewPath) {
@@ -1217,15 +1313,15 @@ export function FileTreePanel({
         await trashWorkspaceItem(workspaceId, relativePath);
         purgeDeletedFileTreePath(relativePath);
         showOperationNotice("success", t("files.trashComplete"));
-        onRefreshFiles?.();
+        refreshFileTree();
       } catch (error) {
         showOperationNotice("error", t("files.trashFailed", { message: normalizeOperationError(error) }));
       }
     },
     [
       normalizeOperationError,
-      onRefreshFiles,
       purgeDeletedFileTreePath,
+      refreshFileTree,
       showOperationNotice,
       t,
       workspaceId,
@@ -1268,9 +1364,7 @@ export function FileTreePanel({
           fileTreeClipboardItem.path,
           targetDirectory,
         );
-        setSelectedNodePath(result.path);
-        setSelectedNodeType(result.kind === "folder" ? "folder" : "file");
-        setSelectedNodePaths(new Set([result.path]));
+        revealOptimisticFileTreePath(result.path, result.kind);
         showOperationNotice("success", t("files.pasteComplete"));
         onRefreshFiles?.();
       } catch (error) {
@@ -1281,6 +1375,7 @@ export function FileTreePanel({
       fileTreeClipboardItem,
       normalizeOperationError,
       onRefreshFiles,
+      revealOptimisticFileTreePath,
       showOperationNotice,
       t,
       workspaceId,
@@ -1291,16 +1386,21 @@ export function FileTreePanel({
     async (relativePath: string) => {
       try {
         const result = await duplicateWorkspaceItem(workspaceId, relativePath);
-        setSelectedNodePath(result.path);
-        setSelectedNodeType(result.kind === "folder" ? "folder" : "file");
-        setSelectedNodePaths(new Set([result.path]));
+        revealOptimisticFileTreePath(result.path, result.kind);
         showOperationNotice("success", t("files.duplicateComplete"));
         onRefreshFiles?.();
       } catch (error) {
         showOperationNotice("error", t("files.duplicateFailed", { message: normalizeOperationError(error) }));
       }
     },
-    [normalizeOperationError, onRefreshFiles, showOperationNotice, t, workspaceId],
+    [
+      normalizeOperationError,
+      revealOptimisticFileTreePath,
+      onRefreshFiles,
+      showOperationNotice,
+      t,
+      workspaceId,
+    ],
   );
 
   const openRenamePrompt = useCallback(
@@ -1334,9 +1434,8 @@ export function FileTreePanel({
     }
     try {
       const result = await renameWorkspaceItem(workspaceId, prompt.path, name);
-      setSelectedNodePath(result.path);
-      setSelectedNodeType(result.kind === "folder" ? "folder" : "file");
-      setSelectedNodePaths(new Set([result.path]));
+      purgeDeletedFileTreePath(prompt.path);
+      revealOptimisticFileTreePath(result.path, result.kind);
       setRenamePrompt(null);
       setRenameDraftName("");
       showOperationNotice("success", t("files.renameComplete"));
@@ -1347,6 +1446,8 @@ export function FileTreePanel({
   }, [
     normalizeOperationError,
     onRefreshFiles,
+    purgeDeletedFileTreePath,
+    revealOptimisticFileTreePath,
     renameDraftName,
     renamePrompt,
     showOperationNotice,
@@ -1375,6 +1476,7 @@ export function FileTreePanel({
     const relativePath = newFileParent ? `${newFileParent}/${name}` : name;
     try {
       await writeWorkspaceFile(workspaceId, relativePath, "");
+      revealOptimisticFileTreePath(relativePath, "file");
       showOperationNotice("success", t("files.createFileComplete"));
       onRefreshFiles?.();
     } catch (error) {
@@ -1386,6 +1488,7 @@ export function FileTreePanel({
     newFileName,
     newFileParent,
     workspaceId,
+    revealOptimisticFileTreePath,
     onRefreshFiles,
     showOperationNotice,
     t,
@@ -1418,6 +1521,7 @@ export function FileTreePanel({
     const relativePath = newFolderParent ? `${newFolderParent}/${name}` : name;
     try {
       await createWorkspaceDirectory(workspaceId, relativePath);
+      revealOptimisticFileTreePath(relativePath, "folder");
       showOperationNotice("success", t("files.createFolderComplete"));
       onRefreshFiles?.();
     } catch (error) {
@@ -1429,6 +1533,7 @@ export function FileTreePanel({
     newFolderName,
     newFolderParent,
     workspaceId,
+    revealOptimisticFileTreePath,
     onRefreshFiles,
     showOperationNotice,
     t,
@@ -1766,7 +1871,7 @@ export function FileTreePanel({
             detachedInitialFilePath={detachedInitialFilePath}
             onOpenNewFile={(parentFolder) => openNewFilePrompt(parentFolder ?? "")}
             onOpenNewFolder={(parentFolder) => openNewFolderPrompt(parentFolder ?? "")}
-            onRefreshFiles={onRefreshFiles}
+            onRefreshFiles={refreshFileTree}
             onTrashSelected={() => {
               if (!canTrashSelectedNode || !selectedNodePath || !selectedNodeType) {
                 return;
@@ -1798,7 +1903,7 @@ export function FileTreePanel({
               <button
                 type="button"
                 className="file-tree-lazy-retry"
-                onClick={() => void onRefreshFiles()}
+                onClick={() => void refreshFileTree()}
                 title={normalizedLoadError}
               >
                 {t("files.retryLoadFiles")}

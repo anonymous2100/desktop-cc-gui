@@ -103,18 +103,27 @@ export type EngineTaskOutputArtifactTailResponse = {
   byteLength: number;
 };
 
-export async function getWorkspaceFiles(workspaceId: string) {
+export async function getWorkspaceFiles(
+  workspaceId: string,
+  options: { forceRefresh?: boolean } = {},
+) {
   return traceStartupInvoke("list_workspace_files", workspaceScope(workspaceId), () =>
     invoke<WorkspaceFilesResponse>("list_workspace_files", {
       workspaceId,
+      forceRefresh: options.forceRefresh ?? false,
     }),
   );
 }
 
-export async function getWorkspaceDirectoryChildren(workspaceId: string, path: string) {
+export async function getWorkspaceDirectoryChildren(
+  workspaceId: string,
+  path: string,
+  options: { forceRefresh?: boolean } = {},
+) {
   return invoke<WorkspaceFilesResponse>("list_workspace_directory_children", {
     workspaceId,
     path,
+    forceRefresh: options.forceRefresh ?? false,
   });
 }
 

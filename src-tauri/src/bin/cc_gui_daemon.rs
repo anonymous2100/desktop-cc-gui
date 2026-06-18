@@ -894,14 +894,18 @@ async fn handle_rpc_request(
         }
         "list_workspace_files" => {
             let workspace_id = parse_string(&params, "workspaceId")?;
-            let files = state.list_workspace_files(workspace_id).await?;
+            let force_refresh = parse_optional_bool(&params, "forceRefresh").unwrap_or(false);
+            let files = state
+                .list_workspace_files(workspace_id, force_refresh)
+                .await?;
             serde_json::to_value(files).map_err(|err| err.to_string())
         }
         "list_workspace_directory_children" => {
             let workspace_id = parse_string(&params, "workspaceId")?;
             let path = parse_string(&params, "path")?;
+            let force_refresh = parse_optional_bool(&params, "forceRefresh").unwrap_or(false);
             let files = state
-                .list_workspace_directory_children(workspace_id, path)
+                .list_workspace_directory_children(workspace_id, path, force_refresh)
                 .await?;
             serde_json::to_value(files).map_err(|err| err.to_string())
         }
