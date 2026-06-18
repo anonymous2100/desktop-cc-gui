@@ -1,4 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
+import { appendRendererDiagnostic } from "./rendererDiagnostics";
 import type { ClaudeDeferredImageLocator, ClaudeHydratedImage } from "../types";
 import { open } from "@tauri-apps/plugin-dialog";
 import type {
@@ -515,6 +516,25 @@ export async function rewindCodexThread(
   });
 }
 
+type CodexTurnStartAckDiagnosticPayload = {
+  workspaceId: string;
+  threadId: string;
+  model: string | null;
+  requestStartedAtMs: number;
+  respondedAtMs: number;
+  durationMs: number;
+  outcome: "ok" | "error";
+  errorName?: string;
+};
+
+function appendCodexTurnStartAckDiagnostic(payload: CodexTurnStartAckDiagnosticPayload) {
+  try {
+    appendRendererDiagnostic("stream-latency/codex-turn-start-ack", payload);
+  } catch {
+    // Diagnostics must not change send_user_message invoke behavior.
+  }
+}
+
 export async function sendUserMessage(
   workspaceId: string,
   threadId: string,
@@ -532,6 +552,7 @@ export async function sendUserMessage(
     resumeTurnId?: string | null;
   },
 ) {
+  const requestStartedAtMs = Date.now();
   const payload: Record<string, unknown> = {
     workspaceId,
     threadId,
@@ -551,7 +572,33 @@ export async function sendUserMessage(
   if (options?.collaborationMode) {
     payload.collaborationMode = options.collaborationMode;
   }
-  return invoke("send_user_message", payload);
+  try {
+    const response = await invoke("send_user_message", payload);
+    const respondedAtMs = Date.now();
+    appendCodexTurnStartAckDiagnostic({
+      workspaceId,
+      threadId,
+      model: options?.model ?? null,
+      requestStartedAtMs,
+      respondedAtMs,
+      durationMs: Math.max(0, respondedAtMs - requestStartedAtMs),
+      outcome: "ok",
+    });
+    return response;
+  } catch (error) {
+    const respondedAtMs = Date.now();
+    appendCodexTurnStartAckDiagnostic({
+      workspaceId,
+      threadId,
+      model: options?.model ?? null,
+      requestStartedAtMs,
+      respondedAtMs,
+      durationMs: Math.max(0, respondedAtMs - requestStartedAtMs),
+      outcome: "error",
+      errorName: error instanceof Error ? error.name : typeof error,
+    });
+    throw error;
+  }
 }
 
 export async function interruptTurn(workspaceId: string, threadId: string, turnId: string) {

@@ -78,6 +78,13 @@ function collectMeasuredSummaries(entries) {
     .filter((payload) => payload.evidenceClass === "measured");
 }
 
+function collectCodexTurnStartAckDiagnostics(entries) {
+  return entries
+    .filter((entry) => isRecord(entry) && entry.label === "stream-latency/codex-turn-start-ack")
+    .map((entry) => (isRecord(entry.payload) ? entry.payload : null))
+    .filter((payload) => payload !== null);
+}
+
 function metricFromValues({ scenario, metric, values, unit, notes, unsupportedReason }) {
   const value = metric === "reducerAmplificationMedian"
     ? median(values)
@@ -151,7 +158,25 @@ function collectFirstDeltaDominanceNotes(summaries) {
   return notes;
 }
 
-function buildFragment(summaries, sourcePath) {
+function collectTurnStartAckComparisonNotes(summaries, ackDiagnostics) {
+  const firstDeltaP95 = percentile(
+    summaries.map((summary) => summary.deltas?.sendToFirstDeltaMs),
+    0.95,
+  );
+  const turnStartAckP95 = percentile(
+    ackDiagnostics.map((diagnostic) => diagnostic.durationMs),
+    0.95,
+  );
+  if (firstDeltaP95 === null || turnStartAckP95 === null) {
+    return [];
+  }
+  const postAckWaitMs = Math.max(0, Number((firstDeltaP95 - turnStartAckP95).toFixed(2)));
+  return [
+    `turnStartAckComparison=firstDeltaLatencyP95:${firstDeltaP95}ms turnStartAckLatencyP95:${turnStartAckP95}ms postAckFirstDeltaWaitApprox:${postAckWaitMs}ms`,
+  ];
+}
+
+function buildFragment(summaries, ackDiagnostics, sourcePath) {
   const unsupportedReason = summaries.length === 0
     ? "No measured realtime.turnTrace.summary diagnostics were found. Enable turn trace in a Tauri/webview session and export renderer diagnostics."
     : undefined;
@@ -166,6 +191,7 @@ function buildFragment(summaries, sourcePath) {
   const terminalSettlementValues = summaries.map((summary) =>
     summary.counters?.terminalSettlementLagMs ?? summary.deltas?.lastReducerCommitToTerminalSettlementMs
   );
+  const turnStartAckLatencyValues = ackDiagnostics.map((diagnostic) => diagnostic.durationMs);
   return {
     schemaVersion: "1.0",
     generatedAt: new Date().toISOString(),
@@ -178,6 +204,16 @@ function buildFragment(summaries, sourcePath) {
         unit: "ms",
         notes: `measured runtime turn trace sendToFirstDeltaMs from ${sourcePath}`,
         unsupportedReason,
+      }),
+      metricFromValues({
+        scenario: "S-RS-TA",
+        metric: "turnStartAckLatencyP95",
+        values: turnStartAckLatencyValues,
+        unit: "ms",
+        notes: `measured renderer Codex send_user_message ack diagnostics from ${sourcePath}`,
+        unsupportedReason:
+          unsupportedReason ??
+          "No stream-latency/codex-turn-start-ack diagnostics were found. Run a build with Codex turn-start ack instrumentation.",
       }),
       metricFromValues({
         scenario: "S-RS-VL",
@@ -215,9 +251,11 @@ function buildFragment(summaries, sourcePath) {
     notes: [
       `input=${sourcePath}`,
       `measuredSummaryCount=${summaries.length}`,
+      `turnStartAckDiagnosticCount=${ackDiagnostics.length}`,
       "contentSafety=ids, durations, counters, and dimensions only; no prompt, assistant text, tool output, or file content",
       ...collectTraceConsistencyCautions(summaries),
       ...collectFirstDeltaDominanceNotes(summaries),
+      ...collectTurnStartAckComparisonNotes(summaries, ackDiagnostics),
     ],
   };
 }
@@ -235,8 +273,10 @@ async function main() {
   if (existsSync(resolve(process.cwd(), inputPath))) {
     input = JSON.parse(await readFile(resolve(process.cwd(), inputPath), "utf-8"));
   }
-  const summaries = collectMeasuredSummaries(collectEntries(input));
-  await writeJson(outputPath, buildFragment(summaries, inputPath));
+  const entries = collectEntries(input);
+  const summaries = collectMeasuredSummaries(entries);
+  const ackDiagnostics = collectCodexTurnStartAckDiagnostics(entries);
+  await writeJson(outputPath, buildFragment(summaries, ackDiagnostics, inputPath));
   if (process.argv.includes("--verbose")) {
     console.info(`realtime runtime measured summaries: ${summaries.length}`);
   }
