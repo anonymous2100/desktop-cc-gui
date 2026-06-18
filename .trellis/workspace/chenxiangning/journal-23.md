@@ -149,3 +149,36 @@
 ### Next Steps
 
 - None - task complete
+
+
+## Session 875: 修复 Codex 默认配置首轮恢复
+
+**Date**: 2026-06-18
+**Task**: 修复 Codex 默认配置首轮恢复
+**Branch**: `feature/v0.5.11`
+
+### Summary
+
+修复 codex-tui/default-config 首轮空白 draft 遇到 thread not found 时误入 stale fork/恢复卡的问题。调整前端 Codex send fallback 顺序，使可证明 disposable 的 first-turn draft 在 refresh 无法 rebind 后优先 fresh replay，再进入 stale fork fallback；保留 durable thread 的保守恢复语义。同步将默认 disk provider 文案统一为 codex-tui/default-config，并补充 OpenSpec/Trellis 契约与回归测试。验证通过 lint、typecheck、全量 npm run test、runtime contracts、cargo test --no-run、OpenSpec strict validate。
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `44c31fb4` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
