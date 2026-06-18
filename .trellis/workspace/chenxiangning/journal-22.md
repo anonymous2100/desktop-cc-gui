@@ -1742,3 +1742,63 @@ Conclusion：性能证据现在明确显示，下一阶段真实方向不是 Mes
 ### Next Steps
 
 - None - task complete
+
+
+## Session 866: v0.5.11 Codex ack 后首包延迟拆分
+
+**Date**: 2026-06-18
+**Task**: v0.5.11 Codex ack 后首包延迟拆分
+**Branch**: `feature/v0.5.11`
+
+### Summary
+
+为 v0.5.11 流式性能定位拆分 Codex turn/start ack 后到首个文本 delta 的 backend phase timing。
+
+### Main Changes
+
+本次基于真实热启动证据继续推进 v0.5.11 性能优化：上一轮 report 显示 turnStartAckLatencyP95=114ms、firstDeltaLatencyP95=3616ms、postAckFirstDeltaWaitApprox=3502ms，证明瓶颈在 frontend/backend ack 之后、first delta 之前。
+
+完成内容：
+- 新增 OpenSpec change: measure-codex-post-ack-first-delta-latency。
+- 在 Rust backend WorkspaceSession 增加 bounded per-thread Codex turn timing state。
+- 在 send_user_message_core 的 turn/start 前后记录 request/response timestamp，覆盖 primary、thread resume retry、collaboration fallback turn/start 路径。
+- 在 stdout app-server event 处理路径附加 content-safe params.ccguiTiming：turnStartRequestStartedAtMs、turnStartResponseReceivedAtMs、firstStreamEventReceivedAtMs、firstTextDeltaReceivedAtMs、turnStartResponseToFirstTextDeltaMs 等。
+- terminal turn/completed、turn/error 后清理 timing state，避免无界增长。
+- 扩展 renderer streamLatencyDiagnostics parser 白名单，保留 Codex backend phase fields，并继续过滤/归一化 malformed fields。
+- 扩展 perf-realtime-runtime-report，新增 S-RS-PA / codexPostAckFirstDeltaP95，并输出 codexPostAckComparison note。
+- 补 Rust、Vitest、Node report tests，覆盖 content-safe、state cleanup、malformed normalization、report metric/note。
+
+验证：
+- npx openspec validate measure-codex-post-ack-first-delta-latency --strict --no-interactive
+- cargo test --manifest-path src-tauri/Cargo.toml enrich_codex_turn_timing -- --nocapture
+- cargo test --manifest-path src-tauri/Cargo.toml --no-run
+- npx vitest run src/features/threads/utils/streamLatencyDiagnostics.test.ts
+- node --test scripts/perf-realtime-runtime-report.test.mjs
+- npm run typecheck
+- npm run lint
+- git diff --check
+- npm run check:runtime-contracts
+
+下一步：
+- 用户用包含 2ecbc5de 的热启动版本跑一轮真实流式问答。
+- 重新导出 renderer diagnostics 并生成 runtime report，查看 codexPostAckFirstDeltaP95。
+- 若 codexPostAckFirstDeltaP95 仍接近 firstDeltaLatencyP95，则继续拆 Codex runtime/provider 内部阶段；若明显降低，则定位到 backend event bridge/renderer ingress 后段。
+
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `2ecbc5de` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
