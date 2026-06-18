@@ -1,12 +1,12 @@
 ## 1. Large-file wave3
 
-- [ ] Split `src/services/tauri.ts` session wrappers into `src/services/tauri/session.ts`.
-- [ ] Split permission wrappers into `src/services/tauri/permission.ts`.
-- [ ] Split app-server wrappers into `src/services/tauri/appServer.ts`.
-- [ ] Preserve `src/services/tauri.ts` public facade and existing import compatibility.
+- [x] Split `src/services/tauri.ts` session wrappers into `src/services/tauri/session.ts`.
+- [x] Split permission wrappers into `src/services/tauri/permission.ts`.
+- [x] Split app-server wrappers into `src/services/tauri/appServer.ts`.
+- [x] Preserve `src/services/tauri.ts` public facade and existing import compatibility.
 - [ ] Extract `useFileTreeViewState.ts` from `FileTreePanel.tsx`.
 - [ ] Extract `FileTreeRefreshControls.tsx` from `FileTreePanel.tsx`.
-- [ ] Run `npm run check:large-files`; no new module may enter near-threshold advisory debt.
+- [x] Run `npm run check:large-files`; no new module may enter near-threshold advisory debt.
 
 ## 2. Recovery cookbook
 
@@ -24,10 +24,10 @@
 
 ## 4. Validation
 
-- [ ] `npm run typecheck`
-- [ ] `npm run lint`
-- [ ] `npm run check:large-files`
+- [x] `npm run typecheck`
+- [x] `npm run lint`
+- [x] `npm run check:large-files`
 - [ ] `node --test scripts/perf-v0511-runtime-evidence.test.mjs scripts/perf-archive-readiness.test.mjs`
 - [ ] `npm run perf:baseline:all`
 - [ ] `npm run perf:archive-readiness -- --json`
-- [ ] `openspec validate follow-up-v0511-large-file-cookbook-and-measured-evidence --strict --no-interactive`
+- [x] `openspec validate follow-up-v0511-large-file-cookbook-and-measured-evidence --strict --no-interactive`
