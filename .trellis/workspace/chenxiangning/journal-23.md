@@ -437,3 +437,36 @@
 ### Next Steps
 
 - None - task complete
+
+
+## Session 883: 收口 v0.5.11 性能证据边界
+
+**Date**: 2026-06-18
+**Task**: 收口 v0.5.11 性能证据边界
+**Branch**: `feature/v0.5.11`
+
+### Summary
+
+为 v0.5.11 runtime evidence measured 行补充 sampleCount/sourceArtifact，为剩余 proxy 行补充 measurementBlocker/requiredSourceArtifact；刷新 perf baseline 与 runtime evidence reports，并完成 OpenSpec tasks 收口。
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `d6941daa` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
