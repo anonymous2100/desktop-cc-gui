@@ -1636,3 +1636,54 @@ Residual observation：fresh diagnostics still contains hidden-window Vite depen
 ### Next Steps
 
 - None - task complete
+
+
+## Session 864: 增加 Codex first-delta 延迟证据
+
+**Date**: 2026-06-18
+**Task**: 增加 Codex first-delta 延迟证据
+**Branch**: `feature/v0.5.11`
+
+### Summary
+
+(Add summary)
+
+### Main Changes
+
+本次会话继续 v0.5.11 性能主线，在 row render 与 turnTrace consistency 已收口后，推进下一阶段 first-delta/upstream startup 证据建设。
+
+| Area | Work |
+|------|------|
+| OpenSpec | 新增 `measure-codex-first-delta-latency` change，明确 Codex/MiniMax first-delta 等待应独立于 visible lag、reducer amplification、batch flush 进行报告。 |
+| Runtime report | `perf-realtime-runtime-report.mjs` 新增 `S-RS-FT/firstDeltaLatencyP95`，来源为 `realtime.turnTrace.summary.deltas.sendToFirstDeltaMs`。 |
+| Evidence interpretation | 当 first-delta latency 主导但 visible lag 和 reducer amplification 健康时，输出 `firstDeltaDominates` note，指向 upstream/provider/startup phase investigation，而不是 row render 或 reducer 优化。 |
+| Tests | 扩展 `scripts/perf-realtime-runtime-report.test.mjs`，覆盖 first-delta metric 与 dominance note。 |
+
+验证结果：
+- `npx openspec validate measure-codex-first-delta-latency --strict --no-interactive` passed
+- `npm run typecheck` passed
+- `npm run lint` passed
+- `node --test scripts/perf-realtime-runtime-report.test.mjs` passed，5 tests
+- `git diff --check` clean
+- Latest diagnostics generated `.artifacts/realtime-runtime-evidence.first-delta.json` with measured metrics: `firstDeltaLatencyP95=14602ms`, `visibleTextLagP95=177ms`, `reducerAmplificationMedian=1`, `batchFlushDurationP95=0.17ms`, `terminalSettlementP95=1788ms`
+
+Conclusion：性能证据现在明确显示，下一阶段真实方向不是 MessageRow、batch flush 或 reducer，而是 Codex/MiniMax first-delta 前的 upstream/provider/startup phase 分解。
+
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `fefe5bfa` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
