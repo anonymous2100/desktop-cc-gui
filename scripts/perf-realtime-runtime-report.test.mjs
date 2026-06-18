@@ -86,6 +86,7 @@ test("realtime runtime report derives measured metrics from content-safe diagnos
           traceSource: "codex-app-server",
           workspaceId: "ws-1",
           threadId: "thread-1",
+          turnId: "turn-1",
           method: "item/agentMessage/delta",
           turnStartResponseToFirstTextDeltaMs: 12,
         },
@@ -97,6 +98,7 @@ test("realtime runtime report derives measured metrics from content-safe diagnos
           traceSource: "codex-app-server",
           workspaceId: "ws-1",
           threadId: "thread-2",
+          turnId: "turn-2",
           method: "item/agentMessage/delta",
           turnStartResponseToFirstTextDeltaMs: 24,
         },
@@ -110,10 +112,21 @@ test("realtime runtime report derives measured metrics from content-safe diagnos
   assert.equal(byMetric.get("firstDeltaLatencyP95")?.value, 40);
   assert.equal(byMetric.get("turnStartAckLatencyP95")?.value, 28);
   assert.equal(byMetric.get("codexPostAckFirstDeltaP95")?.value, 24);
+  assert.deepEqual(
+    fragment.diagnostics.codexPostAckFirstDeltaByTurn.map((entry) => ({
+      turnId: entry.turnId,
+      firstTextDeltaMs: entry.firstTextDeltaMs,
+    })),
+    [
+      { turnId: "turn-2", firstTextDeltaMs: 24 },
+      { turnId: "turn-1", firstTextDeltaMs: 12 },
+    ],
+  );
   assert.equal(byMetric.get("visibleTextLagP95")?.value, 35);
   assert.equal(byMetric.get("reducerAmplificationMedian")?.value, 3);
   assert.equal(byMetric.get("batchFlushDurationP95")?.evidenceClass, "measured");
   assert.match(fragment.notes.join("\n"), /contentSafety=/);
+  assert.match(fragment.notes.join("\n"), /codexPostAckFirstDeltaTurnCount=2/);
 });
 
 test("realtime runtime report separates first-delta latency from visible lag", async () => {

@@ -21,6 +21,9 @@ function isRecord(value) {
 }
 
 function toFiniteNumber(value) {
+  if (value === null || value === undefined || value === "") {
+    return null;
+  }
   const numberValue = Number(value);
   return Number.isFinite(numberValue) ? numberValue : null;
 }
@@ -91,6 +94,42 @@ function collectCodexAppServerTimingDiagnostics(entries) {
     .map((entry) => (isRecord(entry.payload) ? entry.payload : null))
     .filter((payload) => payload !== null)
     .filter((payload) => payload.traceSource === "codex-app-server");
+}
+
+function collectCodexPostAckFirstDeltaByTurn(codexTimingDiagnostics) {
+  const byTurn = new Map();
+  let fallbackIndex = 0;
+  for (const diagnostic of codexTimingDiagnostics) {
+    const firstTextDeltaMs = toFiniteNumber(diagnostic.turnStartResponseToFirstTextDeltaMs);
+    if (firstTextDeltaMs === null) {
+      continue;
+    }
+    const rawTurnId = typeof diagnostic.turnId === "string"
+      ? diagnostic.turnId.trim()
+      : "";
+    const turnKey = rawTurnId || `event-${fallbackIndex += 1}`;
+    const existing = byTurn.get(turnKey);
+    if (existing && existing.firstTextDeltaMs <= firstTextDeltaMs) {
+      existing.eventCount += 1;
+      continue;
+    }
+    byTurn.set(turnKey, {
+      turnId: rawTurnId || null,
+      threadId: typeof diagnostic.threadId === "string" ? diagnostic.threadId : null,
+      model: typeof diagnostic.model === "string" ? diagnostic.model : null,
+      firstTextDeltaMs,
+      firstStreamEventMs: toFiniteNumber(diagnostic.turnStartResponseToFirstStreamEventMs),
+      turnStartAckMs: toFiniteNumber(diagnostic.turnStartRequestToResponseMs),
+      firstTextDeltaMethod:
+        typeof diagnostic.firstTextDeltaMethod === "string"
+          ? diagnostic.firstTextDeltaMethod
+          : null,
+      eventCount: existing ? existing.eventCount + 1 : 1,
+    });
+  }
+  return [...byTurn.values()].sort(
+    (left, right) => right.firstTextDeltaMs - left.firstTextDeltaMs,
+  );
 }
 
 function metricFromValues({ scenario, metric, values, unit, notes, unsupportedReason }) {
@@ -193,8 +232,9 @@ function collectCodexPostAckComparisonNotes(summaries, ackDiagnostics, codexTimi
     ackDiagnostics.map((diagnostic) => diagnostic.durationMs),
     0.95,
   );
+  const codexPostAckByTurn = collectCodexPostAckFirstDeltaByTurn(codexTimingDiagnostics);
   const postAckFirstDeltaP95 = percentile(
-    codexTimingDiagnostics.map((diagnostic) => diagnostic.turnStartResponseToFirstTextDeltaMs),
+    codexPostAckByTurn.map((diagnostic) => diagnostic.firstTextDeltaMs),
     0.95,
   );
   if (firstDeltaP95 === null || turnStartAckP95 === null || postAckFirstDeltaP95 === null) {
@@ -221,8 +261,10 @@ function buildFragment(summaries, ackDiagnostics, codexTimingDiagnostics, source
     summary.counters?.terminalSettlementLagMs ?? summary.deltas?.lastReducerCommitToTerminalSettlementMs
   );
   const turnStartAckLatencyValues = ackDiagnostics.map((diagnostic) => diagnostic.durationMs);
-  const codexPostAckFirstDeltaValues = codexTimingDiagnostics.map((diagnostic) =>
-    diagnostic.turnStartResponseToFirstTextDeltaMs
+  const codexPostAckFirstDeltaByTurn =
+    collectCodexPostAckFirstDeltaByTurn(codexTimingDiagnostics);
+  const codexPostAckFirstDeltaValues = codexPostAckFirstDeltaByTurn.map(
+    (diagnostic) => diagnostic.firstTextDeltaMs,
   );
   return {
     schemaVersion: "1.0",
@@ -290,11 +332,15 @@ function buildFragment(summaries, ackDiagnostics, codexTimingDiagnostics, source
         unsupportedReason,
       }),
     ],
+    diagnostics: {
+      codexPostAckFirstDeltaByTurn: codexPostAckFirstDeltaByTurn.slice(0, 20),
+    },
     notes: [
       `input=${sourcePath}`,
       `measuredSummaryCount=${summaries.length}`,
       `turnStartAckDiagnosticCount=${ackDiagnostics.length}`,
       `codexAppServerTimingDiagnosticCount=${codexTimingDiagnostics.length}`,
+      `codexPostAckFirstDeltaTurnCount=${codexPostAckFirstDeltaByTurn.length}`,
       "contentSafety=ids, durations, counters, and dimensions only; no prompt, assistant text, tool output, or file content",
       ...collectTraceConsistencyCautions(summaries),
       ...collectFirstDeltaDominanceNotes(summaries),

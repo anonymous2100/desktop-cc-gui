@@ -982,9 +982,15 @@ export const Messages = memo(function Messages({
     activeEngine === "codex" && codexSilentSuspectedAt !== null
       ? t("messages.codexSilentSuspected")
       : null;
+  const codexWaitingForFirstTextLabel =
+    activeEngine === "codex" && isThinking && waitingForFirstChunk
+      ? t("messages.codexWaitingForFirstText")
+      : null;
   const primaryWorkingLabel = isContextCompacting
     ? t("chat.contextDualViewCompacting")
-    : codexSilentSuspectedLabel ?? approvalResumeWorkingLabel;
+    : codexSilentSuspectedLabel ??
+      codexWaitingForFirstTextLabel ??
+      approvalResumeWorkingLabel;
   const enableClaudeRenderSafeMode =
     (isWindowsDesktop || isMacDesktop) &&
     activeEngine === "claude" &&

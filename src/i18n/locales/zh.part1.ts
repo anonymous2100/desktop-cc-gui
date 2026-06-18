@@ -2483,6 +2483,7 @@ const zhPart1 = {
     restoringHistory: "正在恢复会话历史…",
     restoringHistoryHint: "正在加载本地 transcript 和会话状态。",
     generatingResponse: "正在生成响应...",
+    codexWaitingForFirstText: "Codex 已启动，正在等待首段文本...",
     codexSilentSuspected: "Codex 暂时没有新输出，仍在监听运行状态...",
     nonStreamingHint: "该模型可能非流式返回，或网络暂不可达，请稍候...",
     proxyBadge: "代理",

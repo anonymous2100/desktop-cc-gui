@@ -2535,6 +2535,8 @@ const enPart1 = {
     restoringHistory: "Restoring conversation history…",
     restoringHistoryHint: "Loading the local transcript and session state.",
     generatingResponse: "Generating response...",
+    codexWaitingForFirstText:
+      "Codex is running. Waiting for the first text chunk...",
     codexSilentSuspected:
       "No new Codex output for a while. Still listening for runtime activity...",
     nonStreamingHint:
