@@ -672,6 +672,11 @@ export function useLayoutNodes(input: LayoutNodesOptions): LayoutNodesResult {
   const [localClaudeThinkingVisible, setLocalClaudeThinkingVisible] = useState<
     boolean | undefined
   >(undefined);
+  const reportedClaudeThinkingVisibleRef = useRef<boolean | undefined>(
+    typeof options.claudeThinkingVisible === "boolean"
+      ? options.claudeThinkingVisible
+      : undefined,
+  );
   const [selectedCodeAnnotations, setSelectedCodeAnnotations] = useState<
     CodeAnnotationSelection[]
   >([]);
@@ -727,19 +732,25 @@ export function useLayoutNodes(input: LayoutNodesOptions): LayoutNodesResult {
     typeof options.claudeThinkingVisible === "boolean"
       ? options.claudeThinkingVisible
       : localClaudeThinkingVisible;
+  useEffect(() => {
+    if (typeof options.claudeThinkingVisible === "boolean") {
+      reportedClaudeThinkingVisibleRef.current = options.claudeThinkingVisible;
+    }
+  }, [options.claudeThinkingVisible]);
   const onResolvedClaudeThinkingVisibleChange =
     options.onResolvedClaudeThinkingVisibleChange;
   const handleResolvedAlwaysThinkingChange = useCallback(
     (enabled: boolean) => {
-      if (claudeThinkingVisible === enabled) {
+      if (reportedClaudeThinkingVisibleRef.current === enabled) {
         return;
       }
+      reportedClaudeThinkingVisibleRef.current = enabled;
       setLocalClaudeThinkingVisible((previous) =>
         previous === enabled ? previous : enabled,
       );
       onResolvedClaudeThinkingVisibleChange?.(enabled);
     },
-    [claudeThinkingVisible, onResolvedClaudeThinkingVisibleChange],
+    [onResolvedClaudeThinkingVisibleChange],
   );
   const onForkFromMessage = options.onForkFromMessage;
   const handleOpenForkConfirmFromMessage = useCallback((messageId: string) => {
