@@ -771,4 +771,83 @@ describe("MessagesRows stream mitigation", () => {
 
     expect(screen.getByTestId("markdown").getAttribute("data-throttle")).toBe("260");
   });
+
+  it("does not rerender completed rows when live-only stream props change", () => {
+    const completedItem = {
+      id: "assistant-completed-stable",
+      kind: "message" as const,
+      role: "assistant" as const,
+      text: "completed answer",
+      isFinal: true,
+    };
+    const onCopy = vi.fn();
+    const { rerender } = render(
+      <MessageRow
+        item={completedItem}
+        isCopied={false}
+        onCopy={onCopy}
+        onAssistantVisibleTextRender={vi.fn()}
+        streamMitigationProfile={null}
+      />,
+    );
+
+    expect(rendererDiagnosticMocks.appendMessageRowRenderBudgetDiagnostic)
+      .toHaveBeenCalledTimes(1);
+
+    rerender(
+      <MessageRow
+        item={{ ...completedItem }}
+        isCopied={false}
+        onCopy={onCopy}
+        onAssistantVisibleTextRender={vi.fn()}
+        streamMitigationProfile={{
+          id: "codex-markdown-stream-recovery",
+          messageStreamingThrottleMs: 120,
+          reasoningStreamingThrottleMs: 220,
+        }}
+      />,
+    );
+
+    expect(rendererDiagnosticMocks.appendMessageRowRenderBudgetDiagnostic)
+      .toHaveBeenCalledTimes(1);
+  });
+
+  it("does not rerender completed rows when hidden runtime reconnect callbacks change", () => {
+    const completedItem = {
+      id: "user-completed-stable",
+      kind: "message" as const,
+      role: "user" as const,
+      text: "current prompt",
+    };
+    const onCopy = vi.fn();
+    const { rerender } = render(
+      <MessageRow
+        item={completedItem}
+        isCopied={false}
+        onCopy={onCopy}
+        onRecoverThreadRuntime={vi.fn()}
+        onRecoverThreadRuntimeAndResend={vi.fn()}
+        onThreadRecoveryFork={vi.fn()}
+        retryMessage={{ text: "retry one", images: [] }}
+      />,
+    );
+
+    expect(rendererDiagnosticMocks.appendMessageRowRenderBudgetDiagnostic)
+      .toHaveBeenCalledTimes(1);
+
+    rerender(
+      <MessageRow
+        item={{ ...completedItem }}
+        isCopied={false}
+        onCopy={onCopy}
+        onRecoverThreadRuntime={vi.fn()}
+        onRecoverThreadRuntimeAndResend={vi.fn()}
+        onThreadRecoveryFork={vi.fn()}
+        retryMessage={{ text: "retry two", images: [] }}
+      />,
+    );
+
+    expect(rendererDiagnosticMocks.appendMessageRowRenderBudgetDiagnostic)
+      .toHaveBeenCalledTimes(1);
+  });
 });

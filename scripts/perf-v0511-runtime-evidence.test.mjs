@@ -29,7 +29,7 @@ function metricMap(fragment) {
 }
 
 test("v0.5.11 runtime producer emits proxy evidence for the four performance gaps", async () => {
-  const dir = await mkdtemp(join(tmpdir(), "mossx-v0511-runtime-evidence-"));
+  const dir = await mkdtemp(join(tmpdir(), "ccgui-v0511-runtime-evidence-"));
   const outputPath = join(dir, "runtime-evidence.json");
 
   await runProducer(["--diagnostics=none", `--output=${outputPath}`]);
@@ -62,7 +62,7 @@ test("v0.5.11 runtime producer emits proxy evidence for the four performance gap
 });
 
 test("v0.5.11 runtime producer promotes whitelisted diagnostics to measured evidence", async () => {
-  const dir = await mkdtemp(join(tmpdir(), "mossx-v0511-runtime-evidence-"));
+  const dir = await mkdtemp(join(tmpdir(), "ccgui-v0511-runtime-evidence-"));
   const diagnosticsPath = join(dir, "renderer-diagnostics.json");
   const outputPath = join(dir, "runtime-evidence.json");
 
@@ -109,7 +109,7 @@ test("v0.5.11 runtime producer promotes whitelisted diagnostics to measured evid
 });
 
 test("v0.5.11 runtime producer ignores unsafe or malformed diagnostics", async () => {
-  const dir = await mkdtemp(join(tmpdir(), "mossx-v0511-runtime-evidence-"));
+  const dir = await mkdtemp(join(tmpdir(), "ccgui-v0511-runtime-evidence-"));
   const diagnosticsPath = join(dir, "renderer-diagnostics.json");
   const outputPath = join(dir, "runtime-evidence.json");
 
@@ -154,7 +154,7 @@ test("v0.5.11 runtime producer ignores unsafe or malformed diagnostics", async (
 });
 
 test("v0.5.11 runtime producer derives measured timing from turn trace summaries", async () => {
-  const dir = await mkdtemp(join(tmpdir(), "mossx-v0511-runtime-evidence-"));
+  const dir = await mkdtemp(join(tmpdir(), "ccgui-v0511-runtime-evidence-"));
   const diagnosticsPath = join(dir, "turn-trace-diagnostics.json");
   const outputPath = join(dir, "runtime-evidence.json");
 
@@ -212,7 +212,7 @@ test("v0.5.11 runtime producer derives measured timing from turn trace summaries
 });
 
 test("v0.5.11 runtime producer derives reducer dispatch rate from measured turn trace counters", async () => {
-  const dir = await mkdtemp(join(tmpdir(), "mossx-v0511-runtime-evidence-"));
+  const dir = await mkdtemp(join(tmpdir(), "ccgui-v0511-runtime-evidence-"));
   const diagnosticsPath = join(dir, "turn-trace-diagnostics.json");
   const outputPath = join(dir, "runtime-evidence.json");
 
@@ -265,7 +265,7 @@ test("v0.5.11 runtime producer derives reducer dispatch rate from measured turn 
 });
 
 test("v0.5.11 runtime producer does not promote legacy turn-window timings as measured route evidence", async () => {
-  const dir = await mkdtemp(join(tmpdir(), "mossx-v0511-runtime-evidence-"));
+  const dir = await mkdtemp(join(tmpdir(), "ccgui-v0511-runtime-evidence-"));
   const diagnosticsPath = join(dir, "legacy-turn-trace-diagnostics.json");
   const outputPath = join(dir, "runtime-evidence.json");
 
