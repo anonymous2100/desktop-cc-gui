@@ -182,3 +182,36 @@
 ### Next Steps
 
 - None - task complete
+
+
+## Session 876: 稳定 Codex 默认配置冷启动首发
+
+**Date**: 2026-06-18
+**Task**: 稳定 Codex 默认配置冷启动首发
+**Branch**: `feature/v0.5.11`
+
+### Summary
+
+修复 codex-tui/default-config 新客户端冷启动首个 Codex 会话 first prompt 可能因 runtime readiness race 触发 thread not found 恢复卡的问题。后端对 turn/start thread not found 增加 same-runtime thread/resume + short bounded readiness backoff retry；前端对 first-turn empty draft 的 same-id refresh 不再视为 verified rebind，而是 fresh replay 到新 thread。新增 useThreadMessaging 回归测试覆盖 activeThreadId=null 新会话首发、refresh 返回 same missing thread 的场景，并同步 Trellis/OpenSpec 契约。验证通过 focused Vitest、typecheck、OpenSpec strict validate、Rust lib thread_not_found tests；全量 cargo --no-run 当前被非 Codex 文件刷新改动阻塞。
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `a84b801e` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
