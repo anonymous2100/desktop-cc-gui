@@ -54,6 +54,7 @@ impl WorkspaceSession {
         let method_name = method.as_deref();
         let has_agent_text_delta = has_agent_message_text_delta(value);
         let is_reasoning_event = is_reasoning_event_method(method_name);
+        let is_assistant_item_event = is_assistant_item_event(value);
         let is_tool_event = is_tool_event(value);
         let should_count_before_first_text = !has_agent_text_delta;
         let timing_snapshot = {
@@ -72,6 +73,11 @@ impl WorkspaceSession {
             if is_reasoning_event && state.first_reasoning_event_received_at_ms.is_none() {
                 state.first_reasoning_event_received_at_ms = Some(stdout_received_at_ms);
                 state.first_reasoning_event_method = method.clone();
+            }
+            if is_assistant_item_event && state.first_assistant_item_event_received_at_ms.is_none()
+            {
+                state.first_assistant_item_event_received_at_ms = Some(stdout_received_at_ms);
+                state.first_assistant_item_event_method = method.clone();
             }
             if method_name == Some("item/agentMessage/delta")
                 && state.first_agent_message_event_received_at_ms.is_none()
@@ -314,6 +320,33 @@ fn is_reasoning_event_method(method: Option<&str>) -> bool {
         .unwrap_or(false)
 }
 
+fn is_assistant_item_event(value: &Value) -> bool {
+    let Some(method) = extract_event_method(value) else {
+        return false;
+    };
+    if !matches!(method, "item/started" | "item/updated" | "item/completed") {
+        return false;
+    }
+    value
+        .get("params")
+        .and_then(|params| params.get("item"))
+        .and_then(Value::as_object)
+        .and_then(|item| {
+            item.get("type")
+                .or_else(|| item.get("kind"))
+                .and_then(Value::as_str)
+        })
+        .map(|type_text| {
+            let normalized = type_text
+                .chars()
+                .filter(|character| *character != '_' && *character != '-')
+                .collect::<String>()
+                .to_ascii_lowercase();
+            normalized == "agentmessage" || normalized == "assistantmessage"
+        })
+        .unwrap_or(false)
+}
+
 fn is_tool_event(value: &Value) -> bool {
     let Some(method) = extract_event_method(value) else {
         return false;
@@ -380,6 +413,10 @@ fn attach_codex_timing_to_event(
         json!(timing.first_reasoning_event_received_at_ms),
     );
     payload.insert(
+        "firstAssistantItemEventReceivedAtMs".to_string(),
+        json!(timing.first_assistant_item_event_received_at_ms),
+    );
+    payload.insert(
         "firstAgentMessageEventReceivedAtMs".to_string(),
         json!(timing.first_agent_message_event_received_at_ms),
     );
@@ -431,6 +468,20 @@ fn attach_codex_timing_to_event(
         )),
     );
     payload.insert(
+        "firstRuntimeEventToFirstAssistantItemEventMs".to_string(),
+        json!(non_negative_gap_ms(
+            timing.first_assistant_item_event_received_at_ms,
+            timing.first_runtime_event_received_at_ms,
+        )),
+    );
+    payload.insert(
+        "firstAssistantItemEventToFirstTextDeltaMs".to_string(),
+        json!(non_negative_gap_ms(
+            timing.first_text_delta_received_at_ms,
+            timing.first_assistant_item_event_received_at_ms,
+        )),
+    );
+    payload.insert(
         "turnStartResponseToThisEventMs".to_string(),
         json!(non_negative_gap_ms(
             Some(stdout_received_at_ms),
@@ -448,6 +499,10 @@ fn attach_codex_timing_to_event(
     payload.insert(
         "firstReasoningEventMethod".to_string(),
         json!(timing.first_reasoning_event_method.as_deref()),
+    );
+    payload.insert(
+        "firstAssistantItemEventMethod".to_string(),
+        json!(timing.first_assistant_item_event_method.as_deref()),
     );
     payload.insert(
         "firstAgentMessageEventMethod".to_string(),

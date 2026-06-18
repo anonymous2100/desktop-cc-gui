@@ -91,12 +91,15 @@ test("realtime runtime report derives measured metrics from content-safe diagnos
           turnStartResponseToFirstRuntimeEventMs: 5,
           turnStartResponseToFirstTextDeltaMs: 12,
           firstRuntimeEventToFirstTextDeltaMs: 7,
+          firstRuntimeEventToFirstAssistantItemEventMs: 6,
+          firstAssistantItemEventToFirstTextDeltaMs: 1,
           eventCountBeforeFirstTextDelta: 1,
           reasoningEventCountBeforeFirstTextDelta: 1,
           toolEventCountBeforeFirstTextDelta: 0,
           methodsBeforeFirstTextDelta: ["item/reasoning/textDelta"],
           firstRuntimeEventMethod: "item/reasoning/textDelta",
           firstReasoningEventMethod: "item/reasoning/textDelta",
+          firstAssistantItemEventMethod: "item/started",
         },
       },
       {
@@ -111,12 +114,15 @@ test("realtime runtime report derives measured metrics from content-safe diagnos
           turnStartResponseToFirstRuntimeEventMs: 4,
           turnStartResponseToFirstTextDeltaMs: 24,
           firstRuntimeEventToFirstTextDeltaMs: 20,
+          firstRuntimeEventToFirstAssistantItemEventMs: 18,
+          firstAssistantItemEventToFirstTextDeltaMs: 2,
           eventCountBeforeFirstTextDelta: 2,
           reasoningEventCountBeforeFirstTextDelta: 1,
           toolEventCountBeforeFirstTextDelta: 1,
           methodsBeforeFirstTextDelta: ["item/reasoning/textDelta", "item/started"],
           firstRuntimeEventMethod: "item/reasoning/textDelta",
           firstReasoningEventMethod: "item/reasoning/textDelta",
+          firstAssistantItemEventMethod: "item/started",
           firstToolEventMethod: "item/started",
         },
       },
@@ -131,12 +137,18 @@ test("realtime runtime report derives measured metrics from content-safe diagnos
   assert.equal(byMetric.get("codexPostAckFirstDeltaP95")?.value, 24);
   assert.equal(byMetric.get("codexPostAckFirstRuntimeEventP95")?.value, 5);
   assert.equal(byMetric.get("codexFirstRuntimeEventToFirstTextDeltaP95")?.value, 20);
+  assert.equal(byMetric.get("codexFirstRuntimeEventToFirstAssistantItemP95")?.value, 18);
+  assert.equal(byMetric.get("codexFirstAssistantItemToFirstTextDeltaP95")?.value, 2);
   assert.deepEqual(
     fragment.diagnostics.codexPostAckFirstDeltaByTurn.map((entry) => ({
       turnId: entry.turnId,
       firstTextDeltaMs: entry.firstTextDeltaMs,
       firstRuntimeEventMs: entry.firstRuntimeEventMs,
       firstRuntimeEventToFirstTextDeltaMs: entry.firstRuntimeEventToFirstTextDeltaMs,
+      firstRuntimeEventToFirstAssistantItemEventMs:
+        entry.firstRuntimeEventToFirstAssistantItemEventMs,
+      firstAssistantItemEventToFirstTextDeltaMs:
+        entry.firstAssistantItemEventToFirstTextDeltaMs,
       eventCountBeforeFirstTextDelta: entry.eventCountBeforeFirstTextDelta,
       methodsBeforeFirstTextDelta: entry.methodsBeforeFirstTextDelta,
     })),
@@ -146,6 +158,8 @@ test("realtime runtime report derives measured metrics from content-safe diagnos
         firstTextDeltaMs: 24,
         firstRuntimeEventMs: 4,
         firstRuntimeEventToFirstTextDeltaMs: 20,
+        firstRuntimeEventToFirstAssistantItemEventMs: 18,
+        firstAssistantItemEventToFirstTextDeltaMs: 2,
         eventCountBeforeFirstTextDelta: 2,
         methodsBeforeFirstTextDelta: ["item/reasoning/textDelta", "item/started"],
       },
@@ -154,6 +168,8 @@ test("realtime runtime report derives measured metrics from content-safe diagnos
         firstTextDeltaMs: 12,
         firstRuntimeEventMs: 5,
         firstRuntimeEventToFirstTextDeltaMs: 7,
+        firstRuntimeEventToFirstAssistantItemEventMs: 6,
+        firstAssistantItemEventToFirstTextDeltaMs: 1,
         eventCountBeforeFirstTextDelta: 1,
         methodsBeforeFirstTextDelta: ["item/reasoning/textDelta"],
       },

@@ -786,6 +786,9 @@ export function noteThreadAppServerEventReceived(input: {
   const firstReasoningEventReceivedAtMs = normalizeNonNegativeFiniteNumber(
     timing.firstReasoningEventReceivedAtMs,
   );
+  const firstAssistantItemEventReceivedAtMs = normalizeNonNegativeFiniteNumber(
+    timing.firstAssistantItemEventReceivedAtMs,
+  );
   const firstAgentMessageEventReceivedAtMs = normalizeNonNegativeFiniteNumber(
     timing.firstAgentMessageEventReceivedAtMs,
   );
@@ -803,6 +806,9 @@ export function noteThreadAppServerEventReceived(input: {
   );
   const firstReasoningEventMethod = normalizeNullableString(
     normalizeString(timing.firstReasoningEventMethod),
+  );
+  const firstAssistantItemEventMethod = normalizeNullableString(
+    normalizeString(timing.firstAssistantItemEventMethod),
   );
   const firstAgentMessageEventMethod = normalizeNullableString(
     normalizeString(timing.firstAgentMessageEventMethod),
@@ -843,12 +849,14 @@ export function noteThreadAppServerEventReceived(input: {
       firstRuntimeEventReceivedAtMs,
       firstStreamEventReceivedAtMs,
       firstReasoningEventReceivedAtMs,
+      firstAssistantItemEventReceivedAtMs,
       firstAgentMessageEventReceivedAtMs,
       firstToolEventReceivedAtMs,
       firstTextDeltaReceivedAtMs,
       firstRuntimeEventMethod,
       firstStreamEventMethod,
       firstReasoningEventMethod,
+      firstAssistantItemEventMethod,
       firstAgentMessageEventMethod,
       firstToolEventMethod,
       firstTextDeltaMethod,
@@ -900,6 +908,12 @@ export function noteThreadAppServerEventReceived(input: {
       ),
       firstRuntimeEventToFirstTextDeltaMs: normalizeNonNegativeFiniteNumber(
         timing.firstRuntimeEventToFirstTextDeltaMs,
+      ),
+      firstRuntimeEventToFirstAssistantItemEventMs: normalizeNonNegativeFiniteNumber(
+        timing.firstRuntimeEventToFirstAssistantItemEventMs,
+      ),
+      firstAssistantItemEventToFirstTextDeltaMs: normalizeNonNegativeFiniteNumber(
+        timing.firstAssistantItemEventToFirstTextDeltaMs,
       ),
       turnStartResponseToThisEventMs: normalizeNonNegativeFiniteNumber(
         timing.turnStartResponseToThisEventMs,

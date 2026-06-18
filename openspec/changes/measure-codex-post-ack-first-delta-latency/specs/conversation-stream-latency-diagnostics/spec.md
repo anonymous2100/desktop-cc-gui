@@ -10,8 +10,9 @@ Codex backend phase timing diagnostics MUST remain bounded and content-safe whil
 
 #### Scenario: backend timing separates runtime activity from assistant first text
 - **WHEN** Codex emits reasoning, tool, lifecycle, or assistant message events before the first assistant text delta
-- **THEN** `ccguiTiming` MUST preserve `firstRuntimeEventReceivedAtMs`, `firstReasoningEventReceivedAtMs`, `firstAgentMessageEventReceivedAtMs`, `firstToolEventReceivedAtMs`, and `firstTextDeltaReceivedAtMs` independently
+- **THEN** `ccguiTiming` MUST preserve `firstRuntimeEventReceivedAtMs`, `firstReasoningEventReceivedAtMs`, `firstAssistantItemEventReceivedAtMs`, `firstAgentMessageEventReceivedAtMs`, `firstToolEventReceivedAtMs`, and `firstTextDeltaReceivedAtMs` independently
 - **AND** `firstTextDeltaReceivedAtMs` MUST only be set by a non-empty `item/agentMessage/delta`, not by reasoning deltas
+- **AND** `firstAssistantItemEventReceivedAtMs` MUST be set by the first `item/started`, `item/updated`, or `item/completed` event whose item type is `agentMessage` or `assistantMessage`
 - **AND** `eventCountBeforeFirstTextDelta`, `reasoningEventCountBeforeFirstTextDelta`, `toolEventCountBeforeFirstTextDelta`, and `methodsBeforeFirstTextDelta` MUST remain bounded and content-free
 
 #### Scenario: malformed or missing timing remains safe

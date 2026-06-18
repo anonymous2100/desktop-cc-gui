@@ -639,6 +639,14 @@ async fn enrich_codex_turn_timing_attaches_content_safe_first_delta_fields() {
     assert_eq!(timing["turnStartResponseToFirstStreamEventMs"], 600);
     assert_eq!(timing["turnStartResponseToFirstTextDeltaMs"], 600);
     assert_eq!(timing["firstRuntimeEventToFirstTextDeltaMs"], 0);
+    assert_eq!(
+        timing["firstRuntimeEventToFirstAssistantItemEventMs"],
+        Value::Null
+    );
+    assert_eq!(
+        timing["firstAssistantItemEventToFirstTextDeltaMs"],
+        Value::Null
+    );
     assert_eq!(timing["turnStartResponseToThisEventMs"], 600);
     assert_eq!(timing["firstRuntimeEventMethod"], "item/agentMessage/delta");
     assert_eq!(timing["firstStreamEventMethod"], "item/agentMessage/delta");
@@ -707,6 +715,20 @@ async fn enrich_codex_turn_timing_keeps_reasoning_and_tool_events_before_first_t
         .enrich_codex_turn_timing(&mut tool_event, 1_450)
         .await;
 
+    let mut assistant_item_event = json!({
+        "method": "item/started",
+        "params": {
+            "threadId": "thread-1",
+            "item": {
+                "id": "assistant-item-1",
+                "type": "agentMessage"
+            }
+        }
+    });
+    session
+        .enrich_codex_turn_timing(&mut assistant_item_event, 1_890)
+        .await;
+
     let mut agent_event = json!({
         "method": "item/agentMessage/delta",
         "params": {
@@ -723,11 +745,14 @@ async fn enrich_codex_turn_timing_keeps_reasoning_and_tool_events_before_first_t
     assert_eq!(timing["firstRuntimeEventReceivedAtMs"], 1_300);
     assert_eq!(timing["firstReasoningEventReceivedAtMs"], 1_300);
     assert_eq!(timing["firstToolEventReceivedAtMs"], 1_450);
+    assert_eq!(timing["firstAssistantItemEventReceivedAtMs"], 1_890);
     assert_eq!(timing["firstAgentMessageEventReceivedAtMs"], 1_900);
     assert_eq!(timing["firstTextDeltaReceivedAtMs"], 1_900);
     assert_eq!(timing["turnStartResponseToFirstRuntimeEventMs"], 200);
     assert_eq!(timing["firstRuntimeEventToFirstTextDeltaMs"], 600);
-    assert_eq!(timing["eventCountBeforeFirstTextDelta"], 2);
+    assert_eq!(timing["firstRuntimeEventToFirstAssistantItemEventMs"], 590);
+    assert_eq!(timing["firstAssistantItemEventToFirstTextDeltaMs"], 10);
+    assert_eq!(timing["eventCountBeforeFirstTextDelta"], 3);
     assert_eq!(timing["reasoningEventCountBeforeFirstTextDelta"], 1);
     assert_eq!(timing["toolEventCountBeforeFirstTextDelta"], 1);
     assert_eq!(
@@ -743,6 +768,7 @@ async fn enrich_codex_turn_timing_keeps_reasoning_and_tool_events_before_first_t
         "item/reasoning/textDelta"
     );
     assert_eq!(timing["firstToolEventMethod"], "item/started");
+    assert_eq!(timing["firstAssistantItemEventMethod"], "item/started");
     assert_eq!(
         timing["firstAgentMessageEventMethod"],
         "item/agentMessage/delta"

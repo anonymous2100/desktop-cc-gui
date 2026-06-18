@@ -131,6 +131,12 @@ function collectCodexPostAckFirstDeltaByTurn(codexTimingDiagnostics) {
       firstRuntimeEventToFirstTextDeltaMs: toFiniteNumber(
         diagnostic.firstRuntimeEventToFirstTextDeltaMs,
       ),
+      firstRuntimeEventToFirstAssistantItemEventMs: toFiniteNumber(
+        diagnostic.firstRuntimeEventToFirstAssistantItemEventMs,
+      ),
+      firstAssistantItemEventToFirstTextDeltaMs: toFiniteNumber(
+        diagnostic.firstAssistantItemEventToFirstTextDeltaMs,
+      ),
       firstStreamEventMs: toFiniteNumber(diagnostic.turnStartResponseToFirstStreamEventMs),
       turnStartAckMs: toFiniteNumber(diagnostic.turnStartRequestToResponseMs),
       eventCountBeforeFirstTextDelta: toFiniteNumber(
@@ -152,6 +158,10 @@ function collectCodexPostAckFirstDeltaByTurn(codexTimingDiagnostics) {
       firstReasoningEventMethod:
         typeof diagnostic.firstReasoningEventMethod === "string"
           ? diagnostic.firstReasoningEventMethod
+          : null,
+      firstAssistantItemEventMethod:
+        typeof diagnostic.firstAssistantItemEventMethod === "string"
+          ? diagnostic.firstAssistantItemEventMethod
           : null,
       firstToolEventMethod:
         typeof diagnostic.firstToolEventMethod === "string"
@@ -293,6 +303,18 @@ function collectCodexPostAckPhaseNotes(codexPostAckFirstDeltaByTurn) {
     ),
     0.95,
   );
+  const firstRuntimeToAssistantItemP95 = percentile(
+    codexPostAckFirstDeltaByTurn.map(
+      (diagnostic) => diagnostic.firstRuntimeEventToFirstAssistantItemEventMs,
+    ),
+    0.95,
+  );
+  const firstAssistantItemToTextP95 = percentile(
+    codexPostAckFirstDeltaByTurn.map(
+      (diagnostic) => diagnostic.firstAssistantItemEventToFirstTextDeltaMs,
+    ),
+    0.95,
+  );
   const postAckFirstTextP95 = percentile(
     codexPostAckFirstDeltaByTurn.map((diagnostic) => diagnostic.firstTextDeltaMs),
     0.95,
@@ -304,8 +326,12 @@ function collectCodexPostAckPhaseNotes(codexPostAckFirstDeltaByTurn) {
   ) {
     return [];
   }
+  const assistantItemBreakdown =
+    firstRuntimeToAssistantItemP95 === null || firstAssistantItemToTextP95 === null
+      ? ""
+      : ` firstRuntimeEventToFirstAssistantItemP95:${firstRuntimeToAssistantItemP95}ms firstAssistantItemToFirstTextDeltaP95:${firstAssistantItemToTextP95}ms`;
   return [
-    `codexPostAckPhaseBreakdown=firstRuntimeEventP95:${postAckFirstRuntimeP95}ms firstRuntimeEventToFirstTextDeltaP95:${firstRuntimeToTextP95}ms firstTextDeltaP95:${postAckFirstTextP95}ms`,
+    `codexPostAckPhaseBreakdown=firstRuntimeEventP95:${postAckFirstRuntimeP95}ms firstRuntimeEventToFirstTextDeltaP95:${firstRuntimeToTextP95}ms${assistantItemBreakdown} firstTextDeltaP95:${postAckFirstTextP95}ms`,
   ];
 }
 
@@ -335,6 +361,12 @@ function buildFragment(summaries, ackDiagnostics, codexTimingDiagnostics, source
   );
   const codexFirstRuntimeEventToFirstTextDeltaValues = codexPostAckFirstDeltaByTurn.map(
     (diagnostic) => diagnostic.firstRuntimeEventToFirstTextDeltaMs,
+  );
+  const codexFirstRuntimeEventToFirstAssistantItemValues = codexPostAckFirstDeltaByTurn.map(
+    (diagnostic) => diagnostic.firstRuntimeEventToFirstAssistantItemEventMs,
+  );
+  const codexFirstAssistantItemToFirstTextDeltaValues = codexPostAckFirstDeltaByTurn.map(
+    (diagnostic) => diagnostic.firstAssistantItemEventToFirstTextDeltaMs,
   );
   return {
     schemaVersion: "1.0",
@@ -388,6 +420,26 @@ function buildFragment(summaries, ackDiagnostics, codexTimingDiagnostics, source
         unsupportedReason:
           unsupportedReason ??
           "No Codex ccguiTiming.firstRuntimeEventToFirstTextDeltaMs diagnostics were found. Run a build with Codex backend phase timing instrumentation.",
+      }),
+      metricFromValues({
+        scenario: "S-RS-RI",
+        metric: "codexFirstRuntimeEventToFirstAssistantItemP95",
+        values: codexFirstRuntimeEventToFirstAssistantItemValues,
+        unit: "ms",
+        notes: `measured renderer stream-latency/app-server-event Codex runtime-event-to-assistant-item phase from ${sourcePath}`,
+        unsupportedReason:
+          unsupportedReason ??
+          "No Codex ccguiTiming.firstRuntimeEventToFirstAssistantItemEventMs diagnostics were found. Run a build with Codex assistant item phase timing instrumentation.",
+      }),
+      metricFromValues({
+        scenario: "S-RS-IT",
+        metric: "codexFirstAssistantItemToFirstTextDeltaP95",
+        values: codexFirstAssistantItemToFirstTextDeltaValues,
+        unit: "ms",
+        notes: `measured renderer stream-latency/app-server-event Codex assistant-item-to-text phase from ${sourcePath}`,
+        unsupportedReason:
+          unsupportedReason ??
+          "No Codex ccguiTiming.firstAssistantItemEventToFirstTextDeltaMs diagnostics were found. Run a build with Codex assistant item phase timing instrumentation.",
       }),
       metricFromValues({
         scenario: "S-RS-VL",

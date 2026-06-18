@@ -37,6 +37,7 @@ Use a bounded map keyed by `threadId` for foreground `turn/start` timing:
 - first stdout event timestamps
 - first text delta timestamp
 - first runtime/reasoning/agent-message/tool event timestamps
+- first assistant item event timestamp
 - bounded pre-first-text event counters and method names
 
 Alternative considered: parse timing only at frontend. Rejected because the frontend cannot know when backend received the `turn/start` response or the first stdout line.
@@ -58,6 +59,12 @@ Alternative considered: add metrics to `realtime.turnTrace.summary`. Rejected fo
 Reasoning deltas are useful evidence that the runtime is alive, but they are not visible assistant answer text. `firstTextDeltaReceivedAtMs` therefore advances only on non-empty `item/agentMessage/delta`. Reasoning/tool/lifecycle events before that point are counted separately through `eventCountBeforeFirstTextDelta`, `reasoningEventCountBeforeFirstTextDelta`, `toolEventCountBeforeFirstTextDelta`, and `methodsBeforeFirstTextDelta`.
 
 Alternative considered: keep using the shared stream-delta extractor for both reasoning and assistant text. Rejected because it can collapse reasoning latency into assistant first-text latency and hide the real phase boundary.
+
+### Decision: split assistant item start from assistant text delta
+
+The first assistant item lifecycle event (`item/started`, `item/updated`, or `item/completed` with item type `agentMessage` / `assistantMessage`) marks when Codex begins materializing an assistant response item. Reports split `firstRuntimeEventToFirstAssistantItemEventMs` from `firstAssistantItemEventToFirstTextDeltaMs` so provider/model first-response delay is not confused with text streaming delay after the assistant item exists.
+
+Alternative considered: infer assistant item start from `itemId` suffixes such as `_msg`. Rejected because item ids are implementation details; item type is the stable event contract.
 
 ## Risks / Trade-offs
 

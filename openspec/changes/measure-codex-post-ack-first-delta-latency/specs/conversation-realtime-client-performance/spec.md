@@ -16,5 +16,6 @@ Realtime performance evidence MUST distinguish Codex post-ack first-delta wait f
 - **WHEN** Codex app-server diagnostics include first runtime event and first assistant text delta phase timings
 - **THEN** runtime performance reports MUST include measured `codexPostAckFirstRuntimeEventP95`
 - **AND** runtime performance reports MUST include measured `codexFirstRuntimeEventToFirstTextDeltaP95`
+- **AND** runtime performance reports SHOULD include measured `codexFirstRuntimeEventToFirstAssistantItemP95` and `codexFirstAssistantItemToFirstTextDeltaP95` when assistant item phase fields are available
 - **AND** turn-level diagnostics MUST expose bounded `methodsBeforeFirstTextDelta` and event counters without prompt, assistant text, tool output, terminal output, or file content
 - **AND** missing phase fields from older artifacts MUST remain `unsupported` rather than being approximated
