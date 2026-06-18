@@ -541,3 +541,40 @@
 ### Next Steps
 
 - None - task complete
+
+
+## Session 886: 修复性能归档评论权限
+
+**Date**: 2026-06-19
+**Task**: 修复性能归档评论权限
+**Branch**: `feature/v0.5.11`
+
+### Summary
+
+修复 Perf archive readiness 在 PR comment 步骤因 fork/read-only token 触发 403 的后续 CI 问题，并升级 github-script 到 Node 24 runtime。
+
+### Main Changes
+
+- 将 `.github/workflows/perf-archive-readiness.yml` 中 `actions/github-script@v7` 升级为 `actions/github-script@v8`，匹配 Node 24 runtime，消除 Node 20 deprecation warning。
+- 将 workflow 的 Node 安装版本从 20 调整为 24，避免继续显式使用即将废弃的 Node 20。
+- 将 PR 评论步骤改为非阻塞 reporting：始终写入 `$GITHUB_STEP_SUMMARY`，fork PR 直接跳过 comment，comment API 失败时只输出 warning，不再让门禁失败。
+- 验证：Ruby YAML parse 通过；`git diff --check -- .github/workflows/perf-archive-readiness.yml` 无输出。
+
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `3a1de15e` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete

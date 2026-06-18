@@ -8,8 +8,8 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-23.md`
-- **Total Sessions**: 885
-- **Last Active**: 2026-06-18
+- **Total Sessions**: 886
+- **Last Active**: 2026-06-19
 <!-- @@@/auto:current-status -->
 
 ---
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-23.md` | ~543 | Active |
+| `journal-23.md` | ~580 | Active |
 | `journal-22.md` | ~1969 | Archived |
 | `journal-21.md` | ~1970 | Archived |
 | `journal-20.md` | ~1997 | Archived |
@@ -51,6 +51,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 886 | 2026-06-19 | 修复性能归档评论权限 | `3a1de15e` | `feature/v0.5.11` |
 | 885 | 2026-06-18 | 修复性能归档门禁 | `e7837d2d` | `feature/v0.5.11` |
 | 884 | 2026-06-18 | 批量归档 v0.5.11 已验证 OpenSpec 提案 | `c486776c` | `feature/v0.5.11` |
 | 883 | 2026-06-18 | 收口 v0.5.11 性能证据边界 | `d6941daa` | `feature/v0.5.11` |
