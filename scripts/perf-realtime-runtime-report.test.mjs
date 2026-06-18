@@ -88,7 +88,15 @@ test("realtime runtime report derives measured metrics from content-safe diagnos
           threadId: "thread-1",
           turnId: "turn-1",
           method: "item/agentMessage/delta",
+          turnStartResponseToFirstRuntimeEventMs: 5,
           turnStartResponseToFirstTextDeltaMs: 12,
+          firstRuntimeEventToFirstTextDeltaMs: 7,
+          eventCountBeforeFirstTextDelta: 1,
+          reasoningEventCountBeforeFirstTextDelta: 1,
+          toolEventCountBeforeFirstTextDelta: 0,
+          methodsBeforeFirstTextDelta: ["item/reasoning/textDelta"],
+          firstRuntimeEventMethod: "item/reasoning/textDelta",
+          firstReasoningEventMethod: "item/reasoning/textDelta",
         },
       },
       {
@@ -100,7 +108,16 @@ test("realtime runtime report derives measured metrics from content-safe diagnos
           threadId: "thread-2",
           turnId: "turn-2",
           method: "item/agentMessage/delta",
+          turnStartResponseToFirstRuntimeEventMs: 4,
           turnStartResponseToFirstTextDeltaMs: 24,
+          firstRuntimeEventToFirstTextDeltaMs: 20,
+          eventCountBeforeFirstTextDelta: 2,
+          reasoningEventCountBeforeFirstTextDelta: 1,
+          toolEventCountBeforeFirstTextDelta: 1,
+          methodsBeforeFirstTextDelta: ["item/reasoning/textDelta", "item/started"],
+          firstRuntimeEventMethod: "item/reasoning/textDelta",
+          firstReasoningEventMethod: "item/reasoning/textDelta",
+          firstToolEventMethod: "item/started",
         },
       },
     ],
@@ -112,14 +129,34 @@ test("realtime runtime report derives measured metrics from content-safe diagnos
   assert.equal(byMetric.get("firstDeltaLatencyP95")?.value, 40);
   assert.equal(byMetric.get("turnStartAckLatencyP95")?.value, 28);
   assert.equal(byMetric.get("codexPostAckFirstDeltaP95")?.value, 24);
+  assert.equal(byMetric.get("codexPostAckFirstRuntimeEventP95")?.value, 5);
+  assert.equal(byMetric.get("codexFirstRuntimeEventToFirstTextDeltaP95")?.value, 20);
   assert.deepEqual(
     fragment.diagnostics.codexPostAckFirstDeltaByTurn.map((entry) => ({
       turnId: entry.turnId,
       firstTextDeltaMs: entry.firstTextDeltaMs,
+      firstRuntimeEventMs: entry.firstRuntimeEventMs,
+      firstRuntimeEventToFirstTextDeltaMs: entry.firstRuntimeEventToFirstTextDeltaMs,
+      eventCountBeforeFirstTextDelta: entry.eventCountBeforeFirstTextDelta,
+      methodsBeforeFirstTextDelta: entry.methodsBeforeFirstTextDelta,
     })),
     [
-      { turnId: "turn-2", firstTextDeltaMs: 24 },
-      { turnId: "turn-1", firstTextDeltaMs: 12 },
+      {
+        turnId: "turn-2",
+        firstTextDeltaMs: 24,
+        firstRuntimeEventMs: 4,
+        firstRuntimeEventToFirstTextDeltaMs: 20,
+        eventCountBeforeFirstTextDelta: 2,
+        methodsBeforeFirstTextDelta: ["item/reasoning/textDelta", "item/started"],
+      },
+      {
+        turnId: "turn-1",
+        firstTextDeltaMs: 12,
+        firstRuntimeEventMs: 5,
+        firstRuntimeEventToFirstTextDeltaMs: 7,
+        eventCountBeforeFirstTextDelta: 1,
+        methodsBeforeFirstTextDelta: ["item/reasoning/textDelta"],
+      },
     ],
   );
   assert.equal(byMetric.get("visibleTextLagP95")?.value, 35);
@@ -127,6 +164,7 @@ test("realtime runtime report derives measured metrics from content-safe diagnos
   assert.equal(byMetric.get("batchFlushDurationP95")?.evidenceClass, "measured");
   assert.match(fragment.notes.join("\n"), /contentSafety=/);
   assert.match(fragment.notes.join("\n"), /codexPostAckFirstDeltaTurnCount=2/);
+  assert.match(fragment.notes.join("\n"), /codexPostAckPhaseBreakdown=/);
 });
 
 test("realtime runtime report separates first-delta latency from visible lag", async () => {

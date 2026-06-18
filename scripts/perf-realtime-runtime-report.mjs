@@ -28,6 +28,15 @@ function toFiniteNumber(value) {
   return Number.isFinite(numberValue) ? numberValue : null;
 }
 
+function normalizeStringList(value) {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+  return value
+    .map((item) => (typeof item === "string" ? item.trim() : ""))
+    .filter((item) => item.length > 0);
+}
+
 function percentile(values, ratio) {
   const finite = values
     .map(toFiniteNumber)
@@ -118,8 +127,36 @@ function collectCodexPostAckFirstDeltaByTurn(codexTimingDiagnostics) {
       threadId: typeof diagnostic.threadId === "string" ? diagnostic.threadId : null,
       model: typeof diagnostic.model === "string" ? diagnostic.model : null,
       firstTextDeltaMs,
+      firstRuntimeEventMs: toFiniteNumber(diagnostic.turnStartResponseToFirstRuntimeEventMs),
+      firstRuntimeEventToFirstTextDeltaMs: toFiniteNumber(
+        diagnostic.firstRuntimeEventToFirstTextDeltaMs,
+      ),
       firstStreamEventMs: toFiniteNumber(diagnostic.turnStartResponseToFirstStreamEventMs),
       turnStartAckMs: toFiniteNumber(diagnostic.turnStartRequestToResponseMs),
+      eventCountBeforeFirstTextDelta: toFiniteNumber(
+        diagnostic.eventCountBeforeFirstTextDelta,
+      ),
+      reasoningEventCountBeforeFirstTextDelta: toFiniteNumber(
+        diagnostic.reasoningEventCountBeforeFirstTextDelta,
+      ),
+      toolEventCountBeforeFirstTextDelta: toFiniteNumber(
+        diagnostic.toolEventCountBeforeFirstTextDelta,
+      ),
+      methodsBeforeFirstTextDelta: normalizeStringList(
+        diagnostic.methodsBeforeFirstTextDelta,
+      ),
+      firstRuntimeEventMethod:
+        typeof diagnostic.firstRuntimeEventMethod === "string"
+          ? diagnostic.firstRuntimeEventMethod
+          : null,
+      firstReasoningEventMethod:
+        typeof diagnostic.firstReasoningEventMethod === "string"
+          ? diagnostic.firstReasoningEventMethod
+          : null,
+      firstToolEventMethod:
+        typeof diagnostic.firstToolEventMethod === "string"
+          ? diagnostic.firstToolEventMethod
+          : null,
       firstTextDeltaMethod:
         typeof diagnostic.firstTextDeltaMethod === "string"
           ? diagnostic.firstTextDeltaMethod
@@ -245,6 +282,33 @@ function collectCodexPostAckComparisonNotes(summaries, ackDiagnostics, codexTimi
   ];
 }
 
+function collectCodexPostAckPhaseNotes(codexPostAckFirstDeltaByTurn) {
+  const postAckFirstRuntimeP95 = percentile(
+    codexPostAckFirstDeltaByTurn.map((diagnostic) => diagnostic.firstRuntimeEventMs),
+    0.95,
+  );
+  const firstRuntimeToTextP95 = percentile(
+    codexPostAckFirstDeltaByTurn.map(
+      (diagnostic) => diagnostic.firstRuntimeEventToFirstTextDeltaMs,
+    ),
+    0.95,
+  );
+  const postAckFirstTextP95 = percentile(
+    codexPostAckFirstDeltaByTurn.map((diagnostic) => diagnostic.firstTextDeltaMs),
+    0.95,
+  );
+  if (
+    postAckFirstRuntimeP95 === null ||
+    firstRuntimeToTextP95 === null ||
+    postAckFirstTextP95 === null
+  ) {
+    return [];
+  }
+  return [
+    `codexPostAckPhaseBreakdown=firstRuntimeEventP95:${postAckFirstRuntimeP95}ms firstRuntimeEventToFirstTextDeltaP95:${firstRuntimeToTextP95}ms firstTextDeltaP95:${postAckFirstTextP95}ms`,
+  ];
+}
+
 function buildFragment(summaries, ackDiagnostics, codexTimingDiagnostics, sourcePath) {
   const unsupportedReason = summaries.length === 0
     ? "No measured realtime.turnTrace.summary diagnostics were found. Enable turn trace in a Tauri/webview session and export renderer diagnostics."
@@ -265,6 +329,12 @@ function buildFragment(summaries, ackDiagnostics, codexTimingDiagnostics, source
     collectCodexPostAckFirstDeltaByTurn(codexTimingDiagnostics);
   const codexPostAckFirstDeltaValues = codexPostAckFirstDeltaByTurn.map(
     (diagnostic) => diagnostic.firstTextDeltaMs,
+  );
+  const codexPostAckFirstRuntimeEventValues = codexPostAckFirstDeltaByTurn.map(
+    (diagnostic) => diagnostic.firstRuntimeEventMs,
+  );
+  const codexFirstRuntimeEventToFirstTextDeltaValues = codexPostAckFirstDeltaByTurn.map(
+    (diagnostic) => diagnostic.firstRuntimeEventToFirstTextDeltaMs,
   );
   return {
     schemaVersion: "1.0",
@@ -298,6 +368,26 @@ function buildFragment(summaries, ackDiagnostics, codexTimingDiagnostics, source
         unsupportedReason:
           unsupportedReason ??
           "No Codex stream-latency/app-server-event diagnostics with turnStartResponseToFirstTextDeltaMs were found. Run a build with Codex backend post-ack timing instrumentation.",
+      }),
+      metricFromValues({
+        scenario: "S-RS-PR",
+        metric: "codexPostAckFirstRuntimeEventP95",
+        values: codexPostAckFirstRuntimeEventValues,
+        unit: "ms",
+        notes: `measured renderer stream-latency/app-server-event Codex first runtime event from ${sourcePath}`,
+        unsupportedReason:
+          unsupportedReason ??
+          "No Codex ccguiTiming.turnStartResponseToFirstRuntimeEventMs diagnostics were found. Run a build with Codex backend phase timing instrumentation.",
+      }),
+      metricFromValues({
+        scenario: "S-RS-RT",
+        metric: "codexFirstRuntimeEventToFirstTextDeltaP95",
+        values: codexFirstRuntimeEventToFirstTextDeltaValues,
+        unit: "ms",
+        notes: `measured renderer stream-latency/app-server-event Codex runtime-event-to-text phase from ${sourcePath}`,
+        unsupportedReason:
+          unsupportedReason ??
+          "No Codex ccguiTiming.firstRuntimeEventToFirstTextDeltaMs diagnostics were found. Run a build with Codex backend phase timing instrumentation.",
       }),
       metricFromValues({
         scenario: "S-RS-VL",
@@ -346,6 +436,7 @@ function buildFragment(summaries, ackDiagnostics, codexTimingDiagnostics, source
       ...collectFirstDeltaDominanceNotes(summaries),
       ...collectTurnStartAckComparisonNotes(summaries, ackDiagnostics),
       ...collectCodexPostAckComparisonNotes(summaries, ackDiagnostics, codexTimingDiagnostics),
+      ...collectCodexPostAckPhaseNotes(codexPostAckFirstDeltaByTurn),
     ],
   };
 }

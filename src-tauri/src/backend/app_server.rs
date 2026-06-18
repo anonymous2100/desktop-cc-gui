@@ -178,6 +178,7 @@ const CODEX_TUI_COMPAT_CLIENT_NAME: &str = "codex-tui";
 const FALLBACK_CODEX_TUI_COMPAT_VERSION: &str = "0.137.0";
 const FALLBACK_TERM_PROGRAM: &str = "Apple_Terminal";
 const FALLBACK_TERM_PROGRAM_VERSION: &str = "470.2";
+const CODEX_TIMING_METHODS_BEFORE_FIRST_TEXT_LIMIT: usize = 12;
 
 #[derive(Debug, Clone)]
 struct TimedOutRequest {
@@ -190,10 +191,45 @@ struct TimedOutRequest {
 pub(super) struct CodexTurnTimingState {
     turn_start_request_started_at_ms: u64,
     turn_start_response_received_at_ms: Option<u64>,
+    first_runtime_event_received_at_ms: Option<u64>,
     first_stream_event_received_at_ms: Option<u64>,
+    first_reasoning_event_received_at_ms: Option<u64>,
+    first_agent_message_event_received_at_ms: Option<u64>,
+    first_tool_event_received_at_ms: Option<u64>,
     first_text_delta_received_at_ms: Option<u64>,
     first_stream_event_method: Option<String>,
+    first_runtime_event_method: Option<String>,
+    first_reasoning_event_method: Option<String>,
+    first_agent_message_event_method: Option<String>,
+    first_tool_event_method: Option<String>,
     first_text_delta_method: Option<String>,
+    event_count_before_first_text_delta: u32,
+    reasoning_event_count_before_first_text_delta: u32,
+    tool_event_count_before_first_text_delta: u32,
+    methods_before_first_text_delta: Vec<String>,
+}
+
+fn new_codex_turn_timing_state(request_started_at_ms: u64) -> CodexTurnTimingState {
+    CodexTurnTimingState {
+        turn_start_request_started_at_ms: request_started_at_ms,
+        turn_start_response_received_at_ms: None,
+        first_runtime_event_received_at_ms: None,
+        first_stream_event_received_at_ms: None,
+        first_reasoning_event_received_at_ms: None,
+        first_agent_message_event_received_at_ms: None,
+        first_tool_event_received_at_ms: None,
+        first_text_delta_received_at_ms: None,
+        first_stream_event_method: None,
+        first_runtime_event_method: None,
+        first_reasoning_event_method: None,
+        first_agent_message_event_method: None,
+        first_tool_event_method: None,
+        first_text_delta_method: None,
+        event_count_before_first_text_delta: 0,
+        reasoning_event_count_before_first_text_delta: 0,
+        tool_event_count_before_first_text_delta: 0,
+        methods_before_first_text_delta: Vec::new(),
+    }
 }
 
 fn non_empty_env_var(key: &str) -> Option<String> {
@@ -605,14 +641,7 @@ impl WorkspaceSession {
         }
         self.codex_turn_timing.lock().await.insert(
             normalized_thread_id.to_string(),
-            CodexTurnTimingState {
-                turn_start_request_started_at_ms: request_started_at_ms,
-                turn_start_response_received_at_ms: None,
-                first_stream_event_received_at_ms: None,
-                first_text_delta_received_at_ms: None,
-                first_stream_event_method: None,
-                first_text_delta_method: None,
-            },
+            new_codex_turn_timing_state(request_started_at_ms),
         );
     }
 
@@ -628,14 +657,7 @@ impl WorkspaceSession {
         let mut timing = self.codex_turn_timing.lock().await;
         let entry = timing
             .entry(normalized_thread_id.to_string())
-            .or_insert_with(|| CodexTurnTimingState {
-                turn_start_request_started_at_ms: response_received_at_ms,
-                turn_start_response_received_at_ms: None,
-                first_stream_event_received_at_ms: None,
-                first_text_delta_received_at_ms: None,
-                first_stream_event_method: None,
-                first_text_delta_method: None,
-            });
+            .or_insert_with(|| new_codex_turn_timing_state(response_received_at_ms));
         entry.turn_start_response_received_at_ms = Some(response_received_at_ms);
     }
 

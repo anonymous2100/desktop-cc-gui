@@ -36,6 +36,8 @@ Use a bounded map keyed by `threadId` for foreground `turn/start` timing:
 - `turnStartResponseReceivedAtMs`
 - first stdout event timestamps
 - first text delta timestamp
+- first runtime/reasoning/agent-message/tool event timestamps
+- bounded pre-first-text event counters and method names
 
 Alternative considered: parse timing only at frontend. Rejected because the frontend cannot know when backend received the `turn/start` response or the first stdout line.
 
@@ -50,6 +52,12 @@ Alternative considered: emit a parallel diagnostic app-server event. Rejected be
 The backend can attach timing to any event, but report aggregation will use `stream-latency/app-server-event` diagnostics and focus on entries that have `turnStartResponseToFirstTextDeltaMs`.
 
 Alternative considered: add metrics to `realtime.turnTrace.summary`. Rejected for this step because the summary is renderer-owned and already stable; report can correlate through diagnostics without expanding the turn summary schema first.
+
+### Decision: define assistant first text as non-empty `item/agentMessage/delta`
+
+Reasoning deltas are useful evidence that the runtime is alive, but they are not visible assistant answer text. `firstTextDeltaReceivedAtMs` therefore advances only on non-empty `item/agentMessage/delta`. Reasoning/tool/lifecycle events before that point are counted separately through `eventCountBeforeFirstTextDelta`, `reasoningEventCountBeforeFirstTextDelta`, `toolEventCountBeforeFirstTextDelta`, and `methodsBeforeFirstTextDelta`.
+
+Alternative considered: keep using the shared stream-delta extractor for both reasoning and assistant text. Rejected because it can collapse reasoning latency into assistant first-text latency and hide the real phase boundary.
 
 ## Risks / Trade-offs
 

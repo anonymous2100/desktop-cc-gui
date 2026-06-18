@@ -611,7 +611,9 @@ fn build_late_turn_error_event_reads_nested_result_error_message() {
 async fn enrich_codex_turn_timing_attaches_content_safe_first_delta_fields() {
     let session = make_workspace_session("codex-timing").await;
     session.start_codex_turn_timing("thread-1", 1_000).await;
-    session.record_codex_turn_start_response("thread-1", 1_120).await;
+    session
+        .record_codex_turn_start_response("thread-1", 1_120)
+        .await;
 
     let mut event = json!({
         "method": "item/agentMessage/delta",
@@ -628,14 +630,27 @@ async fn enrich_codex_turn_timing_attaches_content_safe_first_delta_fields() {
     assert_eq!(timing["source"], "codex-app-server");
     assert_eq!(timing["turnStartRequestStartedAtMs"], 1_000);
     assert_eq!(timing["turnStartResponseReceivedAtMs"], 1_120);
+    assert_eq!(timing["firstRuntimeEventReceivedAtMs"], 1_720);
     assert_eq!(timing["firstStreamEventReceivedAtMs"], 1_720);
+    assert_eq!(timing["firstAgentMessageEventReceivedAtMs"], 1_720);
     assert_eq!(timing["firstTextDeltaReceivedAtMs"], 1_720);
     assert_eq!(timing["turnStartRequestToResponseMs"], 120);
+    assert_eq!(timing["turnStartResponseToFirstRuntimeEventMs"], 600);
     assert_eq!(timing["turnStartResponseToFirstStreamEventMs"], 600);
     assert_eq!(timing["turnStartResponseToFirstTextDeltaMs"], 600);
+    assert_eq!(timing["firstRuntimeEventToFirstTextDeltaMs"], 0);
     assert_eq!(timing["turnStartResponseToThisEventMs"], 600);
+    assert_eq!(timing["firstRuntimeEventMethod"], "item/agentMessage/delta");
     assert_eq!(timing["firstStreamEventMethod"], "item/agentMessage/delta");
+    assert_eq!(
+        timing["firstAgentMessageEventMethod"],
+        "item/agentMessage/delta"
+    );
     assert_eq!(timing["firstTextDeltaMethod"], "item/agentMessage/delta");
+    assert_eq!(timing["eventCountBeforeFirstTextDelta"], 0);
+    assert_eq!(timing["reasoningEventCountBeforeFirstTextDelta"], 0);
+    assert_eq!(timing["toolEventCountBeforeFirstTextDelta"], 0);
+    assert_eq!(timing["methodsBeforeFirstTextDelta"], json!([]));
     assert!(!serde_json::to_string(timing)
         .expect("serialize timing")
         .contains("secret assistant text"));
@@ -644,10 +659,109 @@ async fn enrich_codex_turn_timing_attaches_content_safe_first_delta_fields() {
 }
 
 #[tokio::test]
+async fn enrich_codex_turn_timing_keeps_reasoning_and_tool_events_before_first_text_separate() {
+    let session = make_workspace_session("codex-timing-pre-text").await;
+    session.start_codex_turn_timing("thread-1", 1_000).await;
+    session
+        .record_codex_turn_start_response("thread-1", 1_100)
+        .await;
+
+    let mut reasoning_event = json!({
+        "method": "item/reasoning/textDelta",
+        "params": {
+            "threadId": "thread-1",
+            "itemId": "reasoning-item-1",
+            "delta": "secret reasoning text"
+        }
+    });
+    session
+        .enrich_codex_turn_timing(&mut reasoning_event, 1_300)
+        .await;
+
+    let reasoning_timing = &reasoning_event["params"]["ccguiTiming"];
+    assert_eq!(reasoning_timing["firstRuntimeEventReceivedAtMs"], 1_300);
+    assert_eq!(reasoning_timing["firstReasoningEventReceivedAtMs"], 1_300);
+    assert_eq!(reasoning_timing["firstTextDeltaReceivedAtMs"], Value::Null);
+    assert_eq!(reasoning_timing["eventCountBeforeFirstTextDelta"], 1);
+    assert_eq!(
+        reasoning_timing["reasoningEventCountBeforeFirstTextDelta"],
+        1
+    );
+    assert_eq!(
+        reasoning_timing["methodsBeforeFirstTextDelta"],
+        json!(["item/reasoning/textDelta"])
+    );
+
+    let mut tool_event = json!({
+        "method": "item/started",
+        "params": {
+            "threadId": "thread-1",
+            "item": {
+                "id": "tool-item-1",
+                "type": "tool_call",
+                "tool": "shell"
+            }
+        }
+    });
+    session
+        .enrich_codex_turn_timing(&mut tool_event, 1_450)
+        .await;
+
+    let mut agent_event = json!({
+        "method": "item/agentMessage/delta",
+        "params": {
+            "threadId": "thread-1",
+            "itemId": "assistant-item-1",
+            "delta": "secret assistant text"
+        }
+    });
+    session
+        .enrich_codex_turn_timing(&mut agent_event, 1_900)
+        .await;
+
+    let timing = &agent_event["params"]["ccguiTiming"];
+    assert_eq!(timing["firstRuntimeEventReceivedAtMs"], 1_300);
+    assert_eq!(timing["firstReasoningEventReceivedAtMs"], 1_300);
+    assert_eq!(timing["firstToolEventReceivedAtMs"], 1_450);
+    assert_eq!(timing["firstAgentMessageEventReceivedAtMs"], 1_900);
+    assert_eq!(timing["firstTextDeltaReceivedAtMs"], 1_900);
+    assert_eq!(timing["turnStartResponseToFirstRuntimeEventMs"], 200);
+    assert_eq!(timing["firstRuntimeEventToFirstTextDeltaMs"], 600);
+    assert_eq!(timing["eventCountBeforeFirstTextDelta"], 2);
+    assert_eq!(timing["reasoningEventCountBeforeFirstTextDelta"], 1);
+    assert_eq!(timing["toolEventCountBeforeFirstTextDelta"], 1);
+    assert_eq!(
+        timing["methodsBeforeFirstTextDelta"],
+        json!(["item/reasoning/textDelta", "item/started"])
+    );
+    assert_eq!(
+        timing["firstRuntimeEventMethod"],
+        "item/reasoning/textDelta"
+    );
+    assert_eq!(
+        timing["firstReasoningEventMethod"],
+        "item/reasoning/textDelta"
+    );
+    assert_eq!(timing["firstToolEventMethod"], "item/started");
+    assert_eq!(
+        timing["firstAgentMessageEventMethod"],
+        "item/agentMessage/delta"
+    );
+    assert_eq!(timing["firstTextDeltaMethod"], "item/agentMessage/delta");
+    let serialized = serde_json::to_string(timing).expect("serialize timing");
+    assert!(!serialized.contains("secret reasoning text"));
+    assert!(!serialized.contains("secret assistant text"));
+
+    dispose_workspace_session(&session).await;
+}
+
+#[tokio::test]
 async fn enrich_codex_turn_timing_clears_state_on_terminal_event() {
     let session = make_workspace_session("codex-timing-terminal").await;
     session.start_codex_turn_timing("thread-1", 2_000).await;
-    session.record_codex_turn_start_response("thread-1", 2_050).await;
+    session
+        .record_codex_turn_start_response("thread-1", 2_050)
+        .await;
 
     let mut event = json!({
         "method": "turn/completed",

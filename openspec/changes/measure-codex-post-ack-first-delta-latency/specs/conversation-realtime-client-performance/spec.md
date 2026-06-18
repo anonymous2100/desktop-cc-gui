@@ -11,3 +11,10 @@ Realtime performance evidence MUST distinguish Codex post-ack first-delta wait f
 #### Scenario: post-ack residual guides next action
 - **WHEN** post-ack first-delta wait is high while visible lag and reducer amplification are healthy
 - **THEN** the report MUST identify the next investigation area as backend/provider/startup before renderer optimization
+
+#### Scenario: post-ack phase breakdown is reported when available
+- **WHEN** Codex app-server diagnostics include first runtime event and first assistant text delta phase timings
+- **THEN** runtime performance reports MUST include measured `codexPostAckFirstRuntimeEventP95`
+- **AND** runtime performance reports MUST include measured `codexFirstRuntimeEventToFirstTextDeltaP95`
+- **AND** turn-level diagnostics MUST expose bounded `methodsBeforeFirstTextDelta` and event counters without prompt, assistant text, tool output, terminal output, or file content
+- **AND** missing phase fields from older artifacts MUST remain `unsupported` rather than being approximated
