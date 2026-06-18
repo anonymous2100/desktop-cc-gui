@@ -293,3 +293,48 @@
 ### Next Steps
 
 - None - task complete
+
+
+## Session 879: 收口 v0.5.11 消息恢复与性能证据
+
+**Date**: 2026-06-18
+**Task**: 收口 v0.5.11 消息恢复与性能证据
+**Branch**: `feature/v0.5.11`
+
+### Summary
+
+(Add summary)
+
+### Main Changes
+
+| Area | Summary |
+|---|---|
+| Thread recovery | Extracted Codex stale-thread/fresh-continuation/fork recovery into `useCodexMessageRecovery` and kept `useThreadMessaging` caller contract stable. |
+| Streaming dispatch | Added first-token reasoning urgent dispatch predicate and coverage while preserving steady-state batching. |
+| Perf evidence | Added `evidenceClassUpgrade` mode, `proxyRatio`, warn-only archive readiness behavior, synthetic-aware ratio denominator, and PR readiness workflow. |
+| OpenSpec | Completed `refactor-v0511-thread-messaging-recovery-and-streaming`; split large-file wave3, recovery cookbook, and remaining measured producer work into `follow-up-v0511-large-file-cookbook-and-measured-evidence`. |
+| Validation | Ran typecheck, lint, focused Vitest, perf script node tests, perf archive readiness JSON, and strict OpenSpec validation for both current and follow-up changes. |
+
+**Code commit**: `3f3474c0 feat(threads): 收口 v0.5.11 消息恢复与性能证据`
+
+**Follow-up OpenSpec**:
+- `openspec/changes/follow-up-v0511-large-file-cookbook-and-measured-evidence/`
+
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `3f3474c0` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
