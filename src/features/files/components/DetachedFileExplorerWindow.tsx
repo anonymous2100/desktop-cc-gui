@@ -14,6 +14,7 @@ import {
   clearDetachedExternalChangeMonitor,
   configureDetachedExternalChangeMonitor,
 } from "../../../services/tauri";
+import { loadDetachedFileExplorerStyles } from "../../../styles/featureStyleLoaders";
 import type { WorkspaceInfo } from "../../../types";
 import { isMacPlatform, isWindowsPlatform } from "../../../utils/platform";
 import {
@@ -51,6 +52,9 @@ export function DetachedFileExplorerWindow() {
   const { t } = useTranslation();
   const { appSettings, reduceTransparency } = useAppSettingsController();
   useCodeCssVars(appSettings);
+  useEffect(() => {
+    void loadDetachedFileExplorerStyles();
+  }, []);
   const session = useDetachedFileExplorerSession();
   const isFocused = useWindowFocusState();
   const isMacDesktop = useMemo(() => isMacPlatform(), []);
