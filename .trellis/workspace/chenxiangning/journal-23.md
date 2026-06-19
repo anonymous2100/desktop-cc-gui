@@ -697,3 +697,36 @@
 ### Next Steps
 
 - None - task complete
+
+
+## Session 890: 修复独立文件窗口首屏样式加载
+
+**Date**: 2026-06-20
+**Task**: 修复独立文件窗口首屏样式加载
+**Branch**: `feature/v0.5.11`
+
+### Summary
+
+修复 detached file explorer 首屏未选择文件时未加载 detached-file-explorer.css 导致 UI 回退到主窗口布局的问题；窗口 root 直接加载 detached shell styles，补充 OpenSpec spec/proposal 回写，并通过 targeted test、typecheck 与 OpenSpec specs strict 校验。
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `dd4d7caa` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
