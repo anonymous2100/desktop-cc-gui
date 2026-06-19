@@ -578,3 +578,36 @@
 ### Next Steps
 
 - None - task complete
+
+
+## Session 887: 修正运行时提示侧栏入口和弹层
+
+**Date**: 2026-06-19
+**Task**: 修正运行时提示侧栏入口和弹层
+**Branch**: `feature/v0.5.11`
+
+### Summary
+
+将 runtime notice 入口移动到侧栏底部与设置同层，展开弹窗通过 portal 提层避免裁剪，宽度调整为 560px readable compact，并回写 OpenSpec 变更与测试。
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `b5ddea13` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
