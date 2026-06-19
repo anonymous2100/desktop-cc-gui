@@ -68,6 +68,7 @@ import {
   type TurnDiagnosticState,
 } from "./threadEventDiagnostics";
 export { CODEX_EXECUTION_ACTIVE_NO_PROGRESS_STALL_MS, CODEX_TURN_NO_PROGRESS_STALL_MS } from "./threadEventDiagnostics";
+
 export function useThreadEventHandlers({
   activeThreadId,
   dispatch,
@@ -333,9 +334,6 @@ export function useThreadEventHandlers({
       handled: boolean;
       fallbackApplied: boolean;
     }) => {
-      if (activeThreadId !== null && activeThreadId !== input.threadId) {
-        return;
-      }
       const now = Date.now();
       const progressFreshWindowMs = input.diagnostic
         ? getCodexNoProgressTimeoutMs(input.diagnostic)
@@ -522,7 +520,8 @@ export function useThreadEventHandlers({
               runtimeLeaseId: response.runtimeLeaseId,
               source: "status-query",
               scope: {
-                foreground: activeThreadId === null || activeThreadId === input.threadId,
+                // 这里的 owner 是被查询的 thread scope，不是当前可见 tab。
+                foreground: true,
                 currentWorkspaceId: input.workspaceId,
                 currentEngine: engine,
                 currentThreadId: input.threadId,
@@ -1181,6 +1180,30 @@ export function useThreadEventHandlers({
     [],
   );
 
+  const findQuarantinedCodexTurn = useCallback(
+    (threadId: string, turnId?: string | null) => {
+      const normalizedThreadId = threadId.trim();
+      if (!normalizedThreadId) {
+        return null;
+      }
+      const normalizedTurnId = turnId?.trim() ?? "";
+      if (normalizedTurnId) {
+        return (
+          quarantinedCodexTurnsRef.current.get(
+            buildCodexTurnIdentityKey(normalizedThreadId, normalizedTurnId),
+          ) ?? null
+        );
+      }
+      for (const quarantinedTurn of quarantinedCodexTurnsRef.current.values()) {
+        if (quarantinedTurn.threadId === normalizedThreadId) {
+          return quarantinedTurn;
+        }
+      }
+      return null;
+    },
+    [],
+  );
+
   const shouldSkipCodexTurnEvent = useCallback(
     (input: {
       engine: "claude" | "codex" | "gemini" | "opencode";
@@ -1195,7 +1218,40 @@ export function useThreadEventHandlers({
       }
       const eventTurnId = input.turnId.trim();
       if (!eventTurnId) {
-        return false;
+        const lifecycle = getThreadLifecycleSnapshot(input.threadId);
+        const activeQuarantinedTurn = lifecycle.activeTurnId
+          ? findQuarantinedCodexTurn(input.threadId, lifecycle.activeTurnId)
+          : null;
+        const settledTurnWithoutSuccessor =
+          lifecycle.activeTurnId === null && !lifecycle.isProcessing
+            ? findQuarantinedCodexTurn(input.threadId)
+            : null;
+        const quarantinedTurn = activeQuarantinedTurn ?? settledTurnWithoutSuccessor;
+        if (!quarantinedTurn) {
+          return false;
+        }
+        emitTurnDiagnostic("quarantined-codex-event-skipped", {
+          ...buildCodexLivenessDiagnostic({
+            workspaceId: input.workspaceId,
+            threadId: input.threadId,
+            stage: "abandoned",
+            outcome: "abandoned",
+            source: input.sourceMethod,
+            reason:
+              "turnless event follows a quarantined Codex turn without a verified successor",
+            turnId: quarantinedTurn.turnId,
+          }),
+          eventTurnId: null,
+          activeTurnId: lifecycle.activeTurnId,
+          isProcessing: lifecycle.isProcessing,
+          quarantinedAtMs: quarantinedTurn.settledAt,
+          quarantineReason: quarantinedTurn.reason,
+          quarantineSource: quarantinedTurn.source,
+          operation: input.operation,
+          sourceMethod: input.sourceMethod,
+          diagnosticCategory: "quarantined-codex-event",
+        }, { force: true });
+        return true;
       }
       const quarantineKey = buildCodexTurnIdentityKey(input.threadId, eventTurnId);
       const quarantinedTurn = quarantinedCodexTurnsRef.current.get(quarantineKey);
@@ -1245,7 +1301,22 @@ export function useThreadEventHandlers({
       }, { force: true });
       return true;
     },
-    [emitTurnDiagnostic, getThreadLifecycleSnapshot],
+    [emitTurnDiagnostic, findQuarantinedCodexTurn, getThreadLifecycleSnapshot],
+  );
+
+  const resolveTerminalSettlementTurnId = useCallback(
+    (threadId: string, incomingTurnId: string) => {
+      const normalizedTurnId = incomingTurnId.trim();
+      if (normalizedTurnId) {
+        return normalizedTurnId;
+      }
+      return (
+        getThreadLifecycleSnapshot(threadId).activeTurnId ??
+        turnDiagnosticsRef.current.get(threadId)?.turnId ??
+        ""
+      );
+    },
+    [getThreadLifecycleSnapshot],
   );
 
   const markProcessingTracked = useCallback(
@@ -1773,6 +1844,31 @@ export function useThreadEventHandlers({
 
   const onTurnStartedTracked = useCallback(
     (workspaceId: string, threadId: string, turnId: string) => {
+      const normalizedTurnId = turnId.trim();
+      if (inferThreadEngine(threadId) === "codex" && normalizedTurnId) {
+        const quarantinedTurn = findQuarantinedCodexTurn(threadId, normalizedTurnId);
+        if (quarantinedTurn) {
+          emitTurnDiagnostic("quarantined-codex-event-skipped", {
+            ...buildCodexLivenessDiagnostic({
+              workspaceId,
+              threadId,
+              stage: "abandoned",
+              outcome: "abandoned",
+              source: "turn/started",
+              reason: "turn/started belongs to a quarantined Codex turn",
+              turnId: normalizedTurnId,
+            }),
+            eventTurnId: normalizedTurnId,
+            quarantinedAtMs: quarantinedTurn.settledAt,
+            quarantineReason: quarantinedTurn.reason,
+            quarantineSource: quarantinedTurn.source,
+            operation: "turnStarted",
+            sourceMethod: "turn/started",
+            diagnosticCategory: "quarantined-codex-event",
+          }, { force: true });
+          return;
+        }
+      }
       const startedAt = Date.now();
       noteRealtimeTurnStarted(threadId, turnId);
       clearAssistantSnapshotIngressForThread(threadId);
@@ -1814,6 +1910,7 @@ export function useThreadEventHandlers({
       scheduleCodexNoProgressTimer,
       scheduleFirstDeltaTimer,
       clearAssistantSnapshotIngressForThread,
+      findQuarantinedCodexTurn,
     ],
   );
 
@@ -1894,10 +1991,6 @@ export function useThreadEventHandlers({
         textLength: payload.text.length,
         source: "completion",
       });
-      flushDeferredTurnCompletionRef.current?.(
-        payload.threadId,
-        "assistant-completed",
-      );
     },
     [
       interruptedThreadsRef,
@@ -2083,10 +2176,6 @@ export function useThreadEventHandlers({
           source: "completion",
         });
         recordAssistantCompletionEvidence(event.threadId, event.item.id);
-        flushDeferredTurnCompletionRef.current?.(
-          event.threadId,
-          "assistant-completed",
-        );
       }
       if (!event.rawItem) {
         return;
@@ -2289,6 +2378,13 @@ export function useThreadEventHandlers({
   const settleCompletedTurn = useCallback(
     (workspaceId: string, threadId: string, normalizedTurnId: string) => {
       markRealtimeTurnTerminal(threadId, normalizedTurnId);
+      quarantineCodexTurn(
+        workspaceId,
+        threadId,
+        normalizedTurnId,
+        "turn-completed",
+        "turn/completed",
+      );
       const handled = onTurnCompleted(workspaceId, threadId, normalizedTurnId);
       let fallbackApplied = false;
       if (handled) {
@@ -2450,7 +2546,166 @@ export function useThreadEventHandlers({
       onTurnCompletedExternal,
       onTurnTerminalExternal,
       pendingInterruptsRef,
+      quarantineCodexTurn,
       setActiveTurnIdTracked,
+    ],
+  );
+
+  const requestDeferredCompletionReconciliation = useCallback(
+    (workspaceId: string, threadId: string, turnId: string) => {
+      const engine = inferThreadEngine(threadId);
+      if (engine !== "codex" || !turnId) {
+        return;
+      }
+      const request = {
+        workspaceId,
+        engine,
+        threadId,
+        turnId,
+        runtimeSessionId: null,
+        runtimeLeaseId: null,
+        requestSource: "three-evidence-reconciliation" as const,
+        requestedAtMs: Date.now(),
+      };
+      const queryKey = buildReconciliationQueryKey(request);
+      if (reconciliationQueryInFlightRef.current.has(queryKey)) {
+        emitTurnDiagnostic("deferred-completion-reconciliation-query-skipped", {
+          workspaceId,
+          threadId,
+          turnId,
+          engine,
+          diagnosticCategory: "deferred-completion-reconciliation",
+          skipReason: "query-already-in-flight",
+          requestSource: request.requestSource,
+          queryKeyHash: queryKey.length,
+          activeThreadId,
+        }, { force: true });
+        return;
+      }
+
+      reconciliationQueryInFlightRef.current.add(queryKey);
+      emitTurnDiagnostic("deferred-completion-reconciliation-query-requested", {
+        workspaceId,
+        threadId,
+        turnId,
+        engine,
+        diagnosticCategory: "deferred-completion-reconciliation",
+        requestSource: request.requestSource,
+        queryKeyHash: queryKey.length,
+        activeThreadId,
+      }, { force: true });
+
+      void queryTurnReconciliationStatusWithTimeout(request)
+        .then((response) => {
+          const latestDiagnostic = turnDiagnosticsRef.current.get(threadId);
+          const latestLifecycle = getThreadLifecycleSnapshot(threadId);
+          const completion = latestDiagnostic?.deferredCompletion ?? null;
+          const responseTerminalKind = terminalKindFromReconciliationStatus(response.status);
+          const responseTurnId = response.turnId ?? null;
+          const scopeMatches =
+            response.workspaceId === workspaceId &&
+            response.engine === engine &&
+            response.threadId === threadId &&
+            responseTurnId === turnId;
+          const stillDeferred =
+            latestDiagnostic?.turnId === turnId &&
+            completion?.workspaceId === workspaceId &&
+            completion.threadId === threadId &&
+            completion.turnId === turnId;
+          const activeTurnMatches =
+            latestLifecycle.activeTurnId === null ||
+            latestLifecycle.activeTurnId === turnId;
+          const canFlush =
+            responseTerminalKind !== null &&
+            scopeMatches &&
+            stillDeferred &&
+            activeTurnMatches;
+          const label = scopeMatches
+            ? "deferred-completion-reconciliation-query-resolved"
+            : "deferred-completion-reconciliation-query-rejected";
+          emitTurnDiagnostic(label, {
+            workspaceId,
+            threadId,
+            turnId,
+            engine,
+            diagnosticCategory: "deferred-completion-reconciliation",
+            status: response.status,
+            statusSource: response.statusSource,
+            observedAtMs: response.observedAtMs,
+            responseWorkspaceId: response.workspaceId,
+            responseThreadId: response.threadId,
+            responseTurnId: response.turnId,
+            responseTerminalKind,
+            scopeMatches,
+            stillDeferred,
+            activeTurnMatches,
+            isProcessing: latestLifecycle.isProcessing,
+            activeTurnId: latestLifecycle.activeTurnId,
+            activeThreadId,
+          }, { force: true });
+
+          if (!canFlush) {
+            emitTurnDiagnostic("deferred-completion-reconciliation-cleanup-skipped", {
+              workspaceId,
+              threadId,
+              turnId,
+              engine,
+              diagnosticCategory: "deferred-completion-reconciliation",
+              status: response.status,
+              statusSource: response.statusSource,
+              skipReason:
+                responseTerminalKind === null
+                  ? "status-not-terminal"
+                  : !scopeMatches
+                    ? "scope-mismatch"
+                    : !stillDeferred
+                      ? "deferred-completion-missing"
+                      : !activeTurnMatches
+                        ? "active-turn-mismatch"
+                        : "guard-rejected",
+              responseWorkspaceId: response.workspaceId,
+              responseThreadId: response.threadId,
+              responseTurnId: response.turnId,
+              isProcessing: latestLifecycle.isProcessing,
+              activeTurnId: latestLifecycle.activeTurnId,
+              activeThreadId,
+            }, { force: true });
+            return;
+          }
+
+          flushDeferredTurnCompletionRef.current?.(
+            threadId,
+            "scoped-reconciliation-terminal",
+          );
+        })
+        .catch((error: unknown) => {
+          const latestLifecycle = getThreadLifecycleSnapshot(threadId);
+          emitTurnDiagnostic("deferred-completion-reconciliation-query-failed", {
+            workspaceId,
+            threadId,
+            turnId,
+            engine,
+            diagnosticCategory: "deferred-completion-reconciliation",
+            status: "query-failed",
+            boundedReason:
+              error instanceof Error
+                ? error.message
+                : "status query failed with unknown error",
+            isProcessing: latestLifecycle.isProcessing,
+            activeTurnId: latestLifecycle.activeTurnId,
+            activeThreadId,
+          }, { force: true });
+        })
+        .finally(() => {
+          reconciliationQueryInFlightRef.current.delete(queryKey);
+        });
+    },
+    [
+      activeThreadId,
+      buildReconciliationQueryKey,
+      emitTurnDiagnostic,
+      getThreadLifecycleSnapshot,
+      terminalKindFromReconciliationStatus,
     ],
   );
 
@@ -2470,53 +2725,6 @@ export function useThreadEventHandlers({
         return false;
       }
       const now = Date.now();
-      const assistantCompletedAt = diagnostic.assistantCompletedAt;
-      if (assistantCompletedAt !== null) {
-        const lifecycle = getThreadLifecycleSnapshot(threadId);
-        emitTurnDiagnostic("turn-completed-deferred-bypassed", {
-          workspaceId,
-          threadId,
-          turnId: normalizedTurnId,
-          elapsedMs: Math.max(0, now - diagnostic.startedAt),
-          assistantCompletedAtMs: Math.max(
-            0,
-            assistantCompletedAt - diagnostic.startedAt,
-          ),
-          assistantCompletedItemId: diagnostic.assistantCompletedItemId,
-          blockerCount: blockers.length,
-          remainingBlockers: blockers,
-          isProcessing: lifecycle.isProcessing,
-          activeTurnId: lifecycle.activeTurnId,
-          diagnosticCategory: "codex-collab-terminal-order",
-          reason:
-            "turn/completed arrived after final assistant text with remaining Codex collaboration blockers",
-          ...buildThreadStreamCorrelationDimensions(threadId),
-        }, { force: true });
-        return false;
-      }
-      if (diagnostic.firstDeltaAt !== null || diagnostic.deltaCount > 0) {
-        const lifecycle = getThreadLifecycleSnapshot(threadId);
-        emitTurnDiagnostic("turn-completed-deferred-bypassed", {
-          workspaceId,
-          threadId,
-          turnId: normalizedTurnId,
-          elapsedMs: Math.max(0, now - diagnostic.startedAt),
-          firstDeltaAtMs:
-            diagnostic.firstDeltaAt === null
-              ? null
-              : Math.max(0, diagnostic.firstDeltaAt - diagnostic.startedAt),
-          deltaCount: diagnostic.deltaCount,
-          blockerCount: blockers.length,
-          remainingBlockers: blockers,
-          isProcessing: lifecycle.isProcessing,
-          activeTurnId: lifecycle.activeTurnId,
-          diagnosticCategory: "codex-collab-terminal-order",
-          reason:
-            "turn/completed arrived after assistant stream ingress with remaining Codex collaboration blockers",
-          ...buildThreadStreamCorrelationDimensions(threadId),
-        }, { force: true });
-        return false;
-      }
       diagnostic.deferredCompletion = diagnostic.deferredCompletion ?? {
         workspaceId,
         threadId,
@@ -2537,9 +2745,10 @@ export function useThreadEventHandlers({
         reason: "turn/completed arrived while Codex collaboration child agents were still active",
         ...buildThreadStreamCorrelationDimensions(threadId),
       }, { force: true });
+      requestDeferredCompletionReconciliation(workspaceId, threadId, normalizedTurnId);
       return true;
     },
-    [emitTurnDiagnostic, getThreadLifecycleSnapshot],
+    [emitTurnDiagnostic, getThreadLifecycleSnapshot, requestDeferredCompletionReconciliation],
   );
 
   const flushDeferredTurnCompletionIfReady = useCallback(
@@ -2550,9 +2759,38 @@ export function useThreadEventHandlers({
         return;
       }
       const blockers = listDeferredCompletionBlockers(diagnostic);
-      const forcedByAssistantCompletion =
-        source === "assistant-completed" && blockers.length > 0;
-      if (blockers.length > 0 && !forcedByAssistantCompletion) {
+      const allowBlockedFlush = source === "scoped-reconciliation-terminal";
+      const lifecycle = getThreadLifecycleSnapshot(threadId);
+      if (diagnostic.turnId !== completion.turnId) {
+        emitTurnDiagnostic("turn-completed-deferred-flush-skipped", {
+          workspaceId: completion.workspaceId,
+          threadId: completion.threadId,
+          turnId: completion.turnId,
+          source,
+          diagnosticTurnId: diagnostic.turnId,
+          diagnosticCategory: "codex-collab-terminal-order",
+          skipReason: "diagnostic-turn-mismatch",
+          ...buildThreadStreamCorrelationDimensions(threadId),
+        }, { force: true });
+        return;
+      }
+      if (
+        lifecycle.activeTurnId !== null &&
+        lifecycle.activeTurnId !== completion.turnId
+      ) {
+        emitTurnDiagnostic("turn-completed-deferred-flush-skipped", {
+          workspaceId: completion.workspaceId,
+          threadId: completion.threadId,
+          turnId: completion.turnId,
+          source,
+          activeTurnId: lifecycle.activeTurnId,
+          diagnosticCategory: "codex-collab-terminal-order",
+          skipReason: "active-turn-mismatch",
+          ...buildThreadStreamCorrelationDimensions(threadId),
+        }, { force: true });
+        return;
+      }
+      if (blockers.length > 0 && !allowBlockedFlush) {
         return;
       }
       diagnostic.deferredCompletion = null;
@@ -2564,27 +2802,32 @@ export function useThreadEventHandlers({
         deferredMs: Math.max(0, now - completion.deferredAt),
         elapsedMs: Math.max(0, now - diagnostic.startedAt),
         source,
-        forcedByAssistantCompletion,
-        remainingBlockers: forcedByAssistantCompletion ? blockers : [],
+        forcedByScopedReconciliation: allowBlockedFlush && blockers.length > 0,
+        remainingBlockers: allowBlockedFlush ? blockers : [],
         diagnosticCategory: "codex-collab-terminal-order",
         ...buildThreadStreamCorrelationDimensions(threadId),
       }, { force: true });
       settleCompletedTurn(completion.workspaceId, completion.threadId, completion.turnId);
     },
-    [emitTurnDiagnostic, settleCompletedTurn],
+    [emitTurnDiagnostic, getThreadLifecycleSnapshot, settleCompletedTurn],
   );
   flushDeferredTurnCompletionRef.current = flushDeferredTurnCompletionIfReady;
 
   const onTurnCompletedTracked = useCallback(
     (workspaceId: string, threadId: string, turnId: string) => {
-      const normalizedTurnId = turnId.trim();
+      const normalizedTurnId = resolveTerminalSettlementTurnId(threadId, turnId);
       flushPendingRealtimeEvents();
       if (deferCodexTurnCompletionIfBlocked(workspaceId, threadId, normalizedTurnId)) {
         return;
       }
       settleCompletedTurn(workspaceId, threadId, normalizedTurnId);
     },
-    [deferCodexTurnCompletionIfBlocked, flushPendingRealtimeEvents, settleCompletedTurn],
+    [
+      deferCodexTurnCompletionIfBlocked,
+      flushPendingRealtimeEvents,
+      resolveTerminalSettlementTurnId,
+      settleCompletedTurn,
+    ],
   );
 
   const onTurnErrorTracked = useCallback(
@@ -2598,7 +2841,7 @@ export function useThreadEventHandlers({
         engine?: ConversationEngine | null;
       },
     ) => {
-      const normalizedTurnId = turnId.trim();
+      const normalizedTurnId = resolveTerminalSettlementTurnId(threadId, turnId);
       flushPendingRealtimeEvents();
       markRealtimeTurnTerminal(threadId, normalizedTurnId);
       onTurnError(workspaceId, threadId, normalizedTurnId, payload);
@@ -2639,6 +2882,7 @@ export function useThreadEventHandlers({
       onTurnError,
       onTurnTerminalExternal,
       quarantineCodexTurn,
+      resolveTerminalSettlementTurnId,
     ],
   );
 
@@ -2657,7 +2901,7 @@ export function useThreadEventHandlers({
         engine?: ConversationEngine | null;
       },
     ) => {
-      const normalizedTurnId = turnId.trim();
+      const normalizedTurnId = resolveTerminalSettlementTurnId(threadId, turnId);
       flushPendingRealtimeEvents();
       markRealtimeTurnTerminal(threadId, normalizedTurnId);
       onTurnStalled(workspaceId, threadId, normalizedTurnId, payload);
@@ -2700,6 +2944,7 @@ export function useThreadEventHandlers({
       onTurnStalled,
       onTurnTerminalExternal,
       quarantineCodexTurn,
+      resolveTerminalSettlementTurnId,
     ],
   );
 

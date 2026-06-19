@@ -214,8 +214,20 @@ export function resolveStreamingPresentationItems(
   currentItems: ConversationItem[],
   shouldStabilize: boolean,
   liveOverrideItemIds?: ReadonlySet<string>,
+  scope?: {
+    deferredScopeKey: string | null;
+    currentScopeKey: string | null;
+  },
 ) {
   if (!shouldStabilize) {
+    return currentItems;
+  }
+  if (
+    scope &&
+    scope.deferredScopeKey !== null &&
+    scope.currentScopeKey !== null &&
+    scope.deferredScopeKey !== scope.currentScopeKey
+  ) {
     return currentItems;
   }
   if (deferredItems.length === 0) {

@@ -126,6 +126,30 @@ describe("messages live window", () => {
     ]);
   });
 
+  it("does not append current live items to a deferred snapshot from another thread", () => {
+    const deferredItems = [
+      userMessage("user-a", "A 会话问题"),
+      assistantMessage("assistant-a", "A 会话总结"),
+    ];
+    const currentItems = [
+      userMessage("user-b", "B 会话问题"),
+      assistantMessage("assistant-b", "B 会话输出"),
+    ];
+
+    const resolvedItems = resolveStreamingPresentationItems(
+      deferredItems,
+      currentItems,
+      true,
+      undefined,
+      {
+        deferredScopeKey: "ws-1\u0000thread-a",
+        currentScopeKey: "ws-1\u0000thread-b",
+      },
+    );
+
+    expect(resolvedItems).toBe(currentItems);
+  });
+
   it("reuses the deferred presentation snapshot reference when streaming only updates existing ids", () => {
     const deferredItems = [
       userMessage("user-1", "问题"),

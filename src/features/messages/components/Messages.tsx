@@ -222,6 +222,7 @@ export const Messages = memo(function Messages({
   const threadId = effectiveState.meta.threadId || legacyThreadId;
   const activeTurnId = effectiveState.meta.activeTurnId ?? null;
   const activeEngine = toConversationEngine(effectiveState.meta.engine);
+  const renderScopeKey = `${workspaceId ?? ""}\u0000${threadId ?? ""}`;
   const isThinking = conversationState
     ? effectiveState.meta.isThinking
     : legacyIsThinking;
@@ -353,7 +354,18 @@ export const Messages = memo(function Messages({
     [effectiveItems, enableCollaborationBadge, isThinking, showAllHistoryItems],
   );
   const renderSourceItems = liveTailWorkingSet.items;
-  const deferredRenderSourceItems = useDeferredValue(renderSourceItems);
+  const renderSourceSnapshot = useMemo(
+    () => ({
+      scopeKey: renderScopeKey,
+      items: renderSourceItems,
+    }),
+    [renderScopeKey, renderSourceItems],
+  );
+  const deferredRenderSourceSnapshot = useDeferredValue(renderSourceSnapshot);
+  const deferredRenderSourceItems =
+    deferredRenderSourceSnapshot.scopeKey === renderScopeKey
+      ? deferredRenderSourceSnapshot.items
+      : renderSourceItems;
   const firstItemIdRef = useRef<string | null>(items[0]?.id ?? null);
   const activeUserInputRequest = resolveActiveUserInputRequest({
     requests: userInputRequests,
@@ -1246,7 +1258,20 @@ export const Messages = memo(function Messages({
     isThinking,
     timelineItems,
   ]);
-  const deferredPresentationRenderedItems = useDeferredValue(presentationRenderedItems);
+  const presentationRenderSnapshot = useMemo(
+    () => ({
+      scopeKey: renderScopeKey,
+      items: presentationRenderedItems,
+    }),
+    [presentationRenderedItems, renderScopeKey],
+  );
+  const deferredPresentationRenderSnapshot = useDeferredValue(
+    presentationRenderSnapshot,
+  );
+  const deferredPresentationRenderedItems =
+    deferredPresentationRenderSnapshot.scopeKey === renderScopeKey
+      ? deferredPresentationRenderSnapshot.items
+      : presentationRenderedItems;
   const shouldStabilizePresentationItems =
     supportsStreamingReadableWindowRecovery &&
     (isThinking || isAssistantFinalizing);
@@ -1268,12 +1293,18 @@ export const Messages = memo(function Messages({
       presentationRenderedItems,
       shouldStabilizePresentationItems,
       livePresentationOverrideItemIds,
+      {
+        deferredScopeKey: deferredPresentationRenderSnapshot.scopeKey,
+        currentScopeKey: renderScopeKey,
+      },
     );
   }, [
     claudeHistoryTranscriptFallbackActive,
+    deferredPresentationRenderSnapshot.scopeKey,
     deferredPresentationRenderedItems,
     livePresentationOverrideItemIds,
     presentationRenderedItems,
+    renderScopeKey,
     shouldStabilizePresentationItems,
     timelineItems,
   ]);

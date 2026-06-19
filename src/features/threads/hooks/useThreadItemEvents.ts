@@ -605,19 +605,31 @@ export function useThreadItemEvents({
         useTransitionForDispatch?: boolean;
       } = {},
     ) => {
-      const run = () => {
-        if (
-          isRealtimeTurnTerminal(
-            normalizedEvent.threadId,
-            extractTurnIdFromNormalizedRealtimeEvent(normalizedEvent),
-          )
-        ) {
+      const {
+        ensuredThreads,
+        markedProcessingThreads,
+      } = options;
+      const eventTurnId = extractTurnIdFromNormalizedRealtimeEvent(normalizedEvent);
+      const isEventTurnTerminal = () =>
+        isRealtimeTurnTerminal(normalizedEvent.threadId, eventTurnId);
+      const shouldMarkProcessing = normalizedEvent.operation !== "itemCompleted";
+      const markProcessingIfNeeded = () => {
+        if (!shouldMarkProcessing) {
           return;
         }
-        const {
-          ensuredThreads,
-          markedProcessingThreads,
-        } = options;
+        if (markedProcessingThreads?.has(normalizedEvent.threadId)) {
+          return;
+        }
+        if (isEventTurnTerminal()) {
+          return;
+        }
+        markProcessing(normalizedEvent.threadId, true);
+        markedProcessingThreads?.add(normalizedEvent.threadId);
+      };
+      const run = (runOptions: { skipProcessingMark?: boolean } = {}) => {
+        if (isEventTurnTerminal()) {
+          return;
+        }
         if (!ensuredThreads?.has(normalizedEvent.threadId)) {
           dispatch({
             type: "ensureThread",
@@ -627,12 +639,8 @@ export function useThreadItemEvents({
           });
           ensuredThreads?.add(normalizedEvent.threadId);
         }
-        if (
-          normalizedEvent.operation !== "itemCompleted" &&
-          !markedProcessingThreads?.has(normalizedEvent.threadId)
-        ) {
-          markProcessing(normalizedEvent.threadId, true);
-          markedProcessingThreads?.add(normalizedEvent.threadId);
+        if (!runOptions.skipProcessingMark) {
+          markProcessingIfNeeded();
         }
         dispatch({
           type: "applyNormalizedRealtimeEvent",
@@ -677,7 +685,8 @@ export function useThreadItemEvents({
         run();
         return;
       }
-      scheduleRealtimeDispatch(run);
+      markProcessingIfNeeded();
+      scheduleRealtimeDispatch(() => run({ skipProcessingMark: true }));
     },
     [
       activeThreadId,

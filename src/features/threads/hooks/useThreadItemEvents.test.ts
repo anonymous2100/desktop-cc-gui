@@ -906,8 +906,10 @@ describe("useThreadItemEvents", () => {
 
     expect(queuedTransitions).toHaveLength(1);
     expect(dispatch).not.toHaveBeenCalled();
-    expect(markProcessing).not.toHaveBeenCalled();
+    expect(markProcessing).toHaveBeenCalledWith("thread-1", true);
     expect(safeMessageActivity).toHaveBeenCalledTimes(1);
+
+    markProcessing.mockClear();
 
     act(() => {
       queuedTransitions.forEach((callback) => callback());
@@ -917,6 +919,61 @@ describe("useThreadItemEvents", () => {
       expect.objectContaining({ type: "applyNormalizedRealtimeEvent" }),
     );
     expect(markProcessing).not.toHaveBeenCalled();
+  });
+
+  it("keeps processing marks outside transitioned normalized dispatches", () => {
+    const queuedTransitions: Array<() => void> = [];
+    const { result, dispatch, markProcessing } = makeOptions({
+      scheduleRealtimeDispatch: (callback) => {
+        queuedTransitions.push(callback);
+      },
+    });
+
+    act(() => {
+      result.current.noteRealtimeTurnStarted("thread-1", "turn-1");
+      result.current.onNormalizedRealtimeEvent({
+        engine: "codex",
+        workspaceId: "ws-1",
+        threadId: "thread-1",
+        turnId: "turn-1",
+        eventId: "evt-transition-1",
+        itemKind: "reasoning",
+        timestampMs: 1,
+        operation: "appendReasoningSummaryBoundary",
+        sourceMethod: "item/reasoning/summary/boundary",
+        delta: null,
+        item: {
+          id: "reasoning-transition-1",
+          kind: "reasoning",
+          summary: "transition summary",
+          content: "",
+        },
+      });
+    });
+
+    expect(queuedTransitions).toHaveLength(1);
+    expect(markProcessing).toHaveBeenCalledWith("thread-1", true);
+    expect(dispatch).not.toHaveBeenCalledWith(
+      expect.objectContaining({ type: "applyNormalizedRealtimeEvent" }),
+    );
+
+    markProcessing.mockClear();
+
+    act(() => {
+      queuedTransitions.forEach((callback) => callback());
+    });
+
+    expect(markProcessing).not.toHaveBeenCalled();
+    expect(dispatch).toHaveBeenCalledWith({
+      type: "applyNormalizedRealtimeEvent",
+      workspaceId: "ws-1",
+      threadId: "thread-1",
+      event: expect.objectContaining({
+        operation: "appendReasoningSummaryBoundary",
+        turnId: "turn-1",
+      }),
+      hasCustomName: false,
+    });
   });
 
   it("completes agent messages and updates thread activity", () => {
