@@ -62,6 +62,29 @@ describe("Sidebar", () => {
     expect(container.querySelector(".sidebar-section-title-icon-image")).toBeNull();
   });
 
+  it("renders the runtime notice entry in the same bottom action group as settings", () => {
+    const { container } = render(
+      <Sidebar
+        {...baseProps}
+        runtimeNoticeDockNode={
+          <button type="button" className="global-runtime-notice-dock-bubble">
+            Runtime notice
+          </button>
+        }
+      />,
+    );
+
+    const bottomNav = container.querySelector(".sidebar-bottom-nav");
+    expect(bottomNav).toBeTruthy();
+    const settingsButton = bottomNav?.querySelector(".sidebar-primary-nav-item-bottom");
+    const runtimeNoticeButton = bottomNav?.querySelector(".global-runtime-notice-dock-bubble");
+    expect(settingsButton).toBeTruthy();
+    expect(runtimeNoticeButton).toBeTruthy();
+    expect(
+      settingsButton?.compareDocumentPosition(runtimeNoticeButton as Node),
+    ).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+  });
+
   it("marks the macOS sidebar titlebar placeholder as a drag region", () => {
     const { container } = render(<Sidebar {...baseProps} />);
 
