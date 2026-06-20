@@ -19,6 +19,80 @@ const OUTPUT_JSON_PATH = "docs/perf/runtime-evidence-gates.json";
 const OUTPUT_PERF_MARKDOWN_PATH = "docs/perf/runtime-evidence-gates.md";
 const OUTPUT_OPENSPEC_MARKDOWN_PATH = "openspec/docs/runtime-evidence-gates-2026-05-24.md";
 const CLOSURE_CHANGE_NAMES = new Set(["close-performance-iteration-2026-06"]);
+const PERF_DEBT_CLEANUP_SOURCE =
+  "openspec/changes/archive/2026-06-20-clean-up-perf-archive-readiness-debt/implementation-notes.md";
+
+const acceptedBudgetResiduals = [
+  ["S-LL-200/commitDurationP50", "release-grade-evidence-collection", "Need owner-approved long-list commit budget by row count."],
+  ["S-LL-200/commitDurationP95", "release-grade-evidence-collection", "Need owner-approved long-list commit budget by row count."],
+  ["S-LL-200/firstPaintAfterMount", "release-grade-evidence-collection", "Browser/runtime first-paint budget must be defined before hard gate."],
+  ["S-LL-500/commitDurationP50", "release-grade-evidence-collection", "Need owner-approved long-list commit budget by row count."],
+  ["S-LL-500/commitDurationP95", "release-grade-evidence-collection", "Need owner-approved long-list commit budget by row count."],
+  ["S-LL-500/firstPaintAfterMount", "release-grade-evidence-collection", "Browser/runtime first-paint budget must be defined before hard gate."],
+  ["S-LL-1000/commitDurationP50", "release-grade-evidence-collection", "Need owner-approved long-list commit budget by row count."],
+  ["S-LL-1000/commitDurationP95", "release-grade-evidence-collection", "Need owner-approved long-list commit budget by row count."],
+  ["S-LL-1000/firstPaintAfterMount", "release-grade-evidence-collection", "Browser/runtime first-paint budget must be defined before hard gate."],
+  ["S-CI-50/compositionToCommit", "input-latency-budget", "Need IME/runtime composition-to-commit budget source."],
+  ["S-CI-100-IME/compositionToCommit", "input-latency-budget", "Need IME/runtime composition-to-commit budget source."],
+  ["S-RS-PE/dedupHitRatio", "realtime-runtime-evidence", "Diagnostic ratio remains release-debt until owner approves a hard budget."],
+  ["S-RS-PE/assemblerLatency", "realtime-runtime-evidence", "Need runtime assembler latency budget source."],
+  ["S-CS-COLD/firstPaintMs", "release-grade-evidence-collection", "Need measured Tauri/webview first-paint timing before setting hard budget."],
+  ["S-CS-COLD/firstInteractiveMs", "release-grade-evidence-collection", "Need measured Tauri/webview first-interactive timing before setting hard budget."],
+].map(([record, owner, reason]) => ({
+  record,
+  owner,
+  source: PERF_DEBT_CLEANUP_SOURCE,
+  reason,
+  releaseDecision: "accepted-normal-mode-deferral",
+  nextAction: "Keep release-mode evidence strict; replace this accepted residual with owner-approved budget metadata when measured runtime evidence exists.",
+}));
+
+const acceptedProxyEvidenceDebt = {
+  status: "accepted-normal-mode-deferral",
+  owner: "runtime-perf-evidence-classification",
+  source: PERF_DEBT_CLEANUP_SOURCE,
+  reason:
+    "The current v0.5.11 evidence mix intentionally retains fixture/jsdom proxy records as regression baselines while runtime producers are added incrementally.",
+  releaseDecision:
+    "Normal-mode archive readiness may pass with this accepted disposition; release mode remains stricter and still reports release-required proxy or unsupported evidence.",
+  nextAction:
+    "Promote release-relevant proxy records to measured Tauri/WebView evidence before release-grade archive.",
+};
+
+const acceptedUnsupportedEvidence = [
+  {
+    record: "S-CS-COLD/firstPaintMs",
+    owner: "release-grade-evidence-collection",
+    platformQualifier: "supported Tauri/WebView startup marker runner unavailable in current CI/local evidence set",
+    reason: "Cold-start startup marker snapshot was not provided; bundle baseline is recorded separately.",
+    nextAction: "Collect real Tauri webview first-paint timing on a supported runner.",
+  },
+  {
+    record: "S-CS-COLD/firstInteractiveMs",
+    owner: "release-grade-evidence-collection",
+    platformQualifier: "supported Tauri/WebView startup marker runner unavailable in current CI/local evidence set",
+    reason: "Cold-start startup marker snapshot was not provided; bundle baseline is recorded separately.",
+    nextAction: "Collect real Tauri webview first-interactive timing on a supported runner.",
+  },
+  {
+    record: "S-LR-101/sampledOsChildLivenessAfterClose",
+    owner: "long-running-runtime-evidence",
+    platformQualifier: "cross-platform OS child process sampler unavailable",
+    reason: "Runtime tracks registered handles, but does not yet ship a portable OS child liveness sampler.",
+    nextAction: "Add or explicitly waive a platform-safe child process sampler before release-grade closure.",
+  },
+  {
+    record: "S-LR-200/moduleSwitchP95Ms",
+    owner: "long-running-runtime-evidence",
+    platformQualifier: "Tauri/WebView module-switch trace unavailable in jsdom evidence",
+    reason: "jsdom cannot produce real module switch latency.",
+    nextAction: "Collect module switch P95 from a supported Tauri/WebView trace.",
+  },
+].map((entry) => ({
+  ...entry,
+  source: PERF_DEBT_CLEANUP_SOURCE,
+  releaseDecision: "accepted-normal-mode-deferral",
+}));
 
 const compatibilityPaths = [
   {
@@ -821,6 +895,9 @@ function buildArchiveReadiness(openSpecState) {
     completed,
     previousArchiveContext,
     inProgress,
+    acceptedBudgetResiduals,
+    acceptedProxyEvidenceDebt,
+    acceptedUnsupportedEvidence,
     error: openSpecState?.error ?? null,
   };
 }
@@ -1040,6 +1117,29 @@ function createOpenSpecMarkdown(report) {
     lines.push("", "## Previous Archive Context", "");
     for (const change of report.archiveReadiness.previousArchiveContext) {
       lines.push(`- ${change.name}: ${change.tasks}, ${change.recommendation}. ${change.qualifier}`);
+    }
+  }
+  if (report.archiveReadiness.acceptedBudgetResiduals?.length > 0) {
+    lines.push("", "## Accepted Budget Residuals", "");
+    lines.push("| Record | Owner | Decision | Next Action |");
+    lines.push("|---|---|---|---|");
+    for (const entry of report.archiveReadiness.acceptedBudgetResiduals) {
+      lines.push(`| ${markdownCell(entry.record)} | ${markdownCell(entry.owner)} | ${markdownCell(entry.releaseDecision)} | ${markdownCell(entry.nextAction)} |`);
+    }
+  }
+  if (report.archiveReadiness.acceptedProxyEvidenceDebt) {
+    lines.push("", "## Accepted Proxy Evidence Debt", "");
+    lines.push(`- Status: ${report.archiveReadiness.acceptedProxyEvidenceDebt.status}`);
+    lines.push(`- Owner: ${report.archiveReadiness.acceptedProxyEvidenceDebt.owner}`);
+    lines.push(`- Decision: ${report.archiveReadiness.acceptedProxyEvidenceDebt.releaseDecision}`);
+    lines.push(`- Next action: ${report.archiveReadiness.acceptedProxyEvidenceDebt.nextAction}`);
+  }
+  if (report.archiveReadiness.acceptedUnsupportedEvidence?.length > 0) {
+    lines.push("", "## Accepted Unsupported Evidence", "");
+    lines.push("| Record | Owner | Platform Qualifier | Next Action |");
+    lines.push("|---|---|---|---|");
+    for (const entry of report.archiveReadiness.acceptedUnsupportedEvidence) {
+      lines.push(`| ${markdownCell(entry.record)} | ${markdownCell(entry.owner)} | ${markdownCell(entry.platformQualifier)} | ${markdownCell(entry.nextAction)} |`);
     }
   }
   lines.push("", "## In Progress", "");

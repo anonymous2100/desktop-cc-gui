@@ -1,6 +1,6 @@
 {
   "schemaVersion": "1.0",
-  "generatedAt": "2026-06-18T11:01:58.314Z",
+  "generatedAt": "2026-06-19T19:49:13.978Z",
   "sources": {
     "perfBaseline": "docs/perf/baseline.json",
     "composerBaseline": "docs/perf/composer-baseline.json",
@@ -2096,70 +2096,205 @@
   },
   "archiveReadiness": {
     "source": "openspec list --json",
-    "completed": [],
-    "previousArchiveContext": [
+    "completed": [
       {
-        "name": "refactor-v0511-thread-messaging-recovery-and-streaming",
-        "tasks": "44/44",
-        "recommendation": "previous-closure-context",
-        "qualifier": "Retained as historical closure context after the 2026-06-18 archive batch."
-      },
-      {
-        "name": "fix-disk-codex-empty-draft-fresh-replay",
-        "tasks": "7/7",
-        "recommendation": "previous-closure-context",
-        "qualifier": "Retained as historical closure context after the 2026-06-18 archive batch."
-      },
-      {
-        "name": "optimize-governance-sentry-noise-and-large-file-split",
-        "tasks": "14/14",
-        "recommendation": "previous-closure-context",
-        "qualifier": "Retained as historical closure context after the 2026-06-18 archive batch."
-      },
-      {
-        "name": "measure-codex-turn-start-ack-latency",
-        "tasks": "7/7",
-        "recommendation": "previous-closure-context",
-        "qualifier": "Retained as historical closure context after the 2026-06-18 archive batch."
-      },
-      {
-        "name": "measure-codex-first-delta-latency",
+        "name": "relocate-runtime-notice-dock-sidebar-entry",
         "tasks": "8/8",
-        "recommendation": "previous-closure-context",
-        "qualifier": "Retained as historical closure context after the 2026-06-18 archive batch."
-      },
-      {
-        "name": "reduce-turn-trace-batch-flush-lag",
-        "tasks": "12/12",
-        "recommendation": "previous-closure-context",
-        "qualifier": "Retained as historical closure context after the 2026-06-18 archive batch."
-      },
-      {
-        "name": "reduce-message-row-render-amplification",
-        "tasks": "12/12",
-        "recommendation": "previous-closure-context",
-        "qualifier": "Retained as historical closure context after the 2026-06-18 archive batch."
-      },
-      {
-        "name": "reduce-streaming-reducer-commit-lag",
-        "tasks": "12/12",
-        "recommendation": "previous-closure-context",
-        "qualifier": "Retained as historical closure context after the 2026-06-18 archive batch."
-      },
-      {
-        "name": "v0511-performance-evidence-and-runtime-jank-hardening",
-        "tasks": "28/28",
-        "recommendation": "previous-closure-context",
-        "qualifier": "Retained as historical closure context after the 2026-06-18 archive batch."
-      },
-      {
-        "name": "fix-runtime-reconnect-card-state-loop",
-        "tasks": "7/7",
-        "recommendation": "previous-closure-context",
-        "qualifier": "Retained as historical closure context after the 2026-06-18 archive batch."
+        "recommendation": "archive-candidate-after-qualifier-review",
+        "qualifier": "Review validation and platform qualifiers before archive."
       }
     ],
-    "inProgress": [],
+    "previousArchiveContext": [],
+    "inProgress": [
+      {
+        "name": "fix-codex-parallel-runtime-ended-isolation",
+        "tasks": "63/66",
+        "recommendation": "not-archive-ready"
+      },
+      {
+        "name": "2026-06-18-extend-search-palette-with-commands",
+        "tasks": "0/0",
+        "recommendation": "not-archive-ready"
+      },
+      {
+        "name": "2026-06-18-extend-editor-file-tab-lifecycle",
+        "tasks": "0/0",
+        "recommendation": "not-archive-ready"
+      },
+      {
+        "name": "2026-06-18-add-shortcuts-overview-and-conflict-detection",
+        "tasks": "0/0",
+        "recommendation": "not-archive-ready"
+      }
+    ],
+    "acceptedBudgetResiduals": [
+      {
+        "record": "S-LL-200/commitDurationP50",
+        "owner": "release-grade-evidence-collection",
+        "source": "openspec/changes/archive/2026-06-20-clean-up-perf-archive-readiness-debt/implementation-notes.md",
+        "reason": "Need owner-approved long-list commit budget by row count.",
+        "releaseDecision": "accepted-normal-mode-deferral",
+        "nextAction": "Keep release-mode evidence strict; replace this accepted residual with owner-approved budget metadata when measured runtime evidence exists."
+      },
+      {
+        "record": "S-LL-200/commitDurationP95",
+        "owner": "release-grade-evidence-collection",
+        "source": "openspec/changes/archive/2026-06-20-clean-up-perf-archive-readiness-debt/implementation-notes.md",
+        "reason": "Need owner-approved long-list commit budget by row count.",
+        "releaseDecision": "accepted-normal-mode-deferral",
+        "nextAction": "Keep release-mode evidence strict; replace this accepted residual with owner-approved budget metadata when measured runtime evidence exists."
+      },
+      {
+        "record": "S-LL-200/firstPaintAfterMount",
+        "owner": "release-grade-evidence-collection",
+        "source": "openspec/changes/archive/2026-06-20-clean-up-perf-archive-readiness-debt/implementation-notes.md",
+        "reason": "Browser/runtime first-paint budget must be defined before hard gate.",
+        "releaseDecision": "accepted-normal-mode-deferral",
+        "nextAction": "Keep release-mode evidence strict; replace this accepted residual with owner-approved budget metadata when measured runtime evidence exists."
+      },
+      {
+        "record": "S-LL-500/commitDurationP50",
+        "owner": "release-grade-evidence-collection",
+        "source": "openspec/changes/archive/2026-06-20-clean-up-perf-archive-readiness-debt/implementation-notes.md",
+        "reason": "Need owner-approved long-list commit budget by row count.",
+        "releaseDecision": "accepted-normal-mode-deferral",
+        "nextAction": "Keep release-mode evidence strict; replace this accepted residual with owner-approved budget metadata when measured runtime evidence exists."
+      },
+      {
+        "record": "S-LL-500/commitDurationP95",
+        "owner": "release-grade-evidence-collection",
+        "source": "openspec/changes/archive/2026-06-20-clean-up-perf-archive-readiness-debt/implementation-notes.md",
+        "reason": "Need owner-approved long-list commit budget by row count.",
+        "releaseDecision": "accepted-normal-mode-deferral",
+        "nextAction": "Keep release-mode evidence strict; replace this accepted residual with owner-approved budget metadata when measured runtime evidence exists."
+      },
+      {
+        "record": "S-LL-500/firstPaintAfterMount",
+        "owner": "release-grade-evidence-collection",
+        "source": "openspec/changes/archive/2026-06-20-clean-up-perf-archive-readiness-debt/implementation-notes.md",
+        "reason": "Browser/runtime first-paint budget must be defined before hard gate.",
+        "releaseDecision": "accepted-normal-mode-deferral",
+        "nextAction": "Keep release-mode evidence strict; replace this accepted residual with owner-approved budget metadata when measured runtime evidence exists."
+      },
+      {
+        "record": "S-LL-1000/commitDurationP50",
+        "owner": "release-grade-evidence-collection",
+        "source": "openspec/changes/archive/2026-06-20-clean-up-perf-archive-readiness-debt/implementation-notes.md",
+        "reason": "Need owner-approved long-list commit budget by row count.",
+        "releaseDecision": "accepted-normal-mode-deferral",
+        "nextAction": "Keep release-mode evidence strict; replace this accepted residual with owner-approved budget metadata when measured runtime evidence exists."
+      },
+      {
+        "record": "S-LL-1000/commitDurationP95",
+        "owner": "release-grade-evidence-collection",
+        "source": "openspec/changes/archive/2026-06-20-clean-up-perf-archive-readiness-debt/implementation-notes.md",
+        "reason": "Need owner-approved long-list commit budget by row count.",
+        "releaseDecision": "accepted-normal-mode-deferral",
+        "nextAction": "Keep release-mode evidence strict; replace this accepted residual with owner-approved budget metadata when measured runtime evidence exists."
+      },
+      {
+        "record": "S-LL-1000/firstPaintAfterMount",
+        "owner": "release-grade-evidence-collection",
+        "source": "openspec/changes/archive/2026-06-20-clean-up-perf-archive-readiness-debt/implementation-notes.md",
+        "reason": "Browser/runtime first-paint budget must be defined before hard gate.",
+        "releaseDecision": "accepted-normal-mode-deferral",
+        "nextAction": "Keep release-mode evidence strict; replace this accepted residual with owner-approved budget metadata when measured runtime evidence exists."
+      },
+      {
+        "record": "S-CI-50/compositionToCommit",
+        "owner": "input-latency-budget",
+        "source": "openspec/changes/archive/2026-06-20-clean-up-perf-archive-readiness-debt/implementation-notes.md",
+        "reason": "Need IME/runtime composition-to-commit budget source.",
+        "releaseDecision": "accepted-normal-mode-deferral",
+        "nextAction": "Keep release-mode evidence strict; replace this accepted residual with owner-approved budget metadata when measured runtime evidence exists."
+      },
+      {
+        "record": "S-CI-100-IME/compositionToCommit",
+        "owner": "input-latency-budget",
+        "source": "openspec/changes/archive/2026-06-20-clean-up-perf-archive-readiness-debt/implementation-notes.md",
+        "reason": "Need IME/runtime composition-to-commit budget source.",
+        "releaseDecision": "accepted-normal-mode-deferral",
+        "nextAction": "Keep release-mode evidence strict; replace this accepted residual with owner-approved budget metadata when measured runtime evidence exists."
+      },
+      {
+        "record": "S-RS-PE/dedupHitRatio",
+        "owner": "realtime-runtime-evidence",
+        "source": "openspec/changes/archive/2026-06-20-clean-up-perf-archive-readiness-debt/implementation-notes.md",
+        "reason": "Diagnostic ratio remains release-debt until owner approves a hard budget.",
+        "releaseDecision": "accepted-normal-mode-deferral",
+        "nextAction": "Keep release-mode evidence strict; replace this accepted residual with owner-approved budget metadata when measured runtime evidence exists."
+      },
+      {
+        "record": "S-RS-PE/assemblerLatency",
+        "owner": "realtime-runtime-evidence",
+        "source": "openspec/changes/archive/2026-06-20-clean-up-perf-archive-readiness-debt/implementation-notes.md",
+        "reason": "Need runtime assembler latency budget source.",
+        "releaseDecision": "accepted-normal-mode-deferral",
+        "nextAction": "Keep release-mode evidence strict; replace this accepted residual with owner-approved budget metadata when measured runtime evidence exists."
+      },
+      {
+        "record": "S-CS-COLD/firstPaintMs",
+        "owner": "release-grade-evidence-collection",
+        "source": "openspec/changes/archive/2026-06-20-clean-up-perf-archive-readiness-debt/implementation-notes.md",
+        "reason": "Need measured Tauri/webview first-paint timing before setting hard budget.",
+        "releaseDecision": "accepted-normal-mode-deferral",
+        "nextAction": "Keep release-mode evidence strict; replace this accepted residual with owner-approved budget metadata when measured runtime evidence exists."
+      },
+      {
+        "record": "S-CS-COLD/firstInteractiveMs",
+        "owner": "release-grade-evidence-collection",
+        "source": "openspec/changes/archive/2026-06-20-clean-up-perf-archive-readiness-debt/implementation-notes.md",
+        "reason": "Need measured Tauri/webview first-interactive timing before setting hard budget.",
+        "releaseDecision": "accepted-normal-mode-deferral",
+        "nextAction": "Keep release-mode evidence strict; replace this accepted residual with owner-approved budget metadata when measured runtime evidence exists."
+      }
+    ],
+    "acceptedProxyEvidenceDebt": {
+      "status": "accepted-normal-mode-deferral",
+      "owner": "runtime-perf-evidence-classification",
+      "source": "openspec/changes/archive/2026-06-20-clean-up-perf-archive-readiness-debt/implementation-notes.md",
+      "reason": "The current v0.5.11 evidence mix intentionally retains fixture/jsdom proxy records as regression baselines while runtime producers are added incrementally.",
+      "releaseDecision": "Normal-mode archive readiness may pass with this accepted disposition; release mode remains stricter and still reports release-required proxy or unsupported evidence.",
+      "nextAction": "Promote release-relevant proxy records to measured Tauri/WebView evidence before release-grade archive."
+    },
+    "acceptedUnsupportedEvidence": [
+      {
+        "record": "S-CS-COLD/firstPaintMs",
+        "owner": "release-grade-evidence-collection",
+        "platformQualifier": "supported Tauri/WebView startup marker runner unavailable in current CI/local evidence set",
+        "reason": "Cold-start startup marker snapshot was not provided; bundle baseline is recorded separately.",
+        "nextAction": "Collect real Tauri webview first-paint timing on a supported runner.",
+        "source": "openspec/changes/archive/2026-06-20-clean-up-perf-archive-readiness-debt/implementation-notes.md",
+        "releaseDecision": "accepted-normal-mode-deferral"
+      },
+      {
+        "record": "S-CS-COLD/firstInteractiveMs",
+        "owner": "release-grade-evidence-collection",
+        "platformQualifier": "supported Tauri/WebView startup marker runner unavailable in current CI/local evidence set",
+        "reason": "Cold-start startup marker snapshot was not provided; bundle baseline is recorded separately.",
+        "nextAction": "Collect real Tauri webview first-interactive timing on a supported runner.",
+        "source": "openspec/changes/archive/2026-06-20-clean-up-perf-archive-readiness-debt/implementation-notes.md",
+        "releaseDecision": "accepted-normal-mode-deferral"
+      },
+      {
+        "record": "S-LR-101/sampledOsChildLivenessAfterClose",
+        "owner": "long-running-runtime-evidence",
+        "platformQualifier": "cross-platform OS child process sampler unavailable",
+        "reason": "Runtime tracks registered handles, but does not yet ship a portable OS child liveness sampler.",
+        "nextAction": "Add or explicitly waive a platform-safe child process sampler before release-grade closure.",
+        "source": "openspec/changes/archive/2026-06-20-clean-up-perf-archive-readiness-debt/implementation-notes.md",
+        "releaseDecision": "accepted-normal-mode-deferral"
+      },
+      {
+        "record": "S-LR-200/moduleSwitchP95Ms",
+        "owner": "long-running-runtime-evidence",
+        "platformQualifier": "Tauri/WebView module-switch trace unavailable in jsdom evidence",
+        "reason": "jsdom cannot produce real module switch latency.",
+        "nextAction": "Collect module switch P95 from a supported Tauri/WebView trace.",
+        "source": "openspec/changes/archive/2026-06-20-clean-up-perf-archive-readiness-debt/implementation-notes.md",
+        "releaseDecision": "accepted-normal-mode-deferral"
+      }
+    ],
     "error": null
   },
   "compatibilityPaths": [
@@ -2190,7 +2325,7 @@
   ],
   "largeFileSummary": {
     "source": ".artifacts/large-files-near-threshold.json",
-    "generatedAt": "2026-06-17T07:16:36.950Z",
+    "generatedAt": "2026-06-19T19:13:17.708Z",
     "status": "warn",
     "candidates": [
       {
@@ -2202,16 +2337,6 @@
         "owner": "code-health",
         "followUp": "Declare public facade before splitting. Next split must be scoped to bridge-runtime-critical (7 lines headroom).",
         "facade": "Declare public facade before splitting."
-      },
-      {
-        "path": "src/services/tauri.ts",
-        "lines": 2567,
-        "priority": "P0",
-        "policyId": "bridge-runtime-critical",
-        "headroom": 33,
-        "owner": "frontend-tauri-bridge",
-        "followUp": "Preserve service exports, payload mapping, and web/Tauri fallback semantics. Next split must be scoped to bridge-runtime-critical (33 lines headroom).",
-        "facade": "Preserve service exports, payload mapping, and web/Tauri fallback semantics."
       },
       {
         "path": "src-tauri/src/engine/commands.rs",
@@ -2274,16 +2399,6 @@
         "facade": "Preserve command registration, Rust module facade, payload shape, and cross-platform paths."
       },
       {
-        "path": "src/features/threads/hooks/useThreadEventHandlers.ts",
-        "lines": 2799,
-        "priority": "P1",
-        "policyId": "feature-hotpath",
-        "headroom": 1,
-        "owner": "frontend-thread-runtime",
-        "followUp": "Preserve hook input/output shape and async cleanup semantics. Next split must be scoped to feature-hotpath (1 lines headroom).",
-        "facade": "Preserve hook input/output shape and async cleanup semantics."
-      },
-      {
         "path": "src-tauri/src/session_management.rs",
         "lines": 2976,
         "priority": "P1",
@@ -2292,6 +2407,26 @@
         "owner": "backend-runtime",
         "followUp": "Preserve command registration, Rust module facade, payload shape, and cross-platform paths. Next split must be scoped to default-source (24 lines headroom).",
         "facade": "Preserve command registration, Rust module facade, payload shape, and cross-platform paths."
+      },
+      {
+        "path": "src/features/threads/hooks/useThreads.ts",
+        "lines": 2772,
+        "priority": "P1",
+        "policyId": "feature-hotpath",
+        "headroom": 28,
+        "owner": "frontend-thread-runtime",
+        "followUp": "Preserve hook input/output shape and async cleanup semantics. Next split must be scoped to feature-hotpath (28 lines headroom).",
+        "facade": "Preserve hook input/output shape and async cleanup semantics."
+      },
+      {
+        "path": "src/features/app/hooks/useAppServerEvents.ts",
+        "lines": 2950,
+        "priority": "P1",
+        "policyId": "default-source",
+        "headroom": 50,
+        "owner": "code-health",
+        "followUp": "Preserve hook input/output shape and async cleanup semantics. Next split must be scoped to default-source (50 lines headroom).",
+        "facade": "Preserve hook input/output shape and async cleanup semantics."
       }
     ],
     "nextAction": "Pick one coherent runtime boundary; do not batch unrelated hot paths together."
