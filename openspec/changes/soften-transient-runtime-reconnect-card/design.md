@@ -1,0 +1,57 @@
+## Context
+
+`Messages` locates the latest assistant message that looks like a runtime reconnect diagnostic and renders `RuntimeReconnectCard` for that row. The card currently treats all `[RUNTIME_ENDED]` diagnostics as blocking runtime loss. During managed runtime cleanup (`stale_reuse_cleanup`, `internal_replacement`), the backend may still auto-recover and later stream usable output, but the UI briefly presents a high-severity recovery card in the live canvas.
+
+## Goals / Non-Goals
+
+**Goals:**
+
+- Keep runtime diagnostics visible without over-stating transient cleanup as a blocking failure.
+- Preserve existing manual reconnect / resend affordances.
+- Keep assistant message text readable for transient cleanup diagnostics.
+- Limit the implementation to frontend UI classification and rendering.
+
+**Non-Goals:**
+
+- No backend `runtime/ended` payload changes.
+- No runtime lifecycle ownership or settlement changes.
+- No assistant-completion-based terminal inference.
+- No new dependencies.
+
+## Decisions
+
+1. Add UI-only tone to `RuntimeReconnectHint`
+   - Use `tone: "blocking" | "transient"`.
+   - `blocking` remains the default to preserve existing behavior.
+   - `transient` applies only to runtime-ended diagnostics that contain expected managed cleanup sources such as `stale_reuse_cleanup` or `internal_replacement`.
+   - Alternative considered: suppress transient diagnostics entirely. Rejected because diagnostics are still useful and should remain visible.
+
+2. Render transient diagnostics as lightweight status
+   - Use the same component to avoid duplicating recovery behavior.
+   - Add CSS class modifier for quieter spacing, border, background, and optional detail handling.
+   - Preserve existing buttons so user-initiated recovery remains available if auto-recovery does not converge.
+   - Alternative considered: create a separate component. Rejected because it would duplicate action handling without changing behavior.
+
+3. Keep backend and lifecycle untouched
+   - The UI does not reinterpret terminal authority.
+   - The UI only changes visual severity for known cleanup diagnostics.
+   - Alternative considered: adjust `runtime/ended` routing to not call `onTurnError` for cleanup sources. Rejected because that would change behavior and may hide legitimate owner-gated terminal evidence.
+
+## Risks / Trade-offs
+
+- [Risk] A truly blocking failure may include `stale_reuse_cleanup` in text.
+  - Mitigation: keep reconnect/resend actions available and only reduce visual severity, not functionality.
+- [Risk] Raw diagnostic detail becomes less visible.
+  - Mitigation: keep detail available in the component, but style it as secondary metadata.
+- [Risk] Tests could overfit translation keys.
+  - Mitigation: focused tests assert role/card presence and raw diagnostic behavior using existing i18n test style.
+
+## Migration Plan
+
+No migration required. This is a frontend-only presentation change.
+
+Rollback: revert the UI-only tone classification and CSS modifier; backend state remains unaffected.
+
+## Open Questions
+
+- None for this change. Broader runtime diagnostic taxonomy can be handled separately if more shutdown sources need distinct visual severity.

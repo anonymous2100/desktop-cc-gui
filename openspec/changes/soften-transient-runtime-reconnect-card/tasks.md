@@ -1,0 +1,16 @@
+## 1. UI Classification
+
+- [x] 1.1 Add UI-only transient/blocking tone to runtime reconnect hints, with `stale_reuse_cleanup` and `internal_replacement` classified as transient cleanup sources.
+- [x] 1.2 Preserve existing blocking classification for broken pipe, workspace-not-connected, recovery quarantine, stale thread/session recovery, and runtime-ended diagnostics without cleanup source.
+
+## 2. Rendering
+
+- [x] 2.1 Update `RuntimeReconnectCard` to render transient cleanup diagnostics as low-interruption UI while keeping recovery actions available.
+- [x] 2.2 Adjust message card CSS and i18n copy for transient cleanup status without changing backend or lifecycle behavior.
+
+## 3. Verification
+
+- [x] 3.1 Add or update focused tests for transient cleanup, blocking runtime-ended, and quoted diagnostic behavior.
+- [x] 3.2 Run focused Vitest suites for runtime reconnect rendering.
+- [x] 3.3 Run `npm run typecheck`.
+- [x] 3.4 Run `openspec validate soften-transient-runtime-reconnect-card --strict --no-interactive`.

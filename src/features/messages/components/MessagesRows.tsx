@@ -1194,6 +1194,10 @@ export const MessageRow = memo(function MessageRow({
     ),
     [agentTaskNotification, item],
   );
+  const suppressRuntimeReconnectText =
+    Boolean(runtimeReconnectHint) &&
+    showRuntimeReconnectCard &&
+    runtimeReconnectHint?.tone !== "transient";
 
   const bubbleNode = (
     <div className={`bubble message-bubble${agentTaskNotification ? " message-bubble-agent-task" : ""}`}>
@@ -1325,7 +1329,7 @@ export const MessageRow = memo(function MessageRow({
             content={displayText}
             parsedContent={parsedUserTextContent ?? undefined}
           />
-        ) : runtimeReconnectHint && showRuntimeReconnectCard ? null : usePlainTextStreamingSurface ? (
+        ) : suppressRuntimeReconnectText ? null : usePlainTextStreamingSurface ? (
           <div className={livePlainTextClassName}>
             {useLongFoldedMarkdownStreamingSurface ? liveFoldedStreamingSurfaceText : displayText}
           </div>
@@ -1411,7 +1415,7 @@ export const MessageRow = memo(function MessageRow({
     agentTaskNotification
     || imageItems.length > 0
     || deferredImageItems.length > 0
-    || (Boolean(runtimeReconnectHint) && showRuntimeReconnectCard)
+    || suppressRuntimeReconnectText
     || hasText
     || shouldRenderMessageActions;
   const memoryPayloadDialogNode =

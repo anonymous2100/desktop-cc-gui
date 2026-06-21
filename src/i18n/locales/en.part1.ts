@@ -2578,12 +2578,17 @@ const enPart1 = {
     streamingPlainTextCollapsed:
       "{{omittedChars}} chars omitted to keep live rendering smooth.",
     runtimeReconnectTitle: "Runtime connection lost",
+    runtimeReconnectTransientTitle: "Runtime is recovering",
     runtimeReconnectBrokenPipe:
       "The runtime pipe for this session message has been closed. Reconnect the runtime, then retry your send.",
     runtimeReconnectWorkspaceNotConnected:
       "This workspace does not currently have an available managed runtime. Reconnect the runtime, then retry your send.",
     runtimeReconnectEnded:
       "The managed runtime ended before this conversation turn settled. Reconnect the runtime, then retry or resend the previous prompt.",
+    runtimeReconnectTransientCleanup:
+      "The app is cleaning up an old runtime and switching to an available instance. This usually recovers automatically; reconnect manually only if output does not continue.",
+    runtimeReconnectStoppingRace:
+      "The runtime is stopping or being rebuilt. Wait for automatic recovery, or reconnect the runtime manually.",
     runtimeReconnectQuarantined:
       "The runtime is cooling down after repeated recovery failures. Wait a moment, then reconnect or resend the previous prompt.",
     runtimeReconnectAction: "Reconnect runtime",

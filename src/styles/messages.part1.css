@@ -303,6 +303,18 @@
     inset 0 1px 0 color-mix(in srgb, #ffffff 6%, transparent);
 }
 
+.message-runtime-recovery-card.is-transient {
+  gap: 8px;
+  padding: 10px 12px;
+  margin: 0 0 8px;
+  border-radius: 10px;
+  border-color: color-mix(in srgb, var(--border-strong) 72%, #60a5fa 12%);
+  background: color-mix(in srgb, var(--surface-card) 94%, #2563eb 6%);
+  box-shadow:
+    0 8px 18px color-mix(in srgb, #020617 8%, transparent),
+    inset 0 1px 0 color-mix(in srgb, #ffffff 5%, transparent);
+}
+
 .message-runtime-recovery-header {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto;
@@ -310,9 +322,18 @@
   gap: 12px;
 }
 
+.message-runtime-recovery-card.is-transient .message-runtime-recovery-header {
+  align-items: center;
+}
+
 .message-runtime-recovery-icon {
   margin-top: 2px;
   color: color-mix(in srgb, #60a5fa 72%, var(--text-primary));
+}
+
+.message-runtime-recovery-card.is-transient .message-runtime-recovery-icon {
+  margin-top: 0;
+  color: color-mix(in srgb, #93c5fd 64%, var(--text-secondary));
 }
 
 .message-runtime-recovery-copy {
@@ -334,6 +355,11 @@
   line-height: 1.25;
   font-weight: 700;
   color: var(--text-primary);
+}
+
+.message-runtime-recovery-card.is-transient .message-runtime-recovery-title {
+  font-size: var(--message-meta-font-size);
+  font-weight: 650;
 }
 
 .message-runtime-recovery-description {
@@ -371,6 +397,11 @@
   color: var(--text-muted);
   white-space: pre-wrap;
   word-break: break-word;
+}
+
+.message-runtime-recovery-card.is-transient .message-runtime-recovery-detail {
+  font-size: var(--message-small-font-size);
+  color: color-mix(in srgb, var(--text-muted) 82%, transparent);
 }
 
 .message-runtime-recovery-detail-label {

@@ -235,6 +235,35 @@ describe("Messages runtime reconnect", () => {
     expect(screen.getByText("messages.runtimeReconnectEnded")).toBeTruthy();
   });
 
+  it("shows transient runtime cleanup diagnostics as low-interruption recovery status", () => {
+    renderMessages([
+      {
+        id: "assistant-runtime-stale-cleanup",
+        kind: "message",
+        role: "assistant",
+        text:
+          "[RUNTIME_ENDED] Managed runtime stopped after manual shutdown (source: stale_reuse_cleanup).",
+      },
+    ], {
+      threadId: "thread-runtime-stale-cleanup",
+    });
+
+    const transientCard = screen.getByRole("group", {
+      name: "messages.runtimeReconnectTransientTitle",
+    });
+    expect(transientCard).toBeTruthy();
+    expect(transientCard.className).toContain("is-transient");
+    expect(screen.getByText("messages.runtimeReconnectTransientCleanup")).toBeTruthy();
+    expect(
+      screen.getAllByText(
+        "[RUNTIME_ENDED] Managed runtime stopped after manual shutdown (source: stale_reuse_cleanup).",
+      ).length,
+    ).toBeGreaterThan(1);
+    expect(
+      screen.queryByRole("group", { name: "messages.runtimeReconnectTitle" }),
+    ).toBeNull();
+  });
+
   it("shows only the fork action for stale thread recovery cards", () => {
     const onThreadRecoveryFork = vi.fn();
 
