@@ -804,3 +804,56 @@
 ### Next Steps
 
 - None - task complete
+
+
+## Session 893: 合入 Claude 供应商排序与模型拉取
+
+**Date**: 2026-06-21
+**Task**: 合入 Claude 供应商排序与模型拉取
+**Branch**: `feature/v0.5.11`
+
+### Summary
+
+(Add summary)
+
+### Main Changes
+
+目标：检查并合入 PR #705 到 feature/v0.5.11，处理 review blocker，并按 OpenSpec/Trellis 规则完成提交收口。
+
+主要变更：
+- 合入 Claude 供应商拖拽排序：新增 sortOrder、vendor_reorder_claude_providers、ProviderList DnD、useProviderManagement 乐观排序与失败回滚。
+- 合入 Claude 供应商模型拉取：新增 vendor_fetch_claude_models、Tauri service wrapper、ProviderDialog 拉取按钮、共享 datalist 建议、i18n 与样式。
+- 校准默认 Claude provider settings template：顶层 managed settings 不再误放 env，移除 unsafe env defaults。
+- 保留 PR 附带 file-tree 滚动容器修复。
+- Review 后撤销 AGENTS.md 的 Windows-only pwsh Shell Baseline 回退，最终提交不包含 AGENTS.md 改动。
+- 新增 OpenSpec change：add-claude-provider-management-order-and-model-fetch，包含 proposal/design/tasks/spec delta，并通过 strict validate。
+
+验证：
+- npm run lint 通过。
+- npm run typecheck 通过。
+- npm exec -- vitest run src/features/vendors/components/ProviderDialog.test.ts src/features/vendors/components/ProviderDialog.fetch-models.test.tsx src/features/vendors/components/ProviderList.test.tsx src/features/vendors/hooks/useProviderManagement.test.tsx src/services/tauri.test.ts 通过，5 files / 124 tests passed。
+- cargo test --manifest-path src-tauri/Cargo.toml vendors::commands::tests:: --quiet 通过，12 tests passed。
+- openspec validate add-claude-provider-management-order-and-model-fetch --strict --no-interactive 通过。
+
+后续：
+- 手动 QA：拖拽排序持久化、active provider 回位、真实 endpoint 拉取模型、错误 URL/key 提示。
+- 手动 QA 通过后可执行 OpenSpec sync/archive。
+
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `31732a32` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
