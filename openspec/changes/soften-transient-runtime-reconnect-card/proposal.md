@@ -12,6 +12,8 @@ Realtime conversation output can currently show the full `Runtime 连接已中�
 
 - Classify runtime reconnect hints with a UI-only tone, distinguishing blocking recovery from transient managed-runtime cleanup.
 - Render transient cleanup diagnostics as a lightweight inline notice in the live message canvas.
+- Hide raw `[RUNTIME_ENDED]` diagnostic text for transient cleanup notices; keep it only for blocking recovery cases.
+- Scope the reconnect card to the latest assistant message only; once a newer assistant reply arrives, older runtime diagnostics must not keep a card or raw error text visible.
 - Keep backend `runtime/ended` semantics unchanged; no lifecycle settlement or recovery behavior changes.
 - Preserve the existing full recovery card for true broken pipe, workspace-not-connected, runtime-ended before settlement, recovery quarantine, and stale thread/session recovery cases.
 - Keep transient notice styling theme-token based so light / dark / system themes and Windows WebView2 light surfaces remain compatible.
@@ -58,5 +60,6 @@ Realtime conversation output can currently show the full `Runtime 连接已中�
 - `stale_reuse_cleanup` runtime-ended diagnostic in live messages is shown as low-interruption transient UI, not as the full blocking recovery card.
 - The transient cleanup surface uses lightweight notice copy and theme-token styling, not the high-severity recovery/error card treatment.
 - Genuine runtime failures still show the existing recovery actions.
-- The original assistant output remains readable when the diagnostic is transient.
+- Transient cleanup notices do not repeat raw `会话失败: [RUNTIME_ENDED] ...` diagnostic text in the card or underneath it.
+- Older runtime diagnostics are hidden after a newer assistant reply proves the conversation surface has moved on.
 - Focused message reconnect tests and typecheck pass.

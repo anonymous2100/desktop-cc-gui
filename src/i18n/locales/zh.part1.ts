@@ -2530,7 +2530,7 @@ const zhPart1 = {
     runtimeReconnectEnded:
       "受管 runtime 在本轮对话结束前就已经退出。你可以先重新连接 runtime，再继续重试或重发上一条提示词。",
     runtimeReconnectTransientCleanup:
-      "旧 runtime 正在后台清理，系统会切到可用实例。通常会自动继续；如果后续没有输出，再手动重连。",
+      "正在切换到可用 runtime，通常会自动继续。",
     runtimeReconnectStoppingRace:
       "当前 runtime 正在停止或重建。你可以等待自动恢复，或手动重新连接 runtime。",
     runtimeReconnectQuarantined:

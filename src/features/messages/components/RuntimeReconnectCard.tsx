@@ -296,6 +296,7 @@ export function RuntimeReconnectCard({
   const failedLabel = requiresThreadRecovery
     ? t("messages.threadRecoveryFailed")
     : t("messages.runtimeReconnectFailed");
+  const showDiagnosticDetail = !isTransientCleanup;
 
   return (
     <div
@@ -345,14 +346,16 @@ export function RuntimeReconnectCard({
           {recoveryRecommendation}
         </div>
       ) : null}
-      <div className="message-runtime-recovery-detail">
-        {recoveryDetailLabel ? (
-          <span className="message-runtime-recovery-detail-label">
-            {recoveryDetailLabel}
-          </span>
-        ) : null}
-        <span>{hint.rawMessage}</span>
-      </div>
+      {showDiagnosticDetail ? (
+        <div className="message-runtime-recovery-detail">
+          {recoveryDetailLabel ? (
+            <span className="message-runtime-recovery-detail-label">
+              {recoveryDetailLabel}
+            </span>
+          ) : null}
+          <span>{hint.rawMessage}</span>
+        </div>
+      ) : null}
       {showReconnectUnavailable ? (
         <div className="message-runtime-recovery-status is-error" aria-live="polite">
           {unavailableLabel}

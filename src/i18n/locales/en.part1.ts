@@ -2586,7 +2586,7 @@ const enPart1 = {
     runtimeReconnectEnded:
       "The managed runtime ended before this conversation turn settled. Reconnect the runtime, then retry or resend the previous prompt.",
     runtimeReconnectTransientCleanup:
-      "An old runtime is being cleaned up in the background while the app switches to an available instance. Output usually continues automatically; reconnect manually only if it does not.",
+      "Switching to an available runtime. Output usually continues automatically.",
     runtimeReconnectStoppingRace:
       "The runtime is stopping or being rebuilt. Wait for automatic recovery, or reconnect the runtime manually.",
     runtimeReconnectQuarantined:

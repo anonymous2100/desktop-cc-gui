@@ -235,7 +235,57 @@ describe("Messages runtime reconnect", () => {
     expect(screen.getByText("messages.runtimeReconnectEnded")).toBeTruthy();
   });
 
-  it("shows transient runtime cleanup diagnostics as low-interruption recovery status", () => {
+  it("keeps the runtime reconnect card when only a user follow-up follows the diagnostic", () => {
+    renderMessages([
+      {
+        id: "assistant-runtime-ended",
+        kind: "message",
+        role: "assistant",
+        text:
+          "[RUNTIME_ENDED] Managed runtime ended before this conversation turn settled.",
+      },
+      {
+        id: "user-follow-up",
+        kind: "message",
+        role: "user",
+        text: "继续",
+      },
+    ], {
+      threadId: "thread-runtime-ended-user-follow-up",
+    });
+
+    expect(screen.getByRole("group", { name: "messages.runtimeReconnectTitle" })).toBeTruthy();
+    expect(screen.getByText("messages.runtimeReconnectEnded")).toBeTruthy();
+  });
+
+  it("hides stale runtime reconnect diagnostics after a newer assistant reply", () => {
+    renderMessages([
+      {
+        id: "assistant-runtime-ended",
+        kind: "message",
+        role: "assistant",
+        text:
+          "[RUNTIME_ENDED] Managed runtime ended before this conversation turn settled.",
+      },
+      {
+        id: "assistant-after-recovery",
+        kind: "message",
+        role: "assistant",
+        text: "恢复后继续输出。",
+      },
+    ], {
+      threadId: "thread-runtime-ended-after-recovery",
+    });
+
+    expect(screen.queryByRole("group", { name: "messages.runtimeReconnectTitle" })).toBeNull();
+    expect(screen.queryByRole("group", { name: "messages.runtimeReconnectTransientTitle" })).toBeNull();
+    expect(
+      screen.queryByText("[RUNTIME_ENDED] Managed runtime ended before this conversation turn settled."),
+    ).toBeNull();
+    expect(screen.getByText("恢复后继续输出。")).toBeTruthy();
+  });
+
+  it("shows transient runtime cleanup diagnostics as lightweight notice without raw details", () => {
     renderMessages([
       {
         id: "assistant-runtime-stale-cleanup",
@@ -255,10 +305,10 @@ describe("Messages runtime reconnect", () => {
     expect(transientCard.className).toContain("is-transient");
     expect(screen.getByText("messages.runtimeReconnectTransientCleanup")).toBeTruthy();
     expect(
-      screen.getAllByText(
+      screen.queryByText(
         "[RUNTIME_ENDED] Managed runtime stopped after manual shutdown (source: stale_reuse_cleanup).",
-      ).length,
-    ).toBeGreaterThan(1);
+      ),
+    ).toBeNull();
     expect(
       screen.queryByRole("group", { name: "messages.runtimeReconnectTitle" }),
     ).toBeNull();
