@@ -1191,3 +1191,52 @@
 ### Next Steps
 
 - None - task complete
+
+
+## Session 901: Mermaid 图表全屏查看
+
+**Date**: 2026-06-22
+**Task**: Mermaid 图表全屏查看
+**Branch**: `feature/v0.5.12`
+
+### Summary
+
+(Add summary)
+
+### Main Changes
+
+| 项目 | 内容 |
+|------|------|
+| 功能 | 为消息侧 `MermaidBlock` 与文件预览侧 `FileMarkdownMermaidBlock` 增加 icon-only 全屏入口。 |
+| Viewer | 新增共享 `src/features/markdown/mermaidFullscreen/`，使用 `viewerjs@^1.11.7`、单例 active viewer、显式 `viewer.show()`、StrictMode / panel-lock / theme mutation 防御。 |
+| 主题 | 新增 `src/styles/mermaid-fullscreen.css`，按 dark / light / dim 分别适配 backdrop、toolbar、close button 与 viewerjs sprite icon filter。 |
+| 测试 | 新增 messages/files/viewer-show/theme 回归测试，目标 vitest 23/23 通过。 |
+| OpenSpec | 新增 `openspec/changes/2026-06-22-add-mermaid-block-fullscreen-viewer/` proposal/design/tasks/spec delta，阶段性提交保留 archive gate 未执行。 |
+
+验证已跑：
+- `npm run lint`
+- `npm run typecheck`
+- `npx vitest run src/features/messages/components/MermaidBlock.fullscreen.test.tsx src/features/messages/components/MermaidBlock.viewer-show.test.tsx src/features/files/components/FileMarkdownPreview.mermaid-fullscreen.test.tsx src/styles/mermaid-fullscreen.theme.test.ts`
+- `npx openspec validate 2026-06-22-add-mermaid-block-fullscreen-viewer --strict --no-interactive`
+- `npm run check:large-files`
+- `npm run build`
+- `npm run check:bundle-chunking`
+
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `4c38fa13` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
