@@ -1101,3 +1101,50 @@
 ### Next Steps
 
 - None - task complete
+
+
+## Session 899: 修复 Codex conversation not found 会话恢复
+
+**Date**: 2026-06-22
+**Task**: 修复 Codex conversation not found 会话恢复
+**Branch**: `feature/v0.5.12`
+
+### Summary
+
+(Add summary)
+
+### Main Changes
+
+本次修复 GitHub issue #711 对应的 Codex 旧对话恢复问题：runtime 返回 `conversation not found` / `conversation_not_found` 时，前端和 Rust 侧原本只按普通失败处理，没有进入 stale thread binding recovery。
+
+改动内容：
+- 前端 `stabilityDiagnostics` 将 `conversation not found` 归类为可恢复 stale binding，并保持 `staleReason=thread-not-found`。
+- `useThreadActions.helpers` 同步补齐相同错误形态，避免恢复提示/手动恢复链路与发送链路漂移。
+- Rust `codex_core` 的 `turn/start` retry classifier 同步识别 `conversation not found` / `conversation_not_found`，保持 same-runtime `thread/resume` + bounded retry 策略。
+- 增加 Vitest 与 Rust classifier 回归测试，覆盖 issue 报错形态。
+
+验证：
+- `npm exec vitest run src/features/threads/utils/stabilityDiagnostics.test.ts src/features/threads/hooks/useThreadMessaging.test.tsx`
+- `cargo test --manifest-path src-tauri/Cargo.toml thread_not_found_classifier -- --nocapture`
+- `npm run typecheck`
+- `cargo test --manifest-path src-tauri/Cargo.toml --no-run`
+- `npm run lint`
+
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `9ed9e648` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
