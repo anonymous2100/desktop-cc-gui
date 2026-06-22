@@ -1148,3 +1148,46 @@
 ### Next Steps
 
 - None - task complete
+
+
+## Session 900: 优化 release Rust 编译缓存
+
+**Date**: 2026-06-22
+**Task**: 优化 release Rust 编译缓存
+**Branch**: `feature/v0.5.12`
+
+### Summary
+
+(Add summary)
+
+### Main Changes
+
+| Area | Details |
+|------|---------|
+| CI release cache | Updated `.github/workflows/release.yml` to add stable `swatinem/rust-cache` `shared-key` values and `cache-on-failure: true` for macOS arm64, macOS x86_64, Linux x64, and Windows x64 release jobs. |
+| sccache activation | Added `Configure sccache environment` steps that write `RUSTC_WRAPPER=sccache`, `SCCACHE_GHA_ENABLED=true`, and platform-specific `SCCACHE_DIR` into `$GITHUB_ENV`, then install `mozilla-actions/sccache-action@v0.0.10` so the real Tauri build step inherits the wrapper. |
+| OpenSpec | Added change `2026-06-22-release-pipeline-cache-sccache` with proposal, design, tasks, and `release-pipeline-ci-cache-perf` spec delta. Documented the root problem as slow `workflow_dispatch` release packaging, especially macOS x86_64 run `27905632604`, and captured live verification requirements for future GitHub Actions runs. |
+| Verification | Ran `openspec validate 2026-06-22-release-pipeline-cache-sccache --strict --no-interactive`, YAML parse for `.github/workflows/release.yml`, and `npm run typecheck`. Locally attempted macOS x86_64 Tauri build on Apple Silicon; frontend build and Rust x86_64 compilation started with sccache stats, but full local package was blocked by OpenSSL cross-compilation (`HOST=aarch64-apple-darwin`, `TARGET=x86_64-apple-darwin`), which does not represent the real Intel GitHub runner. |
+
+**Follow-up**:
+- Trigger a real `workflow_dispatch` release run and check cache hit logs, `sccache --show-stats`, artifact upload, and platform wall-clock values.
+- Keep OpenSpec archive pending until live GitHub Actions verification passes.
+
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `11b64eb5` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete

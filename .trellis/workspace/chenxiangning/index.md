@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-23.md`
-- **Total Sessions**: 899
+- **Total Sessions**: 900
 - **Last Active**: 2026-06-22
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-23.md` | ~1150 | Active |
+| `journal-23.md` | ~1193 | Active |
 | `journal-22.md` | ~1969 | Archived |
 | `journal-21.md` | ~1970 | Archived |
 | `journal-20.md` | ~1997 | Archived |
@@ -51,6 +51,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 900 | 2026-06-22 | 优化 release Rust 编译缓存 | `11b64eb5` | `feature/v0.5.12` |
 | 899 | 2026-06-22 | 修复 Codex conversation not found 会话恢复 | `9ed9e648` | `feature/v0.5.12` |
 | 898 | 2026-06-22 | 收紧 runtime 恢复提示展示 | `0dace55e` | `feature/v0.5.12` |
 | 897 | 2026-06-22 | 弱化可恢复 runtime 提示样式 | `b5a9d3a8` | `feature/v0.5.12` |
