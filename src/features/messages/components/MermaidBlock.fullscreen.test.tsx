@@ -67,6 +67,19 @@ afterEach(() => {
   viewerInstances.length = 0;
 });
 
+async function waitForEnabledFullscreenButton(container: HTMLElement) {
+  return await waitFor(() => {
+    const button = container.querySelector<HTMLButtonElement>(
+      '[data-testid="mermaid-fullscreen-button"]',
+    );
+    if (!button) {
+      throw new Error("Mermaid fullscreen button was not rendered");
+    }
+    expect(button.disabled).toBe(false);
+    return button;
+  });
+}
+
 describe("MermaidBlock fullscreen entry", () => {
   it("renders a disabled fullscreen button before render", () => {
     const { container } = render(
@@ -83,15 +96,7 @@ describe("MermaidBlock fullscreen entry", () => {
     const { container } = render(
       <MermaidBlock value="graph LR; A-->B;" copyUseModifier={false} />,
     );
-    await waitFor(() => {
-      const button = container.querySelector<HTMLButtonElement>(
-        '[data-testid="mermaid-fullscreen-button"]',
-      );
-      expect(button?.disabled).toBe(false);
-    });
-    const button = container.querySelector<HTMLButtonElement>(
-      '[data-testid="mermaid-fullscreen-button"]',
-    );
+    const button = await waitForEnabledFullscreenButton(container);
     expect(button?.getAttribute("aria-label")).toBe("Open diagram fullscreen");
   });
 
@@ -99,12 +104,8 @@ describe("MermaidBlock fullscreen entry", () => {
     const { container } = render(
       <MermaidBlock value="graph LR; A-->B;" copyUseModifier={false} />,
     );
-    const button = await waitFor(() =>
-      container.querySelector<HTMLButtonElement>(
-        '[data-testid="mermaid-fullscreen-button"]',
-      ),
-    );
-    fireEvent.click(button!);
+    const button = await waitForEnabledFullscreenButton(container);
+    fireEvent.click(button);
     await waitFor(() => {
       expect(
         document.body.querySelector('[data-testid="mermaid-fullscreen-img"]'),
@@ -116,12 +117,8 @@ describe("MermaidBlock fullscreen entry", () => {
     const { container, unmount } = render(
       <MermaidBlock value="graph LR; A-->B;" copyUseModifier={false} />,
     );
-    const button = await waitFor(() =>
-      container.querySelector<HTMLButtonElement>(
-        '[data-testid="mermaid-fullscreen-button"]',
-      ),
-    );
-    fireEvent.click(button!);
+    const button = await waitForEnabledFullscreenButton(container);
+    fireEvent.click(button);
     await waitFor(() => {
       expect(
         document.body.querySelector('[data-testid="mermaid-fullscreen-img"]'),
